@@ -121,8 +121,9 @@ class ApiClient {
 
       case DioExceptionType.badResponse:
         final response = error.response;
-        if (response == null)
+        if (response == null) {
           return UnknownApiException('No response received from server.');
+        }
 
         final statusCode = response.statusCode;
         final responseData = response.data;
