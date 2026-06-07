@@ -312,6 +312,7 @@ jobs:
       - name: Migrate and Seed
         working-directory: backend
         env:
+          PYTHONPATH: .
           POSTGRES_SERVER: localhost
           POSTGRES_PORT: 5435
           POSTGRES_USER: postgres
@@ -320,7 +321,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:password123@localhost:5435/ags_gold_db
         run: |
           python -m alembic upgrade head
-          python -c "import asyncio; from app.database.seed import seed_data; from app.database.session import get_async_engine; engine = get_async_engine(); asyncio.run(seed_data(engine))" 2>/dev/null || python app/database/seed.py
+          python -c "import asyncio; from app.database.seed import seed_data; from app.database.session import get_async_engine; engine = get_async_engine(); asyncio.run(seed_data(engine))" 2>/dev/null || python -m app.database.seed
 
       - name: Start API Container
         working-directory: backend
