@@ -3,7 +3,6 @@ import os
 import uuid
 from pathlib import Path
 from typing import AsyncGenerator, Generator
-from urllib.parse import urlparse, urlunparse
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
