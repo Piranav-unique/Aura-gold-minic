@@ -1,0 +1,26 @@
+[run]
+source = app
+omit =
+    app/database/seed.py
+    app/core/logging.py
+    app/database/session.py
+    app/core/config.py
+    app/main.py
+    */migrations/*
+    */alembic/*
+    */tests/*
+    */.venv/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if __name__ == .__main__.:
+    raise AssertionError
+    raise NotImplementedError
+    pass
+    class .*\(Protocol\):
+
+fail_under = 85
+show_missing = True

@@ -43,15 +43,15 @@ def test_audit_log_model_instantiation():
     """Verify that AuditLog model properties instantiate and map correctly in memory."""
     log = AuditLog(
         action="update_user",
-        table_name="users",
-        record_id="12345",
-        changes={"first_name": "Old", "first_name_new": "New"},
+        entity_type="users",
+        entity_id="12345",
+        meta_data={"first_name": "Old", "first_name_new": "New"},
         ip_address="127.0.0.1",
         user_agent="Mozilla/5.0",
     )
     assert log.action == "update_user"
-    assert log.table_name == "users"
-    assert log.record_id == "12345"
-    assert log.changes == {"first_name": "Old", "first_name_new": "New"}
+    assert log.entity_type == "users"
+    assert log.entity_id == "12345"
+    assert log.meta_data == {"first_name": "Old", "first_name_new": "New"}
     assert log.ip_address == "127.0.0.1"
     assert log.user_agent == "Mozilla/5.0"

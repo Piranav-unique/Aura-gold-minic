@@ -50,6 +50,14 @@ class ServerException extends ApiException {
     : super(message ?? 'Server error. Please try again later.', 500);
 }
 
+class RateLimitException extends ApiException {
+  RateLimitException([String? message])
+    : super(
+        message ?? 'Too many requests. Please try again later.',
+        429,
+      );
+}
+
 class UnknownApiException extends ApiException {
   UnknownApiException(super.message, [super.statusCode]);
 }
@@ -57,30 +65,40 @@ class UnknownApiException extends ApiException {
 class ApiClient {
   late final Dio _dio;
   final ISecureStorage storageService;
+  final VoidCallback? onUnauthorized;
 
-  ApiClient({required this.storageService, EnvConfig? config}) {
-    final activeConfig = config ?? EnvConfig.active;
+  ApiClient({
+    required this.storageService,
+    this.onUnauthorized,
+    EnvConfig? config,
+    Dio? testDio,
+  }) {
+    if (testDio != null) {
+      _dio = testDio;
+    } else {
+      final activeConfig = config ?? EnvConfig.active;
 
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: activeConfig.baseUrl,
-        connectTimeout: activeConfig.connectionTimeout,
-        receiveTimeout: activeConfig.receiveTimeout,
-        headers: {
-          HttpHeaders.contentTypeHeader: 'application/json',
-          HttpHeaders.acceptHeader: 'application/json',
-        },
-      ),
-    );
-
-    if (kDebugMode) {
-      _dio.interceptors.add(
-        LogInterceptor(
-          requestBody: true,
-          responseBody: true,
-          logPrint: (obj) => debugPrint('[API] $obj'),
+      _dio = Dio(
+        BaseOptions(
+          baseUrl: activeConfig.baseUrl,
+          connectTimeout: activeConfig.connectionTimeout,
+          receiveTimeout: activeConfig.receiveTimeout,
+          headers: {
+            HttpHeaders.contentTypeHeader: 'application/json',
+            HttpHeaders.acceptHeader: 'application/json',
+          },
         ),
       );
+
+      if (kDebugMode) {
+        _dio.interceptors.add(
+          LogInterceptor(
+            requestBody: true,
+            responseBody: true,
+            logPrint: (obj) => debugPrint('[API] $obj'),
+          ),
+        );
+      }
     }
 
     _setupInterceptors();
@@ -98,6 +116,9 @@ class ApiClient {
         },
         onError: (DioException error, handler) {
           final appException = _handleDioException(error);
+          if (appException is UnauthorizedException) {
+            onUnauthorized?.call();
+          }
           return handler.next(
             DioException(
               requestOptions: error.requestOptions,
@@ -127,11 +148,7 @@ class ApiClient {
 
         final statusCode = response.statusCode;
         final responseData = response.data;
-        String errorMessage = '';
-
-        if (responseData is Map && responseData.containsKey('detail')) {
-          errorMessage = responseData['detail'].toString();
-        }
+        final errorMessage = _extractErrorMessage(responseData);
 
         switch (statusCode) {
           case 401:
@@ -144,6 +161,10 @@ class ApiClient {
             );
           case 404:
             return NotFoundException(
+              errorMessage.isNotEmpty ? errorMessage : null,
+            );
+          case 429:
+            return RateLimitException(
               errorMessage.isNotEmpty ? errorMessage : null,
             );
           case 422:
@@ -181,6 +202,23 @@ class ApiClient {
           error.message ?? 'An unknown network error occurred.',
         );
     }
+  }
+
+  String _extractErrorMessage(dynamic responseData) {
+    if (responseData is! Map) {
+      return '';
+    }
+
+    final error = responseData['error'];
+    if (error is Map && error['message'] != null) {
+      return error['message'].toString();
+    }
+
+    if (responseData['detail'] != null) {
+      return responseData['detail'].toString();
+    }
+
+    return '';
   }
 
   // Wrapper helper methods

@@ -11,10 +11,12 @@ from app.models.permission import Permission
 from app.core.logging import logger, setup_logging
 
 
+from app.core.security import get_password_hash
+
+
 def hash_password(password: str) -> str:
-    """Hash password using bcrypt directly to avoid passlib wrapper bugs."""
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+    """Hash password using the application's central security utility."""
+    return get_password_hash(password)
 
 
 async def seed_data(session: AsyncSession) -> None:
@@ -27,6 +29,11 @@ async def seed_data(session: AsyncSession) -> None:
         {"name": "role:read", "description": "View roles"},
         {"name": "role:write", "description": "Manage roles and role mappings"},
         {"name": "audit_log:read", "description": "View system audit logs"},
+        {"name": "user.view", "description": "View user details"},
+        {"name": "user.create", "description": "Create new users"},
+        {"name": "user.update", "description": "Update user details"},
+        {"name": "user.delete", "description": "Delete users"},
+        {"name": "audit.view", "description": "View system audit logs"},
     ]
 
     db_permissions = {}
@@ -85,15 +92,16 @@ async def seed_data(session: AsyncSession) -> None:
             super_admin_role.permissions.append(perm)
 
     admin_role = db_roles["admin"]
-    for perm_name in ["user:read", "role:read", "audit_log:read"]:
+    for perm_name in ["user.view", "role:read", "audit.view", "user:read", "role:read", "audit_log:read"]:
         perm = db_permissions[perm_name]
         if perm not in admin_role.permissions:
             admin_role.permissions.append(perm)
 
     user_role = db_roles["user"]
-    perm = db_permissions["user:read"]
-    if perm not in user_role.permissions:
-        user_role.permissions.append(perm)
+    for perm_name in ["user.view", "user:read"]:
+        perm = db_permissions[perm_name]
+        if perm not in user_role.permissions:
+            user_role.permissions.append(perm)
 
     # 4. Create Default Super Admin User
     import os
@@ -121,6 +129,13 @@ async def seed_data(session: AsyncSession) -> None:
         admin_user.roles.append(super_admin_role)
         session.add(admin_user)
         logger.info("super_admin_user_created", email=admin_email)
+    else:
+        admin_user.hashed_password = hashed_pw
+        admin_user.is_active = True
+        admin_user.is_superuser = True
+        if super_admin_role not in admin_user.roles:
+            admin_user.roles.append(super_admin_role)
+        logger.info("super_admin_user_updated", email=admin_email)
 
     await session.commit()
     logger.info(

@@ -46,7 +46,16 @@ class ValidationException(AppException):
     """Exception raised when validation fails."""
 
     def __init__(self, message: str = "Validation failed"):
-        super().__init__(message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        super().__init__(message, status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+
+
+class RateLimitException(AppException):
+    """Exception raised when a client exceeds rate limits."""
+
+    def __init__(
+        self, message: str = "Too many requests. Please try again later."
+    ):
+        super().__init__(message, status_code=status.HTTP_429_TOO_MANY_REQUESTS)
 
 
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
