@@ -36,17 +36,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Perform login injection
       await ref
           .read(authNotifierProvider.notifier)
-          .login('mock-jwt-access-token');
+          .login(_emailController.text.trim(), _passwordController.text);
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Invalid email or password. Please try again.';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -215,6 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 8),
           TextFormField(
+            key: const Key('emailField'),
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
@@ -257,6 +256,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 8),
           TextFormField(
+            key: const Key('passwordField'),
             controller: _passwordController,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.done,
@@ -288,6 +288,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // Submit Button
           ElevatedButton(
+            key: const Key('loginButton'),
             onPressed: _isLoading ? null : _handleLogin,
             child: _isLoading
                 ? const SizedBox(

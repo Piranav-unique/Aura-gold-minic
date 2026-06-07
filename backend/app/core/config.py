@@ -14,7 +14,12 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     SECRET_KEY: str = "secret-key-change-me"
+    ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
+    RATE_LIMIT_LOGIN_MAX: int = 5
+    RATE_LIMIT_LOGIN_WINDOW_SECONDS: int = 60
 
     # CORS Origins
     BACKEND_CORS_ORIGINS: Union[List[str], str] = []

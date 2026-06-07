@@ -13,26 +13,18 @@ on:
       - '.github/workflows/flutter.yml'
 
 jobs:
-  analyze-and-test:
-    name: Flutter Analyze & Test
+  analyze:
+    name: Flutter Analyze
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
-          cache-key: "flutter-:channel:-:version:-:arch:-:hash:"
-          cache-path: "${{ runner.tool_cache }}/flutter"
 
       - name: Install Dependencies
         run: |
@@ -44,15 +36,92 @@ jobs:
           cd frontend
           flutter analyze
 
-      - name: Run Flutter Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: analyze
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
         run: |
           cd frontend
-          flutter test
+          flutter pub get
+
+      - name: Run Unit Tests
+        run: |
+          cd frontend
+          flutter test test/unit/
+
+  widget-tests:
+    name: Widget Tests
+    runs-on: ubuntu-latest
+    needs: analyze
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Run Widget Tests
+        run: |
+          cd frontend
+          flutter test test/widget/
+
+  integration-tests:
+    name: Integration & E2E Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, widget-tests]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Run Integration Tests
+        run: |
+          cd frontend
+          flutter test test/integration/
+
+      - name: Run E2E Tests
+        run: |
+          cd frontend
+          flutter test test/e2e/
+
+      - name: Run Security Tests
+        run: |
+          cd frontend
+          flutter test test/security/
 
   build-apk:
     name: Build Android APK
     runs-on: ubuntu-latest
-    needs: analyze-and-test
+    needs: integration-tests
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -60,16 +129,14 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: zulu
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
-          cache-key: "flutter-:channel:-:version:-:arch:-:hash:"
-          cache-path: "${{ runner.tool_cache }}/flutter"
 
       - name: Install Dependencies
         run: |
