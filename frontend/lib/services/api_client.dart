@@ -1,8 +1,11 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:ags_gold/config/env_config.dart';
 import 'package:ags_gold/services/interfaces/secure_storage.dart';
+
+const _kContentType = 'Content-Type';
+const _kAccept = 'Accept';
+const _kAuthorization = 'Authorization';
 
 // Custom API Exceptions
 abstract class ApiException implements Exception {
@@ -84,8 +87,8 @@ class ApiClient {
           connectTimeout: activeConfig.connectionTimeout,
           receiveTimeout: activeConfig.receiveTimeout,
           headers: {
-            HttpHeaders.contentTypeHeader: 'application/json',
-            HttpHeaders.acceptHeader: 'application/json',
+            _kContentType: 'application/json',
+            _kAccept: 'application/json',
           },
         ),
       );
@@ -110,7 +113,7 @@ class ApiClient {
         onRequest: (options, handler) async {
           final token = await storageService.getAccessToken();
           if (token != null && token.isNotEmpty) {
-            options.headers[HttpHeaders.authorizationHeader] = 'Bearer $token';
+            options.headers[_kAuthorization] = 'Bearer $token';
           }
           return handler.next(options);
         },
@@ -195,9 +198,6 @@ class ApiClient {
 
       case DioExceptionType.unknown:
       default:
-        if (error.error is SocketException) {
-          return NetworkException();
-        }
         return UnknownApiException(
           error.message ?? 'An unknown network error occurred.',
         );
@@ -221,7 +221,6 @@ class ApiClient {
     return '';
   }
 
-  // Wrapper helper methods
   Future<Response<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -233,6 +232,23 @@ class ApiClient {
         path,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (e) {
+      throw e.error as ApiException;
+    }
+  }
+
+  Future<Response<List<int>>> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      return await _dio.get<List<int>>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(responseType: ResponseType.bytes),
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {

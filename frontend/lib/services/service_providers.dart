@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ags_gold/config/env_config.dart';
 import 'package:ags_gold/services/interfaces/secure_storage.dart';
 import 'package:ags_gold/services/secure_storage_service.dart';
 import 'package:ags_gold/services/api_client.dart';
+import 'package:ags_gold/features/profile/domain/profile.dart';
+import 'package:ags_gold/features/audit_logs/domain/audit_log.dart';
 
-// Authentication Status Options
 enum AuthStatus { initial, authenticated, unauthenticated }
 
 class AuthNotifier extends AsyncNotifier<AuthStatus> {
@@ -15,8 +18,6 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   @override
   FutureOr<AuthStatus> build() async {
     _storage = ref.watch(secureStorageProvider);
-    // Artificial delay to make the splash screen visible
-    await Future.delayed(const Duration(seconds: 2));
     final hasToken = await _storage.hasAccessToken();
     return hasToken ? AuthStatus.authenticated : AuthStatus.unauthenticated;
   }
@@ -27,19 +28,13 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
         '/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
 
       final data = response.data as Map<String, dynamic>;
-      final accessToken = data['access_token'] as String;
-      final refreshToken = data['refresh_token'] as String;
-
       await _storage.saveTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
+        accessToken: data['access_token'] as String,
+        refreshToken: data['refresh_token'] as String,
       );
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
@@ -57,13 +52,9 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         try {
           await apiClient.post(
             '/auth/logout',
-            data: {
-              'refresh_token': refreshToken,
-            },
+            data: {'refresh_token': refreshToken},
           );
-        } catch (_) {
-          // If server log out fails, we still clear tokens locally
-        }
+        } catch (_) {}
       }
       await _storage.clearTokens();
       state = const AsyncValue.data(AuthStatus.unauthenticated);
@@ -78,17 +69,12 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   }
 }
 
-// Provides environment config parameters
-final envConfigProvider = Provider<EnvConfig>((ref) {
-  return EnvConfig.active;
-});
+final envConfigProvider = Provider<EnvConfig>((ref) => EnvConfig.active);
 
-// Provides Secure Storage service
 final secureStorageProvider = Provider<ISecureStorage>((ref) {
   return SecureStorageService();
 });
 
-// Provides ApiClient instance injected with SecureStorage interface and onUnauthorized callback
 final apiClientProvider = Provider<ApiClient>((ref) {
   final storage = ref.watch(secureStorageProvider);
   final env = ref.watch(envConfigProvider);
@@ -101,38 +87,64 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   );
 });
 
-// Provides current authentication state using AsyncNotifierProvider
 final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthStatus>(
   AuthNotifier.new,
 );
 
-// Provides recent audit logs from backend
-final auditLogsProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final auditLogsProvider = FutureProvider.autoDispose<List<AuditLog>>((ref) async {
   final apiClient = ref.watch(apiClientProvider);
   try {
-    final response = await apiClient.get('/audit-logs/?limit=10');
-    return response.data as List<dynamic>;
-  } catch (e) {
-    // Return empty list if unauthorized/forbidden, letting UI handle it
+    final response = await apiClient.get('/audit-logs/', queryParameters: {
+      'limit': 10,
+    });
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>? ?? [];
+    return items
+        .map((e) => AuditLog.fromJson(e as Map<String, dynamic>))
+        .toList();
+  } catch (_) {
     return [];
   }
 });
 
-// Provides current user profile details
-final profileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+final profileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
   final apiClient = ref.watch(apiClientProvider);
-  final response = await apiClient.get('/auth/me');
-  return response.data as Map<String, dynamic>;
+  final response = await apiClient.get('/profile/');
+  return UserProfile.fromJson(response.data as Map<String, dynamic>);
 });
 
-// Users management states & provider
+final avatarBytesProvider = FutureProvider.autoDispose<Uint8List?>((ref) async {
+  final profile = await ref.watch(profileProvider.future);
+  if (!profile.hasAvatar) return null;
+  final apiClient = ref.read(apiClientProvider);
+  final response = await apiClient.getBytes('/profile/avatar');
+  final data = response.data;
+  if (data == null) return null;
+  return Uint8List.fromList(data);
+});
+
+final profileActivityProvider =
+    FutureProvider.autoDispose<List<AuditLog>>((ref) async {
+  final apiClient = ref.watch(apiClientProvider);
+  final response = await apiClient.get('/profile/activity');
+  final data = response.data as Map<String, dynamic>;
+  final items = data['items'] as List<dynamic>? ?? [];
+  return items
+      .map((e) => AuditLog.fromJson(e as Map<String, dynamic>))
+      .toList();
+});
+
 class UsersSearchQueryNotifier extends Notifier<String> {
   @override
   String build() => '';
   @override
   set state(String value) => super.state = value;
 }
-final usersSearchQueryProvider = NotifierProvider<UsersSearchQueryNotifier, String>(UsersSearchQueryNotifier.new);
+
+final usersSearchQueryProvider =
+    NotifierProvider<UsersSearchQueryNotifier, String>(
+  UsersSearchQueryNotifier.new,
+);
 
 class UsersIsActiveFilterNotifier extends Notifier<bool?> {
   @override
@@ -140,7 +152,11 @@ class UsersIsActiveFilterNotifier extends Notifier<bool?> {
   @override
   set state(bool? value) => super.state = value;
 }
-final usersIsActiveFilterProvider = NotifierProvider<UsersIsActiveFilterNotifier, bool?>(UsersIsActiveFilterNotifier.new);
+
+final usersIsActiveFilterProvider =
+    NotifierProvider<UsersIsActiveFilterNotifier, bool?>(
+  UsersIsActiveFilterNotifier.new,
+);
 
 class UsersIsSuperuserFilterNotifier extends Notifier<bool?> {
   @override
@@ -148,7 +164,11 @@ class UsersIsSuperuserFilterNotifier extends Notifier<bool?> {
   @override
   set state(bool? value) => super.state = value;
 }
-final usersIsSuperuserFilterProvider = NotifierProvider<UsersIsSuperuserFilterNotifier, bool?>(UsersIsSuperuserFilterNotifier.new);
+
+final usersIsSuperuserFilterProvider =
+    NotifierProvider<UsersIsSuperuserFilterNotifier, bool?>(
+  UsersIsSuperuserFilterNotifier.new,
+);
 
 class UsersRoleIdFilterNotifier extends Notifier<String?> {
   @override
@@ -156,7 +176,11 @@ class UsersRoleIdFilterNotifier extends Notifier<String?> {
   @override
   set state(String? value) => super.state = value;
 }
-final usersRoleIdFilterProvider = NotifierProvider<UsersRoleIdFilterNotifier, String?>(UsersRoleIdFilterNotifier.new);
+
+final usersRoleIdFilterProvider =
+    NotifierProvider<UsersRoleIdFilterNotifier, String?>(
+  UsersRoleIdFilterNotifier.new,
+);
 
 class UsersLimitNotifier extends Notifier<int> {
   @override
@@ -164,7 +188,9 @@ class UsersLimitNotifier extends Notifier<int> {
   @override
   set state(int value) => super.state = value;
 }
-final usersLimitProvider = NotifierProvider<UsersLimitNotifier, int>(UsersLimitNotifier.new);
+
+final usersLimitProvider =
+    NotifierProvider<UsersLimitNotifier, int>(UsersLimitNotifier.new);
 
 class UsersSkipNotifier extends Notifier<int> {
   @override
@@ -172,7 +198,9 @@ class UsersSkipNotifier extends Notifier<int> {
   @override
   set state(int value) => super.state = value;
 }
-final usersSkipProvider = NotifierProvider<UsersSkipNotifier, int>(UsersSkipNotifier.new);
+
+final usersSkipProvider =
+    NotifierProvider<UsersSkipNotifier, int>(UsersSkipNotifier.new);
 
 final usersListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final apiClient = ref.watch(apiClientProvider);
@@ -183,10 +211,7 @@ final usersListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async 
   final limit = ref.watch(usersLimitProvider);
   final skip = ref.watch(usersSkipProvider);
 
-  final queryParams = <String, dynamic>{
-    'skip': skip,
-    'limit': limit,
-  };
+  final queryParams = <String, dynamic>{'skip': skip, 'limit': limit};
   if (search.isNotEmpty) queryParams['search'] = search;
   if (isActive != null) queryParams['is_active'] = isActive;
   if (isSuperuser != null) queryParams['is_superuser'] = isSuperuser;
@@ -196,37 +221,58 @@ final usersListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async 
   return response.data as List<dynamic>;
 });
 
-// Roles provider
 final rolesListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/rbac/roles');
   return response.data as List<dynamic>;
 });
 
-// Permissions provider
-final permissionsListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final permissionsListProvider =
+    FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/rbac/permissions');
   return response.data as List<dynamic>;
 });
 
-// Theme mode state and provider
 class ThemeModeNotifier extends Notifier<ThemeMode> {
-  @override
-  ThemeMode build() => ThemeMode.system;
+  static const _prefsKey = 'theme_mode';
 
-  void setThemeMode(ThemeMode mode) {
+  @override
+  ThemeMode build() {
+    _loadPersisted();
+    return ThemeMode.system;
+  }
+
+  Future<void> _loadPersisted() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_prefsKey);
+    if (stored == 'light') state = ThemeMode.light;
+    if (stored == 'dark') state = ThemeMode.dark;
+    if (stored == 'system') state = ThemeMode.system;
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
     state = mode;
+    final prefs = await SharedPreferences.getInstance();
+    final value = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    await prefs.setString(_prefsKey, value);
   }
 
   void toggleTheme(BuildContext context) {
     final currentBrightness = Theme.of(context).brightness;
     if (state == ThemeMode.system) {
-      state = currentBrightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark;
+      setThemeMode(
+        currentBrightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark,
+      );
     } else {
-      state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+      setThemeMode(state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
     }
   }
 }
-final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
 
+final themeModeProvider =
+    NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);

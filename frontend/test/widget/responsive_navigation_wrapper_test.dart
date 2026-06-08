@@ -7,7 +7,20 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/services/service_providers.dart';
+import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:ags_gold/features/profile/domain/profile.dart';
 import '../mocks/mock_services.dart';
+
+final _testProfile = UserProfile(
+  id: '11111111-1111-1111-1111-111111111111',
+  email: 'operator@agsgold.com',
+  firstName: 'AGS GOLD',
+  lastName: 'Operator',
+  isActive: true,
+  isSuperuser: true,
+  createdAt: DateTime.utc(2026, 6, 8),
+  updatedAt: DateTime.utc(2026, 6, 8),
+);
 
 void main() {
   late MockApiClient mockApi;
@@ -27,6 +40,8 @@ void main() {
       overrides: [
         apiClientProvider.overrideWithValue(mockApi),
         secureStorageProvider.overrideWithValue(mockStorage),
+        unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+        profileProvider.overrideWithValue(AsyncValue.data(_testProfile)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -173,6 +188,7 @@ void main() {
     // Verify Drawer is open and matches headers
     expect(find.byType(Drawer), findsOneWidget);
     expect(find.text('AGS GOLD Operator'), findsOneWidget);
+    expect(find.text('operator@agsgold.com'), findsOneWidget);
 
     // Navigate from Drawer list item
     final profileTile = find.widgetWithText(ListTile, 'Profile');

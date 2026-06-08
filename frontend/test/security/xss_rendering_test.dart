@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
+import 'package:ags_gold/features/profile/domain/profile.dart';
+import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -88,15 +90,21 @@ void main() {
         overrides: [
           apiClientProvider.overrideWithValue(mockApi),
           profileProvider.overrideWithValue(
-            AsyncValue.data({
-              'email': 'xss@example.com',
-              'first_name': xssPayload,
-              'last_name': 'User',
-              'is_superuser': false,
-              'is_active': true,
-              'roles': [],
-            }),
+            AsyncValue.data(
+              UserProfile(
+                id: '22222222-2222-2222-2222-222222222222',
+                email: 'xss@example.com',
+                firstName: xssPayload,
+                lastName: 'User',
+                isActive: true,
+                isSuperuser: false,
+                createdAt: DateTime(2026, 1, 1),
+                updatedAt: DateTime(2026, 1, 1),
+              ),
+            ),
           ),
+          profileActivityProvider.overrideWithValue(const AsyncValue.data([])),
+          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

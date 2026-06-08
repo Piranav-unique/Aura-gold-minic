@@ -6,9 +6,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ags_gold/main.dart';
 import 'package:ags_gold/services/service_providers.dart';
-import 'package:ags_gold/features/dashboard/presentation/providers/kpi_provider.dart';
-import 'package:ags_gold/features/dashboard/domain/kpi.dart';
+import 'package:ags_gold/features/dashboard/presentation/providers/dashboard_stats_provider.dart';
+import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
+import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import '../mocks/mock_services.dart';
+
+final _mockDashboardStats = DashboardStats(
+  recentActivity: const [],
+  unreadNotifications: 0,
+  securityAlerts: const [],
+  recentNotifications: const [],
+  loginStatistics: const LoginStatistics(today: 0, week: 0, month: 0),
+);
 
 Future<void> pumpE2eApp(
   WidgetTester tester, {
@@ -22,8 +31,17 @@ Future<void> pumpE2eApp(
     tester.view.resetDevicePixelRatio();
   });
 
+  final mockMapResponse = MockResponse<Map<String, dynamic>>();
+  when(() => mockMapResponse.data).thenReturn({
+    'items': [],
+    'total': 0,
+    'skip': 0,
+    'limit': 10,
+  });
+
   final mockListResponse = MockResponse<List<dynamic>>();
   when(() => mockListResponse.data).thenReturn([]);
+
   when(
     () => mockApi.get(
       any(),
@@ -31,20 +49,33 @@ Future<void> pumpE2eApp(
       options: any(named: 'options'),
       cancelToken: any(named: 'cancelToken'),
     ),
-  ).thenAnswer((_) async => mockListResponse);
-
-  final mockKpis = [
-    const Kpi(id: 'vault', title: 'Total Gold Vault', value: '142.84 kg'),
-    const Kpi(id: 'users', title: 'Active Users', value: '24 Users'),
-  ];
+  ).thenAnswer((invocation) async {
+    final path = invocation.positionalArguments[0] as String;
+    if (path.contains('audit-logs') || path.contains('dashboard/stats')) {
+      if (path.contains('dashboard/stats')) {
+        final statsResponse = MockResponse<Map<String, dynamic>>();
+        when(() => statsResponse.data).thenReturn({
+          'recent_activity': [],
+          'unread_notifications': 0,
+          'security_alerts': [],
+          'recent_notifications': [],
+          'login_statistics': {'today': 0, 'week': 0, 'month': 0},
+        });
+        return statsResponse;
+      }
+      return mockMapResponse;
+    }
+    return mockListResponse;
+  });
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         apiClientProvider.overrideWithValue(mockApi),
         secureStorageProvider.overrideWithValue(mockStorage),
-        kpiProvider.overrideWithValue(mockKpis),
+        dashboardStatsProvider.overrideWithValue(AsyncValue.data(_mockDashboardStats)),
         auditLogsProvider.overrideWithValue(const AsyncValue.data([])),
+        unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
       ],
       child: const AGSGoldApp(),
     ),
@@ -80,9 +111,6 @@ Future<void> completeLogin(
   await tester.enterText(find.byKey(const Key('emailField')), email);
   await tester.enterText(find.byKey(const Key('passwordField')), password);
   await tester.tap(find.byKey(const Key('loginButton')));
-  await tester.pump();
-
   loginCompleter.complete(mockLoginResponse);
-  await tester.pump();
   await tester.pumpAndSettle();
 }

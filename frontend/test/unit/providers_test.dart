@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/services/api_client.dart';
 import '../mocks/mock_services.dart';
@@ -14,6 +15,7 @@ void main() {
   late MockApiClient mockApiClient;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockStorage = MockSecureStorage();
     mockApiClient = MockApiClient();
   });
@@ -26,14 +28,14 @@ void main() {
       expect(container.read(themeModeProvider), ThemeMode.system);
     });
 
-    test('setThemeMode changes theme mode', () {
+    test('setThemeMode changes theme mode', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.read(themeModeProvider.notifier).setThemeMode(ThemeMode.dark);
+      await container.read(themeModeProvider.notifier).setThemeMode(ThemeMode.dark);
       expect(container.read(themeModeProvider), ThemeMode.dark);
 
-      container.read(themeModeProvider.notifier).setThemeMode(ThemeMode.light);
+      await container.read(themeModeProvider.notifier).setThemeMode(ThemeMode.light);
       expect(container.read(themeModeProvider), ThemeMode.light);
     });
   });

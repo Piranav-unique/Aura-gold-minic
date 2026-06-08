@@ -36,8 +36,13 @@ void main() {
       ),
     ).thenAnswer((_) async => usersResponse);
 
-    final auditResponse = MockResponse<List<dynamic>>();
-    when(() => auditResponse.data).thenReturn([]);
+    final auditResponse = MockResponse<Map<String, dynamic>>();
+    when(() => auditResponse.data).thenReturn({
+      'items': [],
+      'total': 0,
+      'skip': 0,
+      'limit': 10,
+    });
     when(
       () => mockApi.get(
         '/audit-logs/',

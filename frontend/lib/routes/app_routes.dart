@@ -9,6 +9,8 @@ import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/admin/presentation/roles_screen.dart';
 import 'package:ags_gold/features/admin/presentation/permissions_screen.dart';
+import 'package:ags_gold/features/audit_logs/presentation/audit_logs_screen.dart';
+import 'package:ags_gold/features/settings/presentation/settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
@@ -60,6 +62,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/audit-logs',
+        builder: (context, state) => const AuditLogsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/admin/users',

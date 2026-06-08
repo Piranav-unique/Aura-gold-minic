@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
+import 'package:ags_gold/features/notifications/presentation/notification_drawer.dart';
 
 class ResponsiveNavigationWrapper extends ConsumerWidget {
   final Widget child;
@@ -18,9 +19,11 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
   int _getSelectedIndex(String path) {
     if (path.startsWith('/dashboard')) return 0;
     if (path.startsWith('/profile')) return 1;
-    if (path.startsWith('/admin/users')) return 2;
-    if (path.startsWith('/admin/roles')) return 3;
-    if (path.startsWith('/admin/permissions')) return 4;
+    if (path.startsWith('/audit-logs')) return 2;
+    if (path.startsWith('/admin/users')) return 3;
+    if (path.startsWith('/admin/roles')) return 4;
+    if (path.startsWith('/admin/permissions')) return 5;
+    if (path.startsWith('/settings')) return 6;
     return 0;
   }
 
@@ -28,19 +31,18 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     switch (index) {
       case 0:
         context.go('/dashboard');
-        break;
       case 1:
         context.go('/profile');
-        break;
       case 2:
-        context.go('/admin/users');
-        break;
+        context.go('/audit-logs');
       case 3:
-        context.go('/admin/roles');
-        break;
+        context.go('/admin/users');
       case 4:
+        context.go('/admin/roles');
+      case 5:
         context.go('/admin/permissions');
-        break;
+      case 6:
+        context.go('/settings');
     }
   }
 
@@ -78,9 +80,9 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
 
     if (isDesktop) {
       return Scaffold(
+        endDrawer: const NotificationDrawer(),
         body: Row(
           children: [
-            // Sidebar Navigation Rail for Wide Screens
             NavigationRail(
               selectedIndex: selectedIndex,
               onDestinationSelected: (index) => _onItemTapped(context, index),
@@ -96,11 +98,7 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
               leading: const Column(
                 children: [
                   SizedBox(height: 16),
-                  Icon(
-                    Icons.monetization_on,
-                    size: 40,
-                    color: AppTheme.primaryGold,
-                  ),
+                  Icon(Icons.monetization_on, size: 40, color: AppTheme.primaryGold),
                   SizedBox(height: 32),
                 ],
               ),
@@ -108,19 +106,27 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
+                    padding: const EdgeInsets.only(bottom: 24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        const NotificationBellButton(),
+                        const SizedBox(height: 8),
                         Consumer(
                           builder: (context, ref, child) {
-                            final isDark = Theme.of(context).brightness == Brightness.dark;
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
                             return IconButton(
                               icon: Icon(
-                                isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                isDark
+                                    ? Icons.light_mode_outlined
+                                    : Icons.dark_mode_outlined,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
                               ),
-                              onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(context),
+                              onPressed: () => ref
+                                  .read(themeModeProvider.notifier)
+                                  .toggleTheme(context),
                               tooltip: 'Toggle Theme',
                             );
                           },
@@ -148,6 +154,11 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                   label: Text('Profile'),
                 ),
                 NavigationRailDestination(
+                  icon: Icon(Icons.history_outlined),
+                  selectedIcon: Icon(Icons.history),
+                  label: Text('Audit Logs'),
+                ),
+                NavigationRailDestination(
                   icon: Icon(Icons.people_outline),
                   selectedIcon: Icon(Icons.people),
                   label: Text('Users'),
@@ -162,15 +173,22 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                   selectedIcon: Icon(Icons.security),
                   label: Text('Permissions'),
                 ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: Text('Settings'),
+                ),
               ],
             ),
             const VerticalDivider(thickness: 1, width: 1),
-            // Main Content Area
             Expanded(
               child: Scaffold(
+                endDrawer: const NotificationDrawer(),
                 appBar: AppBar(
-                  title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(title,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   elevation: 0,
+                  actions: const [NotificationBellButton()],
                 ),
                 body: child,
               ),
@@ -180,17 +198,19 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       );
     }
 
-    // Mobile & Tablet Layout (App Bar + Navigation Drawer)
     return Scaffold(
+      endDrawer: const NotificationDrawer(),
       appBar: AppBar(
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          const NotificationBellButton(),
           Consumer(
             builder: (context, ref, child) {
               final isDark = Theme.of(context).brightness == Brightness.dark;
               return IconButton(
                 icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-                onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(context),
+                onPressed: () =>
+                    ref.read(themeModeProvider.notifier).toggleTheme(context),
                 tooltip: 'Toggle Theme',
               );
             },
@@ -204,30 +224,54 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       drawer: Drawer(
         child: Column(
           children: [
-            // Drawer Header
-            UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-              ),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: theme.colorScheme.primary,
-                child: Icon(Icons.person, color: theme.colorScheme.onPrimary, size: 36),
-              ),
-              accountName: Text(
-                'AGS GOLD Operator',
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              accountEmail: Text(
-                'superadmin@agsgold.com',
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                ),
-              ),
+            Consumer(
+              builder: (context, ref, _) {
+                final profileAsync = ref.watch(profileProvider);
+                return profileAsync.when(
+                  data: (profile) => UserAccountsDrawerHeader(
+                    decoration:
+                        BoxDecoration(color: theme.colorScheme.primaryContainer),
+                    currentAccountPicture: CircleAvatar(
+                      backgroundColor: theme.colorScheme.primary,
+                      child: Text(
+                        profile.initials,
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    accountName: Text(
+                      profile.displayName,
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    accountEmail: Text(
+                      profile.email,
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimaryContainer
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                  loading: () => UserAccountsDrawerHeader(
+                    decoration:
+                        BoxDecoration(color: theme.colorScheme.primaryContainer),
+                    accountName: const Text('Loading...'),
+                    accountEmail: const Text(''),
+                  ),
+                  error: (_, _) => UserAccountsDrawerHeader(
+                    decoration:
+                        BoxDecoration(color: theme.colorScheme.primaryContainer),
+                    accountName: const Text('AGS Gold'),
+                    accountEmail: const Text(''),
+                  ),
+                );
+              },
             ),
-            // Navigation List Items
             ListTile(
               leading: const Icon(Icons.dashboard),
               title: const Text('Overview'),
@@ -246,26 +290,30 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                 _onItemTapped(context, 1);
               },
             ),
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                'ADMINISTRATION',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-              ),
-            ),
             ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Users'),
+              leading: const Icon(Icons.history),
+              title: const Text('Audit Logs'),
               selected: selectedIndex == 2,
               onTap: () {
                 Navigator.pop(context);
                 _onItemTapped(context, 2);
               },
             ),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'ADMINISTRATION',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
             ListTile(
-              leading: const Icon(Icons.admin_panel_settings),
-              title: const Text('Roles'),
+              leading: const Icon(Icons.people),
+              title: const Text('Users'),
               selected: selectedIndex == 3,
               onTap: () {
                 Navigator.pop(context);
@@ -273,18 +321,37 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.security),
-              title: const Text('Permissions'),
+              leading: const Icon(Icons.admin_panel_settings),
+              title: const Text('Roles'),
               selected: selectedIndex == 4,
               onTap: () {
                 Navigator.pop(context);
                 _onItemTapped(context, 4);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.security),
+              title: const Text('Permissions'),
+              selected: selectedIndex == 5,
+              onTap: () {
+                Navigator.pop(context);
+                _onItemTapped(context, 5);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              selected: selectedIndex == 6,
+              onTap: () {
+                Navigator.pop(context);
+                _onItemTapped(context, 6);
+              },
+            ),
             const Spacer(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Log Out', style: TextStyle(color: Colors.redAccent)),
+              title: const Text('Log Out',
+                  style: TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(context);
                 _handleLogout(context, ref);

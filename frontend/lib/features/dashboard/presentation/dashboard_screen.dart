@@ -5,7 +5,9 @@ import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ags_gold/features/dashboard/presentation/providers/kpi_provider.dart';
+import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
+import 'package:ags_gold/features/dashboard/presentation/providers/dashboard_stats_provider.dart';
+import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -37,6 +39,7 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final theme = Theme.of(context);
     final auditLogsAsync = ref.watch(auditLogsProvider);
+    final dashboardStatsAsync = ref.watch(dashboardStatsProvider);
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(auditLogsProvider.future),
@@ -129,8 +132,40 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
             ),
             const SizedBox(height: 24),
 
-            // Stats KPI Grid
-            _buildStatsGrid(isDesktop),
+            dashboardStatsAsync.when(
+              data: (stats) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatsGrid(isDesktop, stats),
+                  const SizedBox(height: 28),
+                  _buildLoginStatistics(stats),
+                  const SizedBox(height: 28),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth < 900) {
+                        return Column(
+                          children: [
+                            _buildNotificationWidget(context, stats),
+                            const SizedBox(height: 16),
+                            _buildSecurityAlertsWidget(theme, stats),
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildNotificationWidget(context, stats)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildSecurityAlertsWidget(theme, stats)),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+              loading: () => const PremiumSkeletonList(itemCount: 3),
+              error: (_, _) => _buildStatsGrid(isDesktop, null),
+            ),
             const SizedBox(height: 28),
 
             // Quick Actions Section
@@ -138,7 +173,12 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
             const SizedBox(height: 28),
 
             // Interactive Chart
-            const PremiumFintechChart(),
+            PremiumFintechChart(
+              trend: ref.watch(dashboardStatsProvider).maybeWhen(
+                data: (stats) => stats.activityTrend,
+                orElse: () => const [],
+              ),
+            ),
             const SizedBox(height: 28),
 
             // Recent Audit Logs Header
@@ -153,9 +193,9 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () => ref.refresh(auditLogsProvider.future),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Refresh'),
+                  onPressed: () => context.go('/audit-logs'),
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('View all'),
                 ),
               ],
             ),
@@ -193,17 +233,13 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
                     itemCount: logs.length,
                     separatorBuilder: (context, index) => Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.5)),
                     itemBuilder: (context, index) {
-                      final log = logs[index] as Map<String, dynamic>;
-                      final action = log['action'] ?? 'UNKNOWN';
-                      final ip = log['ip_address'] ?? 'unknown';
-                      final timestampStr = log['timestamp'] as String? ?? '';
-                      final timeText = timestampStr.isNotEmpty
-                          ? DateTime.parse(timestampStr).toLocal().toString().substring(0, 19)
-                          : 'unknown';
-
-                      final bool isSuccess = action.toString().toLowerCase().contains('success') ||
-                          action.toString().toLowerCase().contains('create') ||
-                          action.toString().toLowerCase().contains('assign');
+                      final log = logs[index];
+                      final action = log.action;
+                      final ip = log.ipAddress ?? 'unknown';
+                      final timeText = log.timestamp.toLocal().toString().substring(0, 19);
+                      final isSuccess = action.contains('success') ||
+                          action.contains('create') ||
+                          action.contains('assign');
 
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -226,7 +262,7 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 4.0),
                           child: Text(
-                            'IP: $ip • Resource: ${log['entity_type'] ?? 'None'} (${log['entity_id'] ?? 'None'})',
+                            'IP: $ip • Resource: ${log.entityType ?? 'None'} (${log.entityId ?? 'None'})',
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),
@@ -271,34 +307,131 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
     );
   }
 
-  Widget _buildStatsGrid(bool isDesktop) {
-    final kpis = ref.watch(kpiProvider);
-    final stats = kpis.map((kpi) {
-      IconData icon;
-      Color color;
-      String trend;
-      bool isPositive = true;
+  Widget _buildLoginStatistics(dynamic stats) {
+    final login = stats.loginStatistics;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            _loginStatChip('Today', login.today, AppTheme.sapphireBlue),
+            const SizedBox(width: 16),
+            _loginStatChip('This Week', login.week, AppTheme.emerald),
+            const SizedBox(width: 16),
+            _loginStatChip('This Month', login.month, AppTheme.primaryGold),
+          ],
+        ),
+      ),
+    );
+  }
 
-      if (kpi.id == 'vault' || kpi.id == 'sales') {
-        icon = Icons.store;
-        color = AppTheme.primaryGold;
-        trend = '+ 1.2% this week';
-      } else if (kpi.id == 'users') {
-        icon = Icons.people_outline;
-        color = AppTheme.sapphireBlue;
-        trend = '+ 4 new today';
-      } else {
-        icon = Icons.check_circle_outline;
-        color = AppTheme.emerald;
-        trend = 'All services operational';
-      }
+  Widget _loginStatChip(String label, int value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text('$value', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
 
-      return _StatItem(kpi.title, kpi.value, icon, color, trend, isPositive);
-    }).toList();
+  Widget _buildNotificationWidget(BuildContext context, dynamic stats) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Scaffold.of(context).openEndDrawer(),
+                  child: const Text('View all'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (stats.recentNotifications.isEmpty)
+              const Text('No unread notifications', style: TextStyle(color: Colors.grey))
+            else
+              ...stats.recentNotifications.take(5).map<Widget>(
+                (n) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    n.category == 'security' ? Icons.shield : Icons.info_outline,
+                    color: n.category == 'security' ? AppTheme.rose : AppTheme.sapphireBlue,
+                  ),
+                  title: Text(n.title, style: const TextStyle(fontSize: 13)),
+                  subtitle: Text(n.message, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityAlertsWidget(ThemeData theme, dynamic stats) {
+    return Card(
+      color: AppTheme.rose.withValues(alpha: 0.04),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: AppTheme.rose),
+                SizedBox(width: 8),
+                Text('Security Alerts', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (stats.securityAlerts.isEmpty)
+              Text('No security alerts', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)))
+            else
+              ...stats.securityAlerts.map<Widget>(
+                (log) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(log.action.replaceAll('_', ' ')),
+                  subtitle: Text('IP: ${log.ipAddress ?? 'unknown'}'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsGrid(bool isDesktop, dynamic dashboardStats) {
+    final loginToday = dashboardStats?.loginStatistics.today ?? 0;
+    final unread = dashboardStats?.unreadNotifications ?? 0;
+    final activityCount = dashboardStats?.recentActivity.length ?? 0;
+
+    final stats = [
+      _StatItem('Logins Today', '$loginToday', Icons.login, AppTheme.sapphireBlue,
+          'Today', true),
+      _StatItem('Unread Alerts', '$unread', Icons.notifications_active,
+          AppTheme.primaryGold, 'Pending', unread == 0),
+      _StatItem('Recent Events', '$activityCount', Icons.history,
+          AppTheme.emerald, 'Activity', true),
+    ];
 
     if (isDesktop) {
       return Row(
-        children: stats.map((s) {
+        children: stats.map<Widget>((s) {
           return Expanded(
             child: Padding(
               padding: EdgeInsets.only(
@@ -312,7 +445,7 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
     }
 
     return Column(
-      children: stats.map((s) {
+      children: stats.map<Widget>((s) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: _buildStatCard(s),
@@ -374,12 +507,16 @@ class _DashboardOverviewContentState extends ConsumerState<_DashboardOverviewCon
                         size: 14,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        item.trend,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: item.isPositive ? AppTheme.emerald : Colors.grey,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          item.trend,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: item.isPositive ? AppTheme.emerald : Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -538,7 +675,9 @@ class _StatItem {
 }
 
 class PremiumFintechChart extends StatefulWidget {
-  const PremiumFintechChart({super.key});
+  final List<ActivityTrendPoint> trend;
+
+  const PremiumFintechChart({super.key, this.trend = const []});
 
   @override
   State<PremiumFintechChart> createState() => _PremiumFintechChartState();
@@ -546,8 +685,18 @@ class PremiumFintechChart extends StatefulWidget {
 
 class _PremiumFintechChartState extends State<PremiumFintechChart> {
   int _hoveredIndex = -1;
-  final List<double> _data = [138.2, 139.5, 139.1, 140.8, 141.6, 142.3, 142.84];
-  final List<String> _labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  List<double> get _data {
+    if (widget.trend.isEmpty) return [0, 0, 0, 0, 0, 0, 0];
+    return widget.trend.map((p) => p.count.toDouble()).toList();
+  }
+
+  List<String> get _labels {
+    if (widget.trend.isEmpty) {
+      return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    }
+    return widget.trend.map((p) => p.label).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -567,7 +716,7 @@ class _PremiumFintechChartState extends State<PremiumFintechChart> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Gold Vault Historical Weight (kg)',
+                      'Login Activity Trend',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.5,
@@ -575,7 +724,7 @@ class _PremiumFintechChartState extends State<PremiumFintechChart> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Real-time weight logs over the last 7 days',
+                      'Login activity over the last 7 days',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
@@ -607,7 +756,8 @@ class _PremiumFintechChartState extends State<PremiumFintechChart> {
                 return GestureDetector(
                   onPanUpdate: (details) {
                     final localPosition = details.localPosition;
-                    final segmentWidth = width / (_data.length - 1);
+                    final segmentWidth =
+                        _data.length > 1 ? width / (_data.length - 1) : width;
                     final index = (localPosition.dx / segmentWidth).round().clamp(0, _data.length - 1);
                     if (index != _hoveredIndex) {
                       setState(() {
@@ -663,7 +813,7 @@ class _PremiumFintechChartState extends State<PremiumFintechChart> {
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: _labels.map((l) {
+              children: _labels.map<Widget>((l) {
                 return Text(
                   l,
                   style: theme.textTheme.bodySmall?.copyWith(

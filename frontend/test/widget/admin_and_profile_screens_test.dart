@@ -9,6 +9,8 @@ import 'package:ags_gold/features/admin/presentation/permissions_screen.dart';
 import 'package:ags_gold/features/admin/presentation/roles_screen.dart';
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
+import 'package:ags_gold/features/profile/domain/profile.dart';
+import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -303,15 +305,21 @@ void main() {
         overrides: [
           apiClientProvider.overrideWithValue(mockApi),
           profileProvider.overrideWithValue(
-            const AsyncValue.data({
-              'email': 'profile@example.com',
-              'first_name': 'Profile',
-              'last_name': 'User',
-              'is_active': true,
-              'is_superuser': true,
-              'role': {'name': 'Super Administrator', 'description': 'desc'}
-            }),
+            AsyncValue.data(
+              UserProfile(
+                id: '11111111-1111-1111-1111-111111111111',
+                email: 'profile@example.com',
+                firstName: 'Profile',
+                lastName: 'User',
+                isActive: true,
+                isSuperuser: true,
+                createdAt: DateTime(2026, 1, 1),
+                updatedAt: DateTime(2026, 1, 1),
+              ),
+            ),
           ),
+          profileActivityProvider.overrideWithValue(const AsyncValue.data([])),
+          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
         ],
         child: MaterialApp.router(
           routerConfig: router,

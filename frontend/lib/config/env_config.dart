@@ -1,5 +1,6 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+
+import 'platform_stub.dart' if (dart.library.io) 'platform_io.dart' as platform;
 
 enum AppEnvironment { dev, prod }
 
@@ -17,7 +18,10 @@ class EnvConfig {
   });
 
   static String get _devBaseUrl {
-    if (!kIsWeb && Platform.isAndroid) {
+    const override = String.fromEnvironment('API_BASE_URL');
+    if (override.isNotEmpty) return override;
+
+    if (!kIsWeb && platform.isAndroid) {
       return 'http://10.0.2.2:8000/api/v1';
     }
     return 'http://localhost:8000/api/v1';
@@ -30,7 +34,10 @@ class EnvConfig {
 
   static final EnvConfig prod = EnvConfig(
     environment: AppEnvironment.prod,
-    baseUrl: 'https://api.agsgold.com/api/v1',
+    baseUrl: const String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: 'https://api.agsgold.com/api/v1',
+    ),
   );
 
   static EnvConfig get active {
