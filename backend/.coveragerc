@@ -1,11 +1,11 @@
 [run]
 source = app
 omit =
-    app/database/seed.py
-    app/core/logging.py
-    app/database/session.py
-    app/core/config.py
-    app/main.py
+    */database/seed.py
+    */core/logging.py
+    */database/session.py
+    */core/config.py
+    */main.py
     */migrations/*
     */alembic/*
     */tests/*

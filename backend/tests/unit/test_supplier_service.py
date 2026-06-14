@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from app.core.exceptions import NotFoundException, ValidationException
 from app.models.supplier import Supplier
@@ -85,3 +86,71 @@ async def test_get_supplier_not_found(supplier_service, mock_supplier_repo):
 
     with pytest.raises(NotFoundException):
         await supplier_service.get_supplier_by_id(uuid.uuid4())
+
+
+@pytest.mark.asyncio
+async def test_list_suppliers(supplier_service, mock_supplier_repo):
+    supplier = _sample_supplier()
+    mock_supplier_repo.list_suppliers = AsyncMock(return_value=[supplier])
+    mock_supplier_repo.count_suppliers = AsyncMock(return_value=1)
+
+    items, total = await supplier_service.list_suppliers(search="Gold")
+
+    assert total == 1
+    assert items[0].name == supplier.name
+
+
+@pytest.mark.asyncio
+async def test_update_supplier_success(
+    supplier_service, mock_supplier_repo, mock_audit_service
+):
+    supplier = _sample_supplier()
+    mock_supplier_repo.get_active = AsyncMock(return_value=supplier)
+    mock_supplier_repo.get_by_name = AsyncMock(return_value=None)
+    mock_audit_service.log_action = AsyncMock()
+
+    from app.schemas.supplier import SupplierUpdate
+
+    updated = await supplier_service.update_supplier(
+        supplier.id,
+        SupplierUpdate(contact_person="Amit"),
+        performing_user_id=uuid.uuid4(),
+    )
+
+    assert updated.contact_person == "Amit"
+    mock_audit_service.log_action.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_supplier_success(
+    supplier_service, mock_supplier_repo, mock_audit_service
+):
+    supplier = _sample_supplier()
+    mock_supplier_repo.get_active = AsyncMock(return_value=supplier)
+    mock_supplier_repo.count_linked_inventory_items = AsyncMock(return_value=0)
+    mock_audit_service.log_action = AsyncMock()
+
+    assert await supplier_service.delete_supplier(supplier.id, uuid.uuid4()) is True
+
+
+@pytest.mark.asyncio
+async def test_delete_supplier_with_linked_inventory(
+    supplier_service, mock_supplier_repo
+):
+    supplier = _sample_supplier()
+    mock_supplier_repo.get_active = AsyncMock(return_value=supplier)
+    mock_supplier_repo.count_linked_inventory_items = AsyncMock(return_value=2)
+
+    with pytest.raises(ValidationException, match="linked"):
+        await supplier_service.delete_supplier(supplier.id)
+
+
+@pytest.mark.asyncio
+async def test_create_supplier_integrity_error(supplier_service, mock_supplier_repo):
+    mock_supplier_repo.get_by_name = AsyncMock(return_value=None)
+    mock_supplier_repo.create = AsyncMock(
+        side_effect=IntegrityError("", {}, Exception())
+    )
+
+    with pytest.raises(ValidationException, match="already registered"):
+        await supplier_service.create_supplier(SupplierCreate(name="Duplicate Co"))

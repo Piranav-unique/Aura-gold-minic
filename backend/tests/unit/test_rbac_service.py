@@ -188,3 +188,79 @@ async def test_list_permissions(rbac_service, mock_permission_repository):
     result = await rbac_service.list_permissions(skip=5, limit=15)
     assert result == mock_perms
     mock_permission_repository.list.assert_called_once_with(skip=5, limit=15)
+
+
+@pytest.mark.asyncio
+async def test_update_role_success(rbac_service, mock_role_repository):
+    role_id = uuid.uuid4()
+    role = Role(id=role_id, name="editor")
+    mock_role_repository.get_with_permissions = AsyncMock(return_value=role)
+    mock_role_repository.get_by_name = AsyncMock(return_value=None)
+    mock_role_repository.update = AsyncMock(return_value=role)
+
+    from app.schemas.rbac import RoleUpdate
+
+    updated = await rbac_service.update_role(role_id, RoleUpdate(description="Editors"))
+    assert updated.name == "editor"
+    mock_role_repository.update.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_role_duplicate_name(rbac_service, mock_role_repository):
+    role_id = uuid.uuid4()
+    role = Role(id=role_id, name="editor")
+    mock_role_repository.get_with_permissions = AsyncMock(return_value=role)
+    mock_role_repository.get_by_name = AsyncMock(return_value=Role(name="admin"))
+
+    from app.schemas.rbac import RoleUpdate
+
+    with pytest.raises(ValidationException):
+        await rbac_service.update_role(role_id, RoleUpdate(name="admin"))
+
+
+@pytest.mark.asyncio
+async def test_delete_role(rbac_service, mock_role_repository):
+    role_id = uuid.uuid4()
+    role = Role(id=role_id, name="temp")
+    mock_role_repository.get = AsyncMock(return_value=role)
+    mock_role_repository.db = MagicMock()
+    mock_role_repository.db.delete = AsyncMock()
+    mock_role_repository.db.commit = AsyncMock()
+
+    assert await rbac_service.delete_role(role_id) is True
+
+
+@pytest.mark.asyncio
+async def test_remove_role_from_user(
+    rbac_service, mock_user_repository, mock_role_repository
+):
+    user_id = uuid.uuid4()
+    role_id = uuid.uuid4()
+    role = Role(id=role_id, name="admin")
+    user = User(id=user_id, email="test@example.com", roles=[role])
+    mock_user_repository.get_with_roles_and_permissions = AsyncMock(return_value=user)
+    mock_role_repository.get = AsyncMock(return_value=role)
+    mock_user_repository.db = MagicMock()
+    mock_user_repository.db.commit = AsyncMock()
+    mock_user_repository.db.refresh = AsyncMock()
+
+    updated = await rbac_service.remove_role_from_user(user_id, role_id)
+    assert role not in updated.roles
+
+
+@pytest.mark.asyncio
+async def test_remove_permission_from_role(
+    rbac_service, mock_role_repository, mock_permission_repository
+):
+    role_id = uuid.uuid4()
+    permission_id = uuid.uuid4()
+    permission = Permission(id=permission_id, name="user.view")
+    role = Role(id=role_id, name="admin", permissions=[permission])
+    mock_role_repository.get_with_permissions = AsyncMock(return_value=role)
+    mock_permission_repository.get = AsyncMock(return_value=permission)
+    mock_role_repository.db = MagicMock()
+    mock_role_repository.db.commit = AsyncMock()
+    mock_role_repository.db.refresh = AsyncMock()
+
+    updated = await rbac_service.remove_permission_from_role(role_id, permission_id)
+    assert permission not in updated.permissions
