@@ -22,7 +22,9 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Log Out'),
-        content: const Text('Are you sure you want to end your current session?'),
+        content: const Text(
+          'Are you sure you want to end your current session?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -61,7 +63,9 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
               onDestinationSelected: (index) =>
                   navigateToIndex(context, index, destinations),
               labelType: NavigationRailLabelType.selected,
-              selectedIconTheme: IconThemeData(color: theme.colorScheme.primary),
+              selectedIconTheme: IconThemeData(
+                color: theme.colorScheme.primary,
+              ),
               selectedLabelTextStyle: TextStyle(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -72,7 +76,11 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
               leading: const Column(
                 children: [
                   SizedBox(height: 16),
-                  Icon(Icons.monetization_on, size: 40, color: AppTheme.primaryGold),
+                  Icon(
+                    Icons.monetization_on,
+                    size: 40,
+                    color: AppTheme.primaryGold,
+                  ),
                   SizedBox(height: 32),
                 ],
               ),
@@ -91,8 +99,10 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
               child: Scaffold(
                 endDrawer: const NotificationDrawer(),
                 appBar: AppBar(
-                  title: Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   elevation: 0,
                   actions: [
                     const NotificationBellButton(),
@@ -159,8 +169,9 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                 final profileAsync = ref.watch(profileProvider);
                 return profileAsync.when(
                   data: (profile) => UserAccountsDrawerHeader(
-                    decoration:
-                        BoxDecoration(color: theme.colorScheme.primaryContainer),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                    ),
                     currentAccountPicture: CircleAvatar(
                       backgroundColor: theme.colorScheme.primary,
                       child: Text(
@@ -182,20 +193,23 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                     accountEmail: Text(
                       profile.email,
                       style: TextStyle(
-                        color: theme.colorScheme.onPrimaryContainer
-                            .withValues(alpha: 0.8),
+                        color: theme.colorScheme.onPrimaryContainer.withValues(
+                          alpha: 0.8,
+                        ),
                       ),
                     ),
                   ),
                   loading: () => UserAccountsDrawerHeader(
-                    decoration:
-                        BoxDecoration(color: theme.colorScheme.primaryContainer),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                    ),
                     accountName: const Text('Loading...'),
                     accountEmail: const Text(''),
                   ),
                   error: (_, _) => UserAccountsDrawerHeader(
-                    decoration:
-                        BoxDecoration(color: theme.colorScheme.primaryContainer),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                    ),
                     accountName: const Text('AGS Gold'),
                     accountEmail: const Text(''),
                   ),
@@ -207,21 +221,23 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 children: [
                   ...destinations.asMap().entries.map(
-                        (entry) => ListTile(
-                          leading: Icon(entry.value.selectedIcon),
-                          title: Text(entry.value.label),
-                          selected: selectedIndex == entry.key,
-                          onTap: () {
-                            Navigator.pop(context);
-                            navigateToIndex(context, entry.key, destinations);
-                          },
-                        ),
-                      ),
+                    (entry) => ListTile(
+                      leading: Icon(entry.value.selectedIcon),
+                      title: Text(entry.value.label),
+                      selected: selectedIndex == entry.key,
+                      onTap: () {
+                        Navigator.pop(context);
+                        navigateToIndex(context, entry.key, destinations);
+                      },
+                    ),
+                  ),
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.redAccent),
-                    title: const Text('Log Out',
-                        style: TextStyle(color: Colors.redAccent)),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _handleLogout(context, ref);

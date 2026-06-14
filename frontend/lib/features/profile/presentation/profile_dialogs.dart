@@ -70,9 +70,9 @@ Future<void> showEditProfileDialog(
               if (ctx.mounted) Navigator.pop(ctx);
             } catch (e) {
               if (ctx.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(content: Text('Update failed: $e')),
-                );
+                ScaffoldMessenger.of(
+                  ctx,
+                ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
               }
             }
           },
@@ -88,7 +88,10 @@ Future<void> showEditProfileDialog(
   passwordController.dispose();
 }
 
-Future<void> showChangePasswordDialog(BuildContext context, WidgetRef ref) async {
+Future<void> showChangePasswordDialog(
+  BuildContext context,
+  WidgetRef ref,
+) async {
   final currentController = TextEditingController();
   final newController = TextEditingController();
 
@@ -121,10 +124,13 @@ Future<void> showChangePasswordDialog(BuildContext context, WidgetRef ref) async
           onPressed: () async {
             try {
               final apiClient = ref.read(apiClientProvider);
-              await apiClient.post('/profile/change-password', data: {
-                'current_password': currentController.text,
-                'new_password': newController.text,
-              });
+              await apiClient.post(
+                '/profile/change-password',
+                data: {
+                  'current_password': currentController.text,
+                  'new_password': newController.text,
+                },
+              );
               if (ctx.mounted) Navigator.pop(ctx);
               await ref.read(authNotifierProvider.notifier).clearSession();
               if (context.mounted) {
@@ -154,10 +160,7 @@ Future<void> showChangePasswordDialog(BuildContext context, WidgetRef ref) async
   newController.dispose();
 }
 
-Future<void> pickAndUploadAvatar(
-  BuildContext context,
-  WidgetRef ref,
-) async {
+Future<void> pickAndUploadAvatar(BuildContext context, WidgetRef ref) async {
   final picker = ImagePicker();
   final file = await picker.pickImage(
     source: ImageSource.gallery,
@@ -173,22 +176,22 @@ Future<void> pickAndUploadAvatar(
 
   try {
     final apiClient = ref.read(apiClientProvider);
-    await apiClient.post('/profile/avatar', data: {
-      'avatar_base64': base64Str,
-      'content_type': contentType,
-    });
+    await apiClient.post(
+      '/profile/avatar',
+      data: {'avatar_base64': base64Str, 'content_type': contentType},
+    );
     ref.invalidate(profileProvider);
     ref.invalidate(avatarBytesProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Avatar updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Avatar updated')));
     }
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Avatar upload failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Avatar upload failed: $e')));
     }
   }
 }

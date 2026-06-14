@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
@@ -66,7 +65,6 @@ async def test_transaction_sale_cancel_and_documents_flow(
         json={
             "transaction_type": "sale",
             "customer_id": customer_id,
-            "payment_status": "paid",
             "tax_amount": "100.00",
             "lines": [
                 {
@@ -80,12 +78,36 @@ async def test_transaction_sale_cancel_and_documents_flow(
     assert create_resp.status_code == 201, create_resp.text
     txn = create_resp.json()
     txn_id = txn["id"]
+    assert txn["stock_applied"] is False
+    assert txn["payment_status"] == "pending"
+
+    pay_resp = await db_client.put(
+        f"/api/v1/transactions/{txn_id}",
+        headers=headers,
+        json={"payment_status": "paid"},
+    )
+    assert pay_resp.status_code == 200, pay_resp.text
+    txn = pay_resp.json()
     assert txn["stock_applied"] is True
     assert Decimal(txn["total_amount"]) == Decimal("110100.00")
 
     item_resp = await db_client.get(f"/api/v1/inventory/{item_id}", headers=headers)
     assert item_resp.status_code == 200
     assert item_resp.json()["stock_quantity"] == 8
+
+    customer_resp = await db_client.get(
+        f"/api/v1/customers/{customer_id}",
+        headers=headers,
+    )
+    assert customer_resp.status_code == 200
+    assert Decimal(customer_resp.json()["total_revenue"]) == Decimal("110100.00")
+
+    blocked_update = await db_client.put(
+        f"/api/v1/transactions/{txn_id}",
+        headers=headers,
+        json={"tax_amount": "200.00"},
+    )
+    assert blocked_update.status_code == 422
 
     invoice_resp = await db_client.get(
         f"/api/v1/transactions/{txn_id}/invoice",
@@ -123,6 +145,12 @@ async def test_transaction_sale_cancel_and_documents_flow(
         headers=headers,
     )
     assert item_after_cancel.json()["stock_quantity"] == 10
+
+    customer_after_cancel = await db_client.get(
+        f"/api/v1/customers/{customer_id}",
+        headers=headers,
+    )
+    assert Decimal(customer_after_cancel.json()["total_revenue"]) == Decimal("0")
 
     list_resp = await db_client.get("/api/v1/transactions/", headers=headers)
     assert list_resp.status_code == 200

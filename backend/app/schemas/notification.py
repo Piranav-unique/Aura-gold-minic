@@ -1,43 +1,1 @@
-import uuid
-from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel, Field, model_validator
-
-
-class NotificationResponse(BaseModel):
-    id: uuid.UUID
-    user_id: uuid.UUID
-    title: str
-    message: str
-    category: str
-    is_read: bool
-    created_at: datetime
-    metadata: Optional[dict] = Field(None, validation_alias="meta_data")
-
-    model_config = {
-        "from_attributes": True,
-        "populate_by_name": True,
-    }
-
-
-class NotificationListResponse(BaseModel):
-    items: List[NotificationResponse]
-    total: int
-    unread_count: int
-    skip: int
-    limit: int
-
-
-class UnreadCountResponse(BaseModel):
-    unread_count: int
-
-
-class MarkNotificationsReadRequest(BaseModel):
-    notification_ids: Optional[List[uuid.UUID]] = None
-    mark_all: bool = False
-
-    @model_validator(mode="after")
-    def validate_selection(self) -> "MarkNotificationsReadRequest":
-        if not self.mark_all and not self.notification_ids:
-            raise ValueError("Provide notification_ids or set mark_all=true")
-        return self
+import uuidfrom datetime import datetimefrom typing import List, Optionalfrom pydantic import BaseModel, Field, model_validatorclass NotificationResponse(BaseModel):    id: uuid.UUID    user_id: uuid.UUID    title: str    message: str    category: str    is_read: bool    created_at: datetime    metadata: Optional[dict] = Field(None, validation_alias="meta_data")    model_config = {        "from_attributes": True,        "populate_by_name": True,    }class NotificationListResponse(BaseModel):    items: List[NotificationResponse]    total: int    unread_count: int    skip: int    limit: intclass UnreadCountResponse(BaseModel):    unread_count: intclass MarkNotificationsReadRequest(BaseModel):    notification_ids: Optional[List[uuid.UUID]] = None    mark_all: bool = False    @model_validator(mode="after")    def validate_selection(self) -> "MarkNotificationsReadRequest":        if not self.mark_all and not self.notification_ids:            raise ValueError("Provide notification_ids or set mark_all=true")        return self

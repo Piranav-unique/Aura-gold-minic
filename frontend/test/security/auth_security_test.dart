@@ -15,45 +15,43 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
-  testWidgets('invalid login leaves user unauthenticated and does not save tokens',
-      (tester) async {
-    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
-    when(() => mockApiClient.post(
-          '/auth/login',
-          data: any(named: 'data'),
-        )).thenThrow(UnauthorizedException('Incorrect email or password'));
+  testWidgets(
+    'invalid login leaves user unauthenticated and does not save tokens',
+    (tester) async {
+      when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
+      when(
+        () => mockApiClient.post('/auth/login', data: any(named: 'data')),
+      ).thenThrow(UnauthorizedException('Incorrect email or password'));
 
-    final container = ProviderContainer(
-      overrides: [
-        secureStorageProvider.overrideWithValue(mockStorage),
-        apiClientProvider.overrideWithValue(mockApiClient),
-      ],
-    );
-
-    try {
-      container.read(authNotifierProvider);
-      await tester.pump(const Duration(seconds: 2));
-
-      final notifier = container.read(authNotifierProvider.notifier);
-      await expectLater(
-        notifier.login('wrong@example.com', 'badpassword1'),
-        throwsA(isA<UnauthorizedException>()),
+      final container = ProviderContainer(
+        overrides: [
+          secureStorageProvider.overrideWithValue(mockStorage),
+          apiClientProvider.overrideWithValue(mockApiClient),
+        ],
       );
 
-      verifyNever(
-        () => mockStorage.saveTokens(
-          accessToken: any(named: 'accessToken'),
-          refreshToken: any(named: 'refreshToken'),
-        ),
-      );
-      expect(
-        container.read(authNotifierProvider).hasError,
-        isTrue,
-      );
-    } finally {
-      container.dispose();
-    }
-  });
+      try {
+        container.read(authNotifierProvider);
+        await tester.pump(const Duration(seconds: 2));
+
+        final notifier = container.read(authNotifierProvider.notifier);
+        await expectLater(
+          notifier.login('wrong@example.com', 'badpassword1'),
+          throwsA(isA<UnauthorizedException>()),
+        );
+
+        verifyNever(
+          () => mockStorage.saveTokens(
+            accessToken: any(named: 'accessToken'),
+            refreshToken: any(named: 'refreshToken'),
+          ),
+        );
+        expect(container.read(authNotifierProvider).hasError, isTrue);
+      } finally {
+        container.dispose();
+      }
+    },
+  );
 
   test('onUnauthorized callback clears session via clearSession', () async {
     when(() => mockStorage.clearTokens()).thenAnswer((_) async => {});

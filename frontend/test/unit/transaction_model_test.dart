@@ -26,7 +26,7 @@ void main() {
             'unit_price': '1000.00',
             'line_total': '1000.00',
             'stock_direction': 'out',
-          }
+          },
         ],
       };
 
@@ -47,7 +47,7 @@ void main() {
             'full_name': 'Jane Doe',
             'revenue': '12000.00',
             'transaction_count': 3,
-          }
+          },
         ],
       });
 

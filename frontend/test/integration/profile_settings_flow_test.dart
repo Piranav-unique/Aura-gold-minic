@@ -12,8 +12,9 @@ import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
 void main() {
-  testWidgets('Profile and settings screens load with mocked data',
-      (WidgetTester tester) async {
+  testWidgets('Profile and settings screens load with mocked data', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -33,7 +34,9 @@ void main() {
       ProviderScope(
         overrides: [
           apiClientProvider.overrideWithValue(MockApiClient()),
-          userSettingsProvider.overrideWithValue(const AsyncValue.data(UserSettings())),
+          userSettingsProvider.overrideWithValue(
+            const AsyncValue.data(UserSettings()),
+          ),
           profileProvider.overrideWithValue(
             AsyncValue.data(
               UserProfile(
@@ -49,7 +52,9 @@ void main() {
             ),
           ),
           profileActivityProvider.overrideWithValue(const AsyncValue.data([])),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

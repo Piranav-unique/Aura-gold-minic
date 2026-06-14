@@ -36,15 +36,15 @@ class Supplier {
   }
 
   Map<String, dynamic> toCreateJson() => {
-        'name': name,
-        if (contactPerson != null && contactPerson!.isNotEmpty)
-          'contact_person': contactPerson,
-        if (mobileNumber != null && mobileNumber!.isNotEmpty)
-          'mobile_number': mobileNumber,
-        if (email != null && email!.isNotEmpty) 'email': email,
-        if (address != null && address!.isNotEmpty) 'address': address,
-        'is_active': isActive,
-      };
+    'name': name,
+    if (contactPerson != null && contactPerson!.isNotEmpty)
+      'contact_person': contactPerson,
+    if (mobileNumber != null && mobileNumber!.isNotEmpty)
+      'mobile_number': mobileNumber,
+    if (email != null && email!.isNotEmpty) 'email': email,
+    if (address != null && address!.isNotEmpty) 'address': address,
+    'is_active': isActive,
+  };
 
   Map<String, dynamic> toUpdateJson() => toCreateJson();
 

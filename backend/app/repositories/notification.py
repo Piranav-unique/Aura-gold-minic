@@ -98,11 +98,7 @@ class NotificationRepository(BaseRepository[Notification]):
         """Return user IDs that have a given role."""
         from app.models.user import User
 
-        query = (
-            select(User.id)
-            .join(User.roles)
-            .where(User.is_deleted.is_(False))
-        )
+        query = select(User.id).join(User.roles).where(User.is_deleted.is_(False))
         from app.models.role import Role
 
         query = query.where(Role.id == role_id)

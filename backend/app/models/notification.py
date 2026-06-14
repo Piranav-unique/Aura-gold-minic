@@ -34,6 +34,4 @@ class Notification(Base):
         index=True,
     )
 
-    __table_args__ = (
-        Index("ix_notifications_user_unread", "user_id", "is_read"),
-    )
+    __table_args__ = (Index("ix_notifications_user_unread", "user_id", "is_read"),)

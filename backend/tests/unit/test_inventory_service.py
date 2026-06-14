@@ -7,7 +7,6 @@ import pytest
 
 from app.core.exceptions import NotFoundException, ValidationException
 from app.models.inventory_item import InventoryItem
-from app.models.stock_movement import StockMovement
 from app.repositories.inventory_item import InventoryItemRepository
 from app.repositories.stock_movement import StockMovementRepository
 from app.repositories.supplier import SupplierRepository
@@ -210,7 +209,9 @@ async def test_update_item_success(
 
 
 @pytest.mark.asyncio
-async def test_stock_out_on_inactive_item_raises(inventory_service, mock_inventory_repo):
+async def test_stock_out_on_inactive_item_raises(
+    inventory_service, mock_inventory_repo
+):
     item = _sample_item(status="inactive")
     mock_inventory_repo.get_active_for_update = AsyncMock(return_value=item)
 

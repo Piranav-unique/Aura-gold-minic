@@ -19,8 +19,9 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
-  testWidgets('customer create flow navigates through list and form',
-      (WidgetTester tester) async {
+  testWidgets('customer create flow navigates through list and form', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -28,8 +29,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    when(() => mockApi.post('/customers/', data: any(named: 'data')))
-        .thenAnswer((_) async {
+    when(
+      () => mockApi.post('/customers/', data: any(named: 'data')),
+    ).thenAnswer((_) async {
       final response = MockResponse<Map<String, dynamic>>();
       when(() => response.data).thenReturn({
         'id': '22222222-2222-2222-2222-222222222222',
@@ -60,9 +62,8 @@ void main() {
         ),
         GoRoute(
           path: '/customers/:id',
-          builder: (context, state) => Scaffold(
-            body: Text('Detail ${state.pathParameters['id']}'),
-          ),
+          builder: (context, state) =>
+              Scaffold(body: Text('Detail ${state.pathParameters['id']}')),
         ),
       ],
     );
@@ -76,7 +77,9 @@ void main() {
               PaginatedCustomers(items: [], total: 0, skip: 0, limit: 25),
             ),
           ),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -84,18 +87,32 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Full Name'), 'New Customer');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Full Name'),
+      'New Customer',
+    );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Mobile Number'),
       '+919876543210',
     );
-    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'new@example.com');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Address'), '789 Lane');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'new@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Address'),
+      '789 Lane',
+    );
 
     await tester.tap(find.widgetWithText(FilledButton, 'Create Customer'));
     await tester.pumpAndSettle();
 
-    verify(() => mockApi.post('/customers/', data: any(named: 'data'))).called(1);
-    expect(find.text('Detail 22222222-2222-2222-2222-222222222222'), findsOneWidget);
+    verify(
+      () => mockApi.post('/customers/', data: any(named: 'data')),
+    ).called(1);
+    expect(
+      find.text('Detail 22222222-2222-2222-2222-222222222222'),
+      findsOneWidget,
+    );
   });
 }

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import asc, desc, func, or_, select
@@ -115,3 +116,25 @@ class CustomerRepository(BaseRepository[Customer]):
         query = self._apply_filters(query, search, customer_type, status)
         result = await self.db.execute(query)
         return result.scalar() or 0
+
+    async def dashboard_metrics(self) -> dict[str, int]:
+        """Aggregate customer counts for executive dashboard."""
+        total = await self.count_customers()
+        active = await self.count_customers(status="active")
+        month_start = datetime.now(timezone.utc).replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        new_query = (
+            select(func.count(Customer.id))
+            .select_from(Customer)
+            .where(
+                Customer.is_deleted.is_(False),
+                Customer.created_at >= month_start,
+            )
+        )
+        new_result = await self.db.execute(new_query)
+        return {
+            "total_customers": int(total),
+            "active_customers": int(active),
+            "new_this_month": int(new_result.scalar() or 0),
+        }

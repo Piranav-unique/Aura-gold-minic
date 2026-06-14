@@ -215,3 +215,24 @@ async def test_validation_oversized_first_name_rejected(
         headers=headers,
     )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", ["/api/v1/customers/", "/api/v1/workflows/"])
+@pytest.mark.parametrize("payload", SQL_INJECTION_PAYLOADS)
+async def test_sql_injection_phase3_search_param_safe(
+    db_client: AsyncClient, test_db: AsyncSession, path: str, payload: str
+):
+    permissions = ["customer.view"] if "customers" in path else ["workflow.view"]
+    _, headers = await create_user_with_permissions(test_db, permissions)
+
+    response = await db_client.get(
+        path,
+        params={"search": payload},
+        headers=headers,
+    )
+
+    assert response.status_code in (200, 401, 403, 422)
+    body_text = response.text.lower()
+    for fragment in SQL_ERROR_FRAGMENTS:
+        assert fragment not in body_text

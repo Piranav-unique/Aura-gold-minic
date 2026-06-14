@@ -8,8 +8,9 @@ import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
 void main() {
-  testWidgets('CustomerFormScreen shows create form fields',
-      (WidgetTester tester) async {
+  testWidgets('CustomerFormScreen shows create form fields', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -31,7 +32,9 @@ void main() {
       ProviderScope(
         overrides: [
           apiClientProvider.overrideWithValue(MockApiClient()),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

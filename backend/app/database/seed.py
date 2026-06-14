@@ -1,5 +1,6 @@
 import asyncio
-from sqlalchemy import select
+
+from sqlalchemy import inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -7,6 +8,7 @@ from app.database.session import async_session_maker
 from app.models.user import User
 from app.models.role import Role
 from app.models.permission import Permission
+from app.models.workflow import WorkflowEscalationRule
 from app.core.logging import logger, setup_logging
 
 
@@ -38,12 +40,40 @@ async def seed_data(session: AsyncSession) -> None:
         {"name": "customer.update", "description": "Update customers"},
         {"name": "customer.delete", "description": "Delete customers"},
         {"name": "inventory.view", "description": "View inventory and suppliers"},
-        {"name": "inventory.create", "description": "Create inventory items and suppliers"},
-        {"name": "inventory.update", "description": "Update inventory and record stock movements"},
-        {"name": "inventory.delete", "description": "Delete inventory items and suppliers"},
-        {"name": "transaction.view", "description": "View transactions and revenue metrics"},
+        {
+            "name": "inventory.create",
+            "description": "Create inventory items and suppliers",
+        },
+        {
+            "name": "inventory.update",
+            "description": "Update inventory and record stock movements",
+        },
+        {
+            "name": "inventory.delete",
+            "description": "Delete inventory items and suppliers",
+        },
+        {
+            "name": "transaction.view",
+            "description": "View transactions and revenue metrics",
+        },
         {"name": "transaction.create", "description": "Create transactions"},
         {"name": "transaction.update", "description": "Update or cancel transactions"},
+        {"name": "report.view", "description": "View reports and analytics"},
+        {
+            "name": "report.export",
+            "description": "Export reports as CSV, Excel, or PDF",
+        },
+        {"name": "dashboard.view", "description": "View executive dashboard and stats"},
+        {"name": "workflow.view", "description": "View workflow and approval requests"},
+        {
+            "name": "workflow.create",
+            "description": "Create and submit workflow requests",
+        },
+        {
+            "name": "workflow.approve",
+            "description": "Approve, reject, and assign workflow requests",
+        },
+        {"name": "workflow.manage", "description": "Manage workflow escalation rules"},
     ]
 
     db_permissions = {}
@@ -74,6 +104,16 @@ async def seed_data(session: AsyncSession) -> None:
         {
             "name": "user",
             "description": "Standard user access permissions",
+            "permissions": [],
+        },
+        {
+            "name": "manager",
+            "description": "Team oversight and approval workflows",
+            "permissions": [],
+        },
+        {
+            "name": "employee",
+            "description": "Day-to-day operational access",
             "permissions": [],
         },
     ]
@@ -120,16 +160,52 @@ async def seed_data(session: AsyncSession) -> None:
         "transaction.view",
         "transaction.create",
         "transaction.update",
+        "report.view",
+        "report.export",
+        "dashboard.view",
+        "workflow.view",
+        "workflow.create",
+        "workflow.approve",
+        "workflow.manage",
     ]:
         perm = db_permissions[perm_name]
         if perm not in admin_role.permissions:
             admin_role.permissions.append(perm)
 
     user_role = db_roles["user"]
-    for perm_name in ["user.view", "user:read"]:
+    for perm_name in ["user.view", "user:read", "dashboard.view"]:
         perm = db_permissions[perm_name]
         if perm not in user_role.permissions:
             user_role.permissions.append(perm)
+
+    manager_role = db_roles["manager"]
+    for perm_name in [
+        "user.view",
+        "audit.view",
+        "customer.view",
+        "inventory.view",
+        "transaction.view",
+        "workflow.view",
+        "workflow.approve",
+        "report.view",
+        "dashboard.view",
+    ]:
+        perm = db_permissions[perm_name]
+        if perm not in manager_role.permissions:
+            manager_role.permissions.append(perm)
+
+    employee_role = db_roles["employee"]
+    for perm_name in [
+        "user.view",
+        "workflow.view",
+        "workflow.create",
+        "inventory.view",
+        "customer.view",
+        "dashboard.view",
+    ]:
+        perm = db_permissions[perm_name]
+        if perm not in employee_role.permissions:
+            employee_role.permissions.append(perm)
 
     # 4. Create Default Super Admin User
     import os
@@ -164,6 +240,41 @@ async def seed_data(session: AsyncSession) -> None:
         if super_admin_role not in admin_user.roles:
             admin_user.roles.append(super_admin_role)
         logger.info("super_admin_user_updated", email=admin_email)
+
+    conn = await session.connection()
+
+    def _has_workflow_tables(sync_conn) -> bool:
+        inspector = inspect(sync_conn)
+        return inspector.has_table("workflow_escalation_rules")
+
+    if await conn.run_sync(_has_workflow_tables):
+        default_rule = await session.execute(
+            select(WorkflowEscalationRule).where(
+                WorkflowEscalationRule.name == "Default 24h escalation"
+            )
+        )
+        if not default_rule.scalars().first():
+            session.add(
+                WorkflowEscalationRule(
+                    name="Default 24h escalation",
+                    request_type="*",
+                    hours_until_escalation=24,
+                    target_permission="workflow.manage",
+                    escalation_level=0,
+                    is_active=True,
+                )
+            )
+            logger.info(
+                "workflow_escalation_rule_created", name="Default 24h escalation"
+            )
+    else:
+        logger.warning(
+            "workflow_escalation_rule_skipped",
+            message=(
+                "workflow_escalation_rules table not found. "
+                "Run `python -m alembic upgrade head` then re-run seed."
+            ),
+        )
 
     await session.commit()
     logger.info(

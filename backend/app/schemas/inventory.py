@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 InventoryCategory = Literal["gold_bar", "gold_coin", "gold_ornament", "raw_gold"]
 InventoryStatus = Literal["active", "inactive", "discontinued"]
@@ -125,7 +125,9 @@ class StockMovementResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, movement, *, item_name: Optional[str] = None) -> "StockMovementResponse":
+    def from_model(
+        cls, movement, *, item_name: Optional[str] = None
+    ) -> "StockMovementResponse":
         resolved_name = item_name
         if resolved_name is None:
             item = movement.__dict__.get("inventory_item")

@@ -35,7 +35,9 @@ void main() {
           userSettingsProvider.overrideWithValue(
             const AsyncValue.data(UserSettings()),
           ),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

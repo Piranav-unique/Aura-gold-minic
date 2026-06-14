@@ -10,6 +10,7 @@ import 'package:ags_gold/features/auth/presentation/login_screen.dart';
 import 'package:ags_gold/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/main.dart';
+import '../test_helpers/auth_dashboard_overrides.dart';
 import '../mocks/mock_services.dart';
 
 void main() {
@@ -18,7 +19,9 @@ void main() {
     registerFallbackValue(const MethodChannel(''));
   });
 
-  testWidgets('LoginScreen renders and displays validation errors', (WidgetTester tester) async {
+  testWidgets('LoginScreen renders and displays validation errors', (
+    WidgetTester tester,
+  ) async {
     final mockApi = MockApiClient();
     final mockStorage = MockSecureStorage();
 
@@ -30,9 +33,7 @@ void main() {
           apiClientProvider.overrideWithValue(mockApi),
           secureStorageProvider.overrideWithValue(mockStorage),
         ],
-        child: const MaterialApp(
-          home: LoginScreen(),
-        ),
+        child: const MaterialApp(home: LoginScreen()),
       ),
     );
 
@@ -50,14 +51,19 @@ void main() {
     expect(find.text('Password is required.'), findsOneWidget);
 
     // Enter invalid email
-    await tester.enterText(find.byKey(const Key('emailField')), 'invalid-email');
+    await tester.enterText(
+      find.byKey(const Key('emailField')),
+      'invalid-email',
+    );
     await tester.tap(find.byKey(const Key('loginButton')));
     await tester.pump();
 
     expect(find.text('Enter a valid email address.'), findsOneWidget);
   });
 
-  testWidgets('LoginScreen successful login redirects using AGSGoldApp', (WidgetTester tester) async {
+  testWidgets('LoginScreen successful login redirects using AGSGoldApp', (
+    WidgetTester tester,
+  ) async {
     final mockApi = MockApiClient();
     final mockStorage = MockSecureStorage();
     const testEmail = 'user@example.com';
@@ -65,10 +71,12 @@ void main() {
     const fakeToken = 'fake-jwt-token';
 
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
-    when(() => mockStorage.saveTokens(
-          accessToken: any(named: 'accessToken'),
-          refreshToken: any(named: 'refreshToken'),
-        )).thenAnswer((_) async => {});
+    when(
+      () => mockStorage.saveTokens(
+        accessToken: any(named: 'accessToken'),
+        refreshToken: any(named: 'refreshToken'),
+      ),
+    ).thenAnswer((_) async => {});
 
     final mockResponse = MockResponse<Map<String, dynamic>>();
     when(() => mockResponse.data).thenReturn({
@@ -78,18 +86,21 @@ void main() {
 
     // Use a Completer to halt execution during API call and verify the loading indicator
     final completer = Completer<MockResponse<Map<String, dynamic>>>();
-    when(() => mockApi.post('/auth/login', data: any(named: 'data')))
-        .thenAnswer((_) => completer.future);
+    when(
+      () => mockApi.post('/auth/login', data: any(named: 'data')),
+    ).thenAnswer((_) => completer.future);
 
     // Mock audit logs request triggered on dashboard
     final mockLogsResponse = MockResponse<List<dynamic>>();
     when(() => mockLogsResponse.data).thenReturn([]);
-    when(() => mockApi.get(
-          any(),
-          queryParameters: any(named: 'queryParameters'),
-          options: any(named: 'options'),
-          cancelToken: any(named: 'cancelToken'),
-        )).thenAnswer((_) async => mockLogsResponse);
+    when(
+      () => mockApi.get(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+        options: any(named: 'options'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    ).thenAnswer((_) async => mockLogsResponse);
 
     // Build the full app with route integration
     await tester.pumpWidget(
@@ -97,6 +108,7 @@ void main() {
         overrides: [
           apiClientProvider.overrideWithValue(mockApi),
           secureStorageProvider.overrideWithValue(mockStorage),
+          ...authDashboardTestOverrides,
         ],
         child: const AGSGoldApp(),
       ),
@@ -113,7 +125,10 @@ void main() {
 
     // Input email and password
     await tester.enterText(find.byKey(const Key('emailField')), testEmail);
-    await tester.enterText(find.byKey(const Key('passwordField')), testPassword);
+    await tester.enterText(
+      find.byKey(const Key('passwordField')),
+      testPassword,
+    );
 
     // Tap sign in
     await tester.tap(find.byKey(const Key('loginButton')));

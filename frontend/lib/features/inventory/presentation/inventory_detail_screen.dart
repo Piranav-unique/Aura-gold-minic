@@ -69,8 +69,10 @@ class InventoryDetailScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               _buildStockSection(context, ref, item),
               const SizedBox(height: 24),
-              Text('Movement History',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Movement History',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               movementsAsync.when(
                 data: (page) => _buildMovements(page.items, dateFormat),
@@ -114,15 +116,21 @@ class InventoryDetailScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.itemName,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                item.itemName,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               Text('${item.displayCategory} • ${item.displayStatus}'),
               if (item.isLowStock)
-                const Text('Low stock',
-                    style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Low stock',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
             ],
           ),
         ),
@@ -174,7 +182,10 @@ class InventoryDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildStockSection(
-      BuildContext context, WidgetRef ref, InventoryItem item) {
+    BuildContext context,
+    WidgetRef ref,
+    InventoryItem item,
+  ) {
     final profile = ref.watch(profileProvider).value;
     final canUpdate =
         profile != null && hasPermission(profile, 'inventory.update');

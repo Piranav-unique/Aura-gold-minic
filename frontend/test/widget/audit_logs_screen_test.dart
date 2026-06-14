@@ -37,7 +37,9 @@ void main() {
               PaginatedAuditLogs(items: [], total: 0, skip: 0, limit: 25),
             ),
           ),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

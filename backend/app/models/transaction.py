@@ -4,7 +4,15 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,7 +24,9 @@ class Transaction(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     __tablename__ = "transactions"
 
-    transaction_number: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    transaction_number: Mapped[str] = mapped_column(
+        String(40), nullable=False, unique=True
+    )
     transaction_type: Mapped[str] = mapped_column(String(20), nullable=False)
     customer_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("customers.id"), nullable=True
@@ -26,10 +36,18 @@ class Transaction(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         String(20), nullable=False, default="pending"
     )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
-    tax_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
-    total_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=0)
-    invoice_number: Mapped[str | None] = mapped_column(String(40), nullable=True, unique=True)
-    receipt_number: Mapped[str | None] = mapped_column(String(40), nullable=True, unique=True)
+    tax_amount: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), nullable=False, default=0
+    )
+    total_amount: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), nullable=False, default=0
+    )
+    invoice_number: Mapped[str | None] = mapped_column(
+        String(40), nullable=True, unique=True
+    )
+    receipt_number: Mapped[str | None] = mapped_column(
+        String(40), nullable=True, unique=True
+    )
     stock_applied: Mapped[bool] = mapped_column(default=False, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     performed_by: Mapped[uuid.UUID | None] = mapped_column(
@@ -72,7 +90,9 @@ class TransactionLine(Base, UUIDPrimaryKeyMixin):
     __tablename__ = "transaction_lines"
 
     transaction_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("transactions.id", ondelete="CASCADE"),
+        nullable=False,
     )
     inventory_item_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("inventory_items.id"), nullable=False

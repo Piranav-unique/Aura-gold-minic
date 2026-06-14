@@ -32,7 +32,12 @@ from app.services.customer import CustomerService
 from app.services.supplier import SupplierService
 from app.services.inventory import InventoryService
 from app.repositories.transaction import TransactionRepository
+from app.repositories.report import ReportRepository
+from app.repositories.workflow import WorkflowRepository
+from app.services.executive_dashboard import ExecutiveDashboardService
 from app.services.transaction import TransactionService
+from app.services.report import ReportService
+from app.services.workflow import WorkflowService
 
 # Setup oauth2 scheme for bearer tokens
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
@@ -221,9 +226,7 @@ def get_inventory_service(
     audit_service: AuditService = Depends(get_audit_service),
 ) -> InventoryService:
     """Dependency injecting the InventoryService."""
-    return InventoryService(
-        inventory_repo, movement_repo, supplier_repo, audit_service
-    )
+    return InventoryService(inventory_repo, movement_repo, supplier_repo, audit_service)
 
 
 def get_transaction_repository(
@@ -231,6 +234,21 @@ def get_transaction_repository(
 ) -> TransactionRepository:
     """Dependency injecting the TransactionRepository."""
     return TransactionRepository(db)
+
+
+def get_report_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> ReportRepository:
+    """Dependency injecting the ReportRepository."""
+    return ReportRepository(db)
+
+
+def get_report_service(
+    report_repo: ReportRepository = Depends(get_report_repository),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> ReportService:
+    """Dependency injecting the ReportService."""
+    return ReportService(report_repo, audit_service)
 
 
 def get_transaction_service(
@@ -249,6 +267,51 @@ def get_transaction_service(
         customer_service,
         inventory_service,
         audit_service,
+    )
+
+
+def get_workflow_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> WorkflowRepository:
+    """Dependency injecting the WorkflowRepository."""
+    return WorkflowRepository(db)
+
+
+def get_workflow_service(
+    workflow_repo: WorkflowRepository = Depends(get_workflow_repository),
+    user_repo: UserRepository = Depends(get_user_repository),
+    audit_service: AuditService = Depends(get_audit_service),
+    notification_service: NotificationService = Depends(get_notification_service),
+) -> WorkflowService:
+    """Dependency injecting the WorkflowService."""
+    return WorkflowService(
+        workflow_repo,
+        user_repo,
+        audit_service,
+        notification_service,
+    )
+
+
+def get_executive_dashboard_service(
+    audit_service: AuditService = Depends(get_audit_service),
+    notification_service: NotificationService = Depends(get_notification_service),
+    customer_repo: CustomerRepository = Depends(get_customer_repository),
+    user_repo: UserRepository = Depends(get_user_repository),
+    workflow_repo: WorkflowRepository = Depends(get_workflow_repository),
+    report_repo: ReportRepository = Depends(get_report_repository),
+    inventory_service: InventoryService = Depends(get_inventory_service),
+    transaction_service: TransactionService = Depends(get_transaction_service),
+) -> ExecutiveDashboardService:
+    """Dependency injecting the ExecutiveDashboardService."""
+    return ExecutiveDashboardService(
+        audit_service,
+        notification_service,
+        customer_repo,
+        user_repo,
+        workflow_repo,
+        report_repo,
+        inventory_service,
+        transaction_service,
     )
 
 

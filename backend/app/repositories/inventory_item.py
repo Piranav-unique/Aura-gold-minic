@@ -73,6 +73,22 @@ class InventoryItemRepository(BaseRepository[InventoryItem]):
         result = await self.db.execute(query)
         return result.scalars().first()
 
+    async def get_active_by_ids(self, item_ids: list) -> dict:
+        if not item_ids:
+            return {}
+        unique_ids = list(dict.fromkeys(item_ids))
+        query = (
+            select(InventoryItem)
+            .options(selectinload(InventoryItem.supplier))
+            .where(
+                InventoryItem.id.in_(unique_ids),
+                InventoryItem.is_deleted.is_(False),
+            )
+        )
+        result = await self.db.execute(query)
+        items = result.scalars().all()
+        return {item.id: item for item in items}
+
     async def get_active_for_update(self, item_id) -> Optional[InventoryItem]:
         """Fetch active item with row lock for stock mutations."""
         query = (

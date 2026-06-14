@@ -38,7 +38,8 @@ class UserSettings {
       locale: json['locale'] as String? ?? 'en',
       notificationEmailEnabled:
           json['notification_email_enabled'] as bool? ?? true,
-      notificationPushEnabled: json['notification_push_enabled'] as bool? ?? true,
+      notificationPushEnabled:
+          json['notification_push_enabled'] as bool? ?? true,
       notificationSecurityAlerts:
           json['notification_security_alerts'] as bool? ?? true,
       notificationSystemUpdates:

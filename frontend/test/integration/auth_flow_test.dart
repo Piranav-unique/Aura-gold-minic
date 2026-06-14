@@ -13,6 +13,7 @@ import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:ags_gold/features/dashboard/presentation/providers/kpi_provider.dart';
 import 'package:ags_gold/features/dashboard/domain/kpi.dart';
+import '../test_helpers/auth_dashboard_overrides.dart';
 import '../mocks/mock_services.dart';
 
 void main() {
@@ -21,7 +22,9 @@ void main() {
     registerFallbackValue(const MethodChannel(''));
   });
 
-  testWidgets('Full auth flow: unauthenticated -> login -> dashboard', (WidgetTester tester) async {
+  testWidgets('Full auth flow: unauthenticated -> login -> dashboard', (
+    WidgetTester tester,
+  ) async {
     final mockApi = MockApiClient();
     final mockStorage = MockSecureStorage();
     const testEmail = 'user@example.com';
@@ -30,10 +33,12 @@ void main() {
 
     // Storage starts empty (unauthenticated)
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
-    when(() => mockStorage.saveTokens(
-          accessToken: any(named: 'accessToken'),
-          refreshToken: any(named: 'refreshToken'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockStorage.saveTokens(
+        accessToken: any(named: 'accessToken'),
+        refreshToken: any(named: 'refreshToken'),
+      ),
+    ).thenAnswer((_) async {});
 
     // Use a Completer to control when the login API call resolves
     final loginCompleter = Completer<MockResponse<Map<String, dynamic>>>();
@@ -43,18 +48,21 @@ void main() {
       'refresh_token': 'fake-refresh-token',
     });
 
-    when(() => mockApi.post('/auth/login', data: any(named: 'data')))
-        .thenAnswer((_) => loginCompleter.future);
+    when(
+      () => mockApi.post('/auth/login', data: any(named: 'data')),
+    ).thenAnswer((_) => loginCompleter.future);
 
     // Mock any GET calls (audit logs, dashboard data, etc.)
     final mockListResponse = MockResponse<List<dynamic>>();
     when(() => mockListResponse.data).thenReturn([]);
-    when(() => mockApi.get(
-          any(),
-          queryParameters: any(named: 'queryParameters'),
-          options: any(named: 'options'),
-          cancelToken: any(named: 'cancelToken'),
-        )).thenAnswer((_) async => mockListResponse);
+    when(
+      () => mockApi.get(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+        options: any(named: 'options'),
+        cancelToken: any(named: 'cancelToken'),
+      ),
+    ).thenAnswer((_) async => mockListResponse);
 
     final mockKpis = [
       const Kpi(id: 'vault', title: 'Total Gold Vault', value: '142.84 kg'),
@@ -69,6 +77,7 @@ void main() {
           secureStorageProvider.overrideWithValue(mockStorage),
           kpiProvider.overrideWithValue(mockKpis),
           auditLogsProvider.overrideWithValue(const AsyncValue.data([])),
+          ...authDashboardTestOverrides,
         ],
         child: const AGSGoldApp(),
       ),
@@ -85,7 +94,10 @@ void main() {
 
     // Enter credentials
     await tester.enterText(find.byKey(const Key('emailField')), testEmail);
-    await tester.enterText(find.byKey(const Key('passwordField')), testPassword);
+    await tester.enterText(
+      find.byKey(const Key('passwordField')),
+      testPassword,
+    );
 
     // Tap Login
     await tester.tap(find.byKey(const Key('loginButton')));
@@ -103,54 +115,64 @@ void main() {
     expect(find.byType(DashboardScreen), findsOneWidget);
 
     // Verify tokens were saved
-    verify(() => mockStorage.saveTokens(
-          accessToken: fakeToken,
-          refreshToken: 'fake-refresh-token',
-        )).called(1);
+    verify(
+      () => mockStorage.saveTokens(
+        accessToken: fakeToken,
+        refreshToken: 'fake-refresh-token',
+      ),
+    ).called(1);
   });
 
-  testWidgets('Auth flow: already authenticated -> goes directly to dashboard', (WidgetTester tester) async {
-    final mockApi = MockApiClient();
-    final mockStorage = MockSecureStorage();
+  testWidgets(
+    'Auth flow: already authenticated -> goes directly to dashboard',
+    (WidgetTester tester) async {
+      final mockApi = MockApiClient();
+      final mockStorage = MockSecureStorage();
 
-    // Storage has a token (authenticated)
-    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
+      // Storage has a token (authenticated)
+      when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
 
-    final mockListResponse = MockResponse<List<dynamic>>();
-    when(() => mockListResponse.data).thenReturn([]);
-    when(() => mockApi.get(
+      final mockListResponse = MockResponse<List<dynamic>>();
+      when(() => mockListResponse.data).thenReturn([]);
+      when(
+        () => mockApi.get(
           any(),
           queryParameters: any(named: 'queryParameters'),
           options: any(named: 'options'),
           cancelToken: any(named: 'cancelToken'),
-        )).thenAnswer((_) async => mockListResponse);
+        ),
+      ).thenAnswer((_) async => mockListResponse);
 
-    final mockKpis = [
-      const Kpi(id: 'vault', title: 'Total Gold Vault', value: '142.84 kg'),
-    ];
+      final mockKpis = [
+        const Kpi(id: 'vault', title: 'Total Gold Vault', value: '142.84 kg'),
+      ];
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          apiClientProvider.overrideWithValue(mockApi),
-          secureStorageProvider.overrideWithValue(mockStorage),
-          kpiProvider.overrideWithValue(mockKpis),
-          auditLogsProvider.overrideWithValue(const AsyncValue.data([])),
-        ],
-        child: const AGSGoldApp(),
-      ),
-    );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiClientProvider.overrideWithValue(mockApi),
+            secureStorageProvider.overrideWithValue(mockStorage),
+            kpiProvider.overrideWithValue(mockKpis),
+            auditLogsProvider.overrideWithValue(const AsyncValue.data([])),
+            ...authDashboardTestOverrides,
+          ],
+          child: const AGSGoldApp(),
+        ),
+      );
 
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
-    // Should go directly to Dashboard — no login screen
-    expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.byKey(const Key('loginButton')), findsNothing);
-  });
+      // Should go directly to Dashboard — no login screen
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      expect(find.byKey(const Key('loginButton')), findsNothing);
+    },
+  );
 
-  testWidgets('Login form shows validation errors on empty submit', (WidgetTester tester) async {
+  testWidgets('Login form shows validation errors on empty submit', (
+    WidgetTester tester,
+  ) async {
     final mockApi = MockApiClient();
     final mockStorage = MockSecureStorage();
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);

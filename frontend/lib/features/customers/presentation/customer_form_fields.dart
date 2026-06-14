@@ -37,7 +37,7 @@ class CustomerFormFields extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DropdownButtonFormField<String>(
-            value: customerType,
+            initialValue: customerType,
             decoration: const InputDecoration(
               labelText: 'Customer Type',
               prefixIcon: Icon(Icons.category_outlined),
@@ -97,8 +97,9 @@ class CustomerFormFields extends StatelessWidget {
               if (v == null || v.trim().isEmpty) {
                 return 'Email is required';
               }
-              if (!RegExp(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
-                  .hasMatch(v.trim())) {
+              if (!RegExp(
+                r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
+              ).hasMatch(v.trim())) {
                 return 'Enter a valid email address';
               }
               return null;
@@ -138,7 +139,7 @@ class CustomerFormFields extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: status,
+            initialValue: status,
             decoration: const InputDecoration(
               labelText: 'Status',
               prefixIcon: Icon(Icons.flag_outlined),

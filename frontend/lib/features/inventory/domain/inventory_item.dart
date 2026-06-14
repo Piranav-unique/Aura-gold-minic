@@ -57,18 +57,18 @@ class InventoryItem {
   }
 
   Map<String, dynamic> toCreateJson() => {
-        'item_name': itemName,
-        'item_category': itemCategory,
-        'weight': weight,
-        'purity': purity,
-        'purchase_price': purchasePrice,
-        'current_value': currentValue,
-        'stock_quantity': stockQuantity,
-        'reorder_level': reorderLevel,
-        if (supplierId != null && supplierId!.isNotEmpty) 'supplier_id': supplierId,
-        'status': status,
-        if (notes != null && notes!.isNotEmpty) 'notes': notes,
-      };
+    'item_name': itemName,
+    'item_category': itemCategory,
+    'weight': weight,
+    'purity': purity,
+    'purchase_price': purchasePrice,
+    'current_value': currentValue,
+    'stock_quantity': stockQuantity,
+    'reorder_level': reorderLevel,
+    if (supplierId != null && supplierId!.isNotEmpty) 'supplier_id': supplierId,
+    'status': status,
+    if (notes != null && notes!.isNotEmpty) 'notes': notes,
+  };
 
   Map<String, dynamic> toUpdateJson() {
     final json = <String, dynamic>{

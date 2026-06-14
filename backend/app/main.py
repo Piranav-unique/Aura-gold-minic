@@ -25,6 +25,8 @@ from app.api.customer import router as customer_router
 from app.api.inventory import router as inventory_router
 from app.api.supplier import router as supplier_router
 from app.api.transaction import router as transaction_router
+from app.api.report import router as report_router
+from app.api.workflow import router as workflow_router
 from app.database.session import verify_db_connection, async_session_maker
 from app.database import base as db_base  # noqa: F401
 from app.repositories.token_blacklist import TokenBlacklistRepository
@@ -142,4 +144,14 @@ app.include_router(
     transaction_router,
     prefix=f"{settings.API_V1_STR}/transactions",
     tags=["transactions"],
+)
+app.include_router(
+    report_router,
+    prefix=f"{settings.API_V1_STR}/reports",
+    tags=["reports"],
+)
+app.include_router(
+    workflow_router,
+    prefix=f"{settings.API_V1_STR}/workflows",
+    tags=["workflows"],
 )

@@ -13,7 +13,8 @@ class InventoryFormScreen extends ConsumerStatefulWidget {
   bool get isEdit => itemId != null;
 
   @override
-  ConsumerState<InventoryFormScreen> createState() => _InventoryFormScreenState();
+  ConsumerState<InventoryFormScreen> createState() =>
+      _InventoryFormScreenState();
 }
 
 class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
@@ -74,8 +75,9 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
 
     try {
       if (widget.isEdit) {
-        final existing =
-            await ref.read(inventoryDetailProvider(widget.itemId!).future);
+        final existing = await ref.read(
+          inventoryDetailProvider(widget.itemId!).future,
+        );
         final updated = existing.copyWith(
           itemName: _nameController.text.trim(),
           itemCategory: _category,
@@ -128,7 +130,9 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     final suppliersAsync = ref.watch(suppliersListProvider);
 
     if (widget.isEdit) {
-      ref.watch(inventoryDetailProvider(widget.itemId!)).whenData(_populateForm);
+      ref
+          .watch(inventoryDetailProvider(widget.itemId!))
+          .whenData(_populateForm);
     }
 
     return ResponsiveNavigationWrapper(
@@ -143,8 +147,10 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_errorMessage!,
-                      style: const TextStyle(color: Colors.redAccent)),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
                 ),
               TextFormField(
                 controller: _nameController,
@@ -154,13 +160,15 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _category,
+                initialValue: _category,
                 decoration: const InputDecoration(labelText: 'Category *'),
                 items: inventoryCategoryOptions
-                    .map((c) => DropdownMenuItem(
-                          value: c,
-                          child: Text(c.replaceAll('_', ' ')),
-                        ))
+                    .map(
+                      (c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(c.replaceAll('_', ' ')),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _category = v!),
               ),
@@ -170,21 +178,28 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _weightController,
-                      decoration: const InputDecoration(labelText: 'Weight (g) *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Weight (g) *',
+                      ),
                       keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          _parseDouble(v ?? '') == null ? 'Invalid weight' : null,
+                      validator: (v) => _parseDouble(v ?? '') == null
+                          ? 'Invalid weight'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _purityController,
-                      decoration: const InputDecoration(labelText: 'Purity (%) *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Purity (%) *',
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (v) {
                         final p = _parseDouble(v ?? '');
-                        if (p == null || p <= 0 || p > 100) return 'Invalid purity';
+                        if (p == null || p <= 0 || p > 100) {
+                          return 'Invalid purity';
+                        }
                         return null;
                       },
                     ),
@@ -197,22 +212,26 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _purchaseController,
-                      decoration:
-                          const InputDecoration(labelText: 'Purchase Price *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Purchase Price *',
+                      ),
                       keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          _parseDouble(v ?? '') == null ? 'Invalid price' : null,
+                      validator: (v) => _parseDouble(v ?? '') == null
+                          ? 'Invalid price'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _valueController,
-                      decoration:
-                          const InputDecoration(labelText: 'Current Value *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Current Value *',
+                      ),
                       keyboardType: TextInputType.number,
-                      validator: (v) =>
-                          _parseDouble(v ?? '') == null ? 'Invalid value' : null,
+                      validator: (v) => _parseDouble(v ?? '') == null
+                          ? 'Invalid value'
+                          : null,
                     ),
                   ),
                 ],
@@ -221,8 +240,9 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
               if (!widget.isEdit)
                 TextFormField(
                   controller: _stockController,
-                  decoration:
-                      const InputDecoration(labelText: 'Initial Stock *'),
+                  decoration: const InputDecoration(
+                    labelText: 'Initial Stock *',
+                  ),
                   keyboardType: TextInputType.number,
                   validator: (v) {
                     final n = int.tryParse(v?.trim() ?? '');
@@ -244,7 +264,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
               const SizedBox(height: 16),
               suppliersAsync.when(
                 data: (page) => DropdownButtonFormField<String?>(
-                  value: _supplierId,
+                  initialValue: _supplierId,
                   decoration: const InputDecoration(labelText: 'Supplier'),
                   items: [
                     const DropdownMenuItem(value: null, child: Text('None')),
@@ -259,7 +279,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _status,
+                initialValue: _status,
                 decoration: const InputDecoration(labelText: 'Status *'),
                 items: inventoryStatusOptions
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))

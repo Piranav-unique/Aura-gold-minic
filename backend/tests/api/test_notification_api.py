@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock
 
 from app.core.security import create_access_token
 from app.models.user import User
-from app.models.notification import Notification
 
 
 def make_mock_result(val, is_list=False):

@@ -63,8 +63,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
 
     try {
       if (widget.isEdit) {
-        final existing =
-            await ref.read(customerDetailProvider(widget.customerId!).future);
+        final existing = await ref.read(
+          customerDetailProvider(widget.customerId!).future,
+        );
         final updated = existing.copyWith(
           customerType: _customerType,
           fullName: _fullNameController.text.trim(),
@@ -118,8 +119,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
     final title = widget.isEdit ? 'Edit Customer' : 'New Customer';
 
     if (widget.isEdit) {
-      final customerAsync =
-          ref.watch(customerDetailProvider(widget.customerId!));
+      final customerAsync = ref.watch(
+        customerDetailProvider(widget.customerId!),
+      );
       return ResponsiveNavigationWrapper(
         title: title,
         child: customerAsync.when(
@@ -153,8 +155,10 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                 child: MaterialBanner(
                   content: Text(_errorMessage!),
                   backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
-                  leading:
-                      const Icon(Icons.error_outline, color: Colors.redAccent),
+                  leading: const Icon(
+                    Icons.error_outline,
+                    color: Colors.redAccent,
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => setState(() => _errorMessage = null),
@@ -183,10 +187,10 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                   onPressed: _isLoading
                       ? null
                       : () => context.go(
-                            widget.isEdit
-                                ? '/customers/${widget.customerId}'
-                                : '/customers',
-                          ),
+                          widget.isEdit
+                              ? '/customers/${widget.customerId}'
+                              : '/customers',
+                        ),
                   child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 12),

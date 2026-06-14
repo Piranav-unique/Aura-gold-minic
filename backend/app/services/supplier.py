@@ -42,9 +42,7 @@ class SupplierService:
             )
         except IntegrityError as exc:
             await self.supplier_repo.db.rollback()
-            raise ValidationException(
-                "Supplier name already registered"
-            ) from exc
+            raise ValidationException("Supplier name already registered") from exc
 
         if self.audit_service:
             await self.audit_service.log_action(
@@ -106,9 +104,7 @@ class SupplierService:
             await self.supplier_repo.db.refresh(supplier)
         except IntegrityError as exc:
             await self.supplier_repo.db.rollback()
-            raise ValidationException(
-                "Supplier name already registered"
-            ) from exc
+            raise ValidationException("Supplier name already registered") from exc
 
         if self.audit_service:
             await self.audit_service.log_action(

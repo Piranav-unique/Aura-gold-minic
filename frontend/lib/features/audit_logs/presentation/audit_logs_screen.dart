@@ -53,9 +53,9 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
           : null,
     );
     if (picked != null) {
-      ref.read(auditLogsDateRangeProvider.notifier).update(
-            AuditDateRange(picked.start, picked.end),
-          );
+      ref
+          .read(auditLogsDateRangeProvider.notifier)
+          .update(AuditDateRange(picked.start, picked.end));
       ref.read(auditLogsSkipProvider.notifier).update(0);
     }
   }
@@ -95,9 +95,9 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 
@@ -105,7 +105,8 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
     final sortIndex = ref.read(auditLogsSortProvider);
     final ascending = ref.read(auditLogsSortAscProvider);
     final sorted = List<AuditLog>.from(items);
-    int compare<T extends Comparable>(T a, T b) => ascending ? a.compareTo(b) : b.compareTo(a);
+    int compare<T extends Comparable>(T a, T b) =>
+        ascending ? a.compareTo(b) : b.compareTo(a);
 
     sorted.sort((a, b) {
       switch (sortIndex) {
@@ -194,7 +195,8 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
                     return const EmptyStateWidget(
                       icon: Icons.history_toggle_off,
                       title: 'No audit events yet',
-                      subtitle: 'Activity will appear here as users interact with the system.',
+                      subtitle:
+                          'Activity will appear here as users interact with the system.',
                     );
                   }
 
@@ -202,14 +204,17 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
 
                   if (isTimeline || !isDesktop) {
                     return RefreshIndicator(
-                      onRefresh: () => ref.refresh(auditLogsListProvider.future),
+                      onRefresh: () =>
+                          ref.refresh(auditLogsListProvider.future),
                       child: ListView(
                         children: [
                           PremiumTimeline(
                             entries: items
                                 .map(
                                   (log) => TimelineEntry(
-                                    title: log.action.replaceAll('_', ' ').toUpperCase(),
+                                    title: log.action
+                                        .replaceAll('_', ' ')
+                                        .toUpperCase(),
                                     subtitle:
                                         '${log.entityType ?? 'System'} • ${log.entityId ?? '—'}',
                                     timestamp: log.timestamp,
@@ -234,16 +239,21 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
                           onSort: (index) {
                             final current = ref.read(auditLogsSortProvider);
                             if (current == index) {
-                              ref.read(auditLogsSortAscProvider.notifier).toggle();
+                              ref
+                                  .read(auditLogsSortAscProvider.notifier)
+                                  .toggle();
                             } else {
-                              ref.read(auditLogsSortProvider.notifier).update(index);
+                              ref
+                                  .read(auditLogsSortProvider.notifier)
+                                  .update(index);
                             }
                           },
                           columns: [
                             DataTableColumn(
                               label: 'Timestamp',
                               valueGetter: (l) => l.timestamp,
-                              cellBuilder: (l) => Text(dateFormat.format(l.timestamp)),
+                              cellBuilder: (l) =>
+                                  Text(dateFormat.format(l.timestamp)),
                             ),
                             DataTableColumn(
                               label: 'Action',
@@ -253,8 +263,9 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
                             DataTableColumn(
                               label: 'Entity',
                               valueGetter: (l) => l.entityType ?? '',
-                              cellBuilder: (l) =>
-                                  Text('${l.entityType ?? ''} ${l.entityId ?? ''}'),
+                              cellBuilder: (l) => Text(
+                                '${l.entityType ?? ''} ${l.entityId ?? ''}',
+                              ),
                             ),
                             DataTableColumn(
                               label: 'User',
@@ -292,22 +303,24 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Showing ${skip + 1}-${skip + page.items.length} of ${page.total}'),
+          Text(
+            'Showing ${skip + 1}-${skip + page.items.length} of ${page.total}',
+          ),
           Row(
             children: [
               IconButton(
                 onPressed: canPrev
                     ? () => ref
-                        .read(auditLogsSkipProvider.notifier)
-                        .update(skip - limit)
+                          .read(auditLogsSkipProvider.notifier)
+                          .update(skip - limit)
                     : null,
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
                 onPressed: canNext
                     ? () => ref
-                        .read(auditLogsSkipProvider.notifier)
-                        .update(skip + limit)
+                          .read(auditLogsSkipProvider.notifier)
+                          .update(skip + limit)
                     : null,
                 icon: const Icon(Icons.chevron_right),
               ),

@@ -38,8 +38,9 @@ void main() {
     'updated_at': '2026-06-08T10:00:00Z',
   });
 
-  testWidgets('CustomerDetailScreen shows customer information',
-      (WidgetTester tester) async {
+  testWidgets('CustomerDetailScreen shows customer information', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -52,9 +53,8 @@ void main() {
       routes: [
         GoRoute(
           path: '/customers/:id',
-          builder: (context, state) => CustomerDetailScreen(
-            customerId: state.pathParameters['id']!,
-          ),
+          builder: (context, state) =>
+              CustomerDetailScreen(customerId: state.pathParameters['id']!),
         ),
       ],
     );
@@ -63,10 +63,12 @@ void main() {
       ProviderScope(
         overrides: [
           apiClientProvider.overrideWithValue(MockApiClient()),
-          customerDetailProvider(customerId).overrideWithValue(
-            AsyncValue.data(sampleCustomer),
+          customerDetailProvider(
+            customerId,
+          ).overrideWithValue(AsyncValue.data(sampleCustomer)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
           ),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

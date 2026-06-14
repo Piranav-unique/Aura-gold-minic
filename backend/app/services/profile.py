@@ -148,7 +148,9 @@ class ProfileService:
     async def get_settings(self, user_id: uuid.UUID):
         return await self.settings_repo.get_or_create(user_id)
 
-    async def update_settings(self, user_id: uuid.UUID, settings_in: UserSettingsUpdate):
+    async def update_settings(
+        self, user_id: uuid.UUID, settings_in: UserSettingsUpdate
+    ):
         settings = await self.settings_repo.get_or_create(user_id)
         update_data = settings_in.model_dump(exclude_unset=True)
         updated = await self.settings_repo.update(settings, update_data)

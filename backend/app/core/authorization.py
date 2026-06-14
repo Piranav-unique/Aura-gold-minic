@@ -4,7 +4,6 @@ from typing import Any, Callable
 from fastapi import Depends
 
 from app.core.exceptions import AuthenticationException, ForbiddenException
-from app.core.permissions import user_has_permission
 from app.models.user import User
 from app.api.dependencies import get_current_user
 

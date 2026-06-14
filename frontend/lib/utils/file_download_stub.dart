@@ -5,5 +5,7 @@ Future<void> downloadTextFile({
   required String content,
   required String mimeType,
 }) async {
-  debugPrint('Download $filename (${content.length} bytes) — platform handler unavailable');
+  debugPrint(
+    'Download $filename (${content.length} bytes) — platform handler unavailable',
+  );
 }

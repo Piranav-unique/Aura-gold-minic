@@ -67,9 +67,9 @@ class CustomerDetailScreen extends ConsumerWidget {
       context.go('/customers');
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete customer: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete customer: $e')));
     }
   }
 
@@ -82,7 +82,8 @@ class CustomerDetailScreen extends ConsumerWidget {
     return ResponsiveNavigationWrapper(
       title: 'Customer Details',
       child: customerAsync.when(
-        data: (customer) => _buildContent(context, ref, customer, currency, dateFormat),
+        data: (customer) =>
+            _buildContent(context, ref, customer, currency, dateFormat),
         loading: () => const Padding(
           padding: EdgeInsets.all(24),
           child: PremiumSkeletonList(itemCount: 6),
@@ -106,8 +107,10 @@ class CustomerDetailScreen extends ConsumerWidget {
     DateFormat dateFormat,
   ) {
     final profile = ref.watch(profileProvider).value;
-    final canUpdate = profile != null && hasPermission(profile, 'customer.update');
-    final canDelete = profile != null && hasPermission(profile, 'customer.delete');
+    final canUpdate =
+        profile != null && hasPermission(profile, 'customer.update');
+    final canDelete =
+        profile != null && hasPermission(profile, 'customer.delete');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -137,9 +140,8 @@ class CustomerDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       customer.fullName,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -172,7 +174,10 @@ class CustomerDetailScreen extends ConsumerWidget {
               if (canDelete)
                 OutlinedButton.icon(
                   onPressed: () => _confirmDelete(context, ref, customer),
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
                   label: const Text(
                     'Delete',
                     style: TextStyle(color: Colors.redAccent),
@@ -187,7 +192,11 @@ class CustomerDetailScreen extends ConsumerWidget {
             _infoRow(Icons.phone_outlined, 'Mobile', customer.mobileNumber),
             _infoRow(Icons.location_on_outlined, 'Address', customer.address),
             if (customer.gstNumber != null)
-              _infoRow(Icons.receipt_long_outlined, 'GST Number', customer.gstNumber!),
+              _infoRow(
+                Icons.receipt_long_outlined,
+                'GST Number',
+                customer.gstNumber!,
+              ),
           ]),
           const SizedBox(height: 24),
           _sectionTitle(context, 'Business Metrics'),
@@ -241,9 +250,9 @@ class CustomerDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }

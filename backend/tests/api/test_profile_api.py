@@ -2,7 +2,7 @@ import uuid
 import pytest
 from datetime import datetime, timezone
 from httpx import AsyncClient
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from app.core.security import create_access_token, get_password_hash
 from app.models.user import User

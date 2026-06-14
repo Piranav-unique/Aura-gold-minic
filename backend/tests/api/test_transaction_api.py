@@ -10,7 +10,10 @@ from app.core.security import create_access_token
 from app.models.permission import Permission
 from app.models.role import Role
 from app.models.user import User
-from app.schemas.transaction import TransactionDetailResponse, TransactionMetricsResponse
+from app.schemas.transaction import (
+    TransactionDetailResponse,
+    TransactionMetricsResponse,
+)
 
 
 def make_mock_result(val, is_list=False):
@@ -97,7 +100,9 @@ async def test_list_transactions_success(
     from app.api import dependencies
     from app.main import app
 
-    app.dependency_overrides[dependencies.get_transaction_service] = lambda: mock_service
+    app.dependency_overrides[dependencies.get_transaction_service] = lambda: (
+        mock_service
+    )
 
     try:
         response = await client.get(

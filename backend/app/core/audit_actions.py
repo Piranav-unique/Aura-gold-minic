@@ -30,6 +30,17 @@ STOCK_MOVEMENT_ADJUST = "stock_movement_adjust"
 TRANSACTION_CREATE = "transaction_create"
 TRANSACTION_UPDATE = "transaction_update"
 TRANSACTION_CANCEL = "transaction_cancel"
+REPORT_EXPORT = "report_export"
+WORKFLOW_CREATE = "workflow_create"
+WORKFLOW_UPDATE = "workflow_update"
+WORKFLOW_SUBMIT = "workflow_submit"
+WORKFLOW_ASSIGN = "workflow_assign"
+WORKFLOW_APPROVE = "workflow_approve"
+WORKFLOW_REJECT = "workflow_reject"
+WORKFLOW_COMMENT = "workflow_comment"
+WORKFLOW_ESCALATE = "workflow_escalate"
+WORKFLOW_ESCALATION_RULE_CREATE = "workflow_escalation_rule_create"
+WORKFLOW_ESCALATION_RULE_UPDATE = "workflow_escalation_rule_update"
 
 ALL_ACTIONS = [
     LOGIN_SUCCESS,
@@ -62,4 +73,15 @@ ALL_ACTIONS = [
     TRANSACTION_CREATE,
     TRANSACTION_UPDATE,
     TRANSACTION_CANCEL,
+    REPORT_EXPORT,
+    WORKFLOW_CREATE,
+    WORKFLOW_UPDATE,
+    WORKFLOW_SUBMIT,
+    WORKFLOW_ASSIGN,
+    WORKFLOW_APPROVE,
+    WORKFLOW_REJECT,
+    WORKFLOW_COMMENT,
+    WORKFLOW_ESCALATE,
+    WORKFLOW_ESCALATION_RULE_CREATE,
+    WORKFLOW_ESCALATION_RULE_UPDATE,
 ]

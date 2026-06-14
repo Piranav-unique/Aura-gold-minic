@@ -19,14 +19,18 @@ void main() {
   });
 
   testWidgets('E2E login flow: login -> dashboard -> logout', (tester) async {
-    when(() => mockApi.post('/auth/logout', data: any(named: 'data')))
-        .thenAnswer((_) async {
+    when(
+      () => mockApi.post('/auth/logout', data: any(named: 'data')),
+    ).thenAnswer((_) async {
       final response = MockResponse<Map<String, dynamic>>();
-      when(() => response.data).thenReturn({'message': 'Successfully logged out'});
+      when(
+        () => response.data,
+      ).thenReturn({'message': 'Successfully logged out'});
       return response;
     });
-    when(() => mockStorage.getRefreshToken())
-        .thenAnswer((_) async => 'e2e-refresh-token');
+    when(
+      () => mockStorage.getRefreshToken(),
+    ).thenAnswer((_) async => 'e2e-refresh-token');
 
     await pumpE2eApp(tester, mockApi: mockApi, mockStorage: mockStorage);
     expect(find.byType(LoginScreen), findsOneWidget);

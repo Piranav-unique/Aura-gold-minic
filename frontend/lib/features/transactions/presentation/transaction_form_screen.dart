@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/customers/domain/customer.dart';
 import 'package:ags_gold/features/customers/presentation/providers/customers_provider.dart';
@@ -18,14 +17,14 @@ class _LineDraft {
   String stockDirection = 'out';
 
   TransactionLine toLine() => TransactionLine(
-        id: '',
-        inventoryItemId: inventoryItemId ?? '',
-        itemName: itemName,
-        quantity: quantity,
-        unitPrice: unitPrice,
-        lineTotal: quantity * unitPrice,
-        stockDirection: stockDirection,
-      );
+    id: '',
+    inventoryItemId: inventoryItemId ?? '',
+    itemName: itemName,
+    quantity: quantity,
+    unitPrice: unitPrice,
+    lineTotal: quantity * unitPrice,
+    stockDirection: stockDirection,
+  );
 }
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -102,7 +101,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_requiresCustomer && (_customerId == null || _customerId!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer is required for this transaction type')),
+        const SnackBar(
+          content: Text('Customer is required for this transaction type'),
+        ),
       );
       return;
     }
@@ -137,16 +138,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Transaction updated' : 'Transaction created'),
+            content: Text(
+              isEditing ? 'Transaction updated' : 'Transaction created',
+            ),
           ),
         );
         context.go('/transactions');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Save failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -156,8 +159,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   @override
   Widget build(BuildContext context) {
     if (isEditing && !_loaded) {
-      final existingAsync =
-          ref.watch(transactionDetailProvider(widget.transactionId!));
+      final existingAsync = ref.watch(
+        transactionDetailProvider(widget.transactionId!),
+      );
       return existingAsync.when(
         data: (txn) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -194,8 +198,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             children: [
               if (!isEditing)
                 DropdownButtonFormField<String>(
-                  value: _transactionType,
-                  decoration: const InputDecoration(labelText: 'Transaction type'),
+                  initialValue: _transactionType,
+                  decoration: const InputDecoration(
+                    labelText: 'Transaction type',
+                  ),
                   items: transactionTypes
                       .map(
                         (type) => DropdownMenuItem(
@@ -211,7 +217,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _paymentStatus,
+                initialValue: _paymentStatus,
                 decoration: const InputDecoration(labelText: 'Payment status'),
                 items: paymentStatuses
                     .map(
@@ -230,7 +236,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               if (_requiresCustomer)
                 customersAsync.when(
                   data: (page) => DropdownButtonFormField<String>(
-                    value: _customerId,
+                    initialValue: _customerId,
                     decoration: const InputDecoration(labelText: 'Customer'),
                     items: page.items
                         .map(
@@ -251,7 +257,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               TextFormField(
                 controller: _taxController,
                 decoration: const InputDecoration(labelText: 'Tax amount'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -266,8 +274,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   Text(
                     'Line items',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: () => setState(() => _lines.add(_LineDraft())),
@@ -288,11 +296,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         child: Column(
                           children: [
                             DropdownButtonFormField<String>(
-                              value: line.inventoryItemId,
-                              decoration:
-                                  const InputDecoration(labelText: 'Inventory item'),
+                              initialValue: line.inventoryItemId,
+                              decoration: const InputDecoration(
+                                labelText: 'Inventory item',
+                              ),
                               items: inventoryPage.items
-                                  .where((InventoryItem i) => i.status == 'active')
+                                  .where(
+                                    (InventoryItem i) => i.status == 'active',
+                                  )
                                   .map(
                                     (item) => DropdownMenuItem(
                                       value: item.id,
@@ -327,8 +338,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 Expanded(
                                   child: TextFormField(
                                     initialValue: '${line.quantity}',
-                                    decoration:
-                                        const InputDecoration(labelText: 'Quantity'),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Quantity',
+                                    ),
                                     keyboardType: TextInputType.number,
                                     onChanged: (value) {
                                       line.quantity = int.tryParse(value) ?? 1;
@@ -339,15 +351,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: TextFormField(
-                                    initialValue: line.unitPrice.toStringAsFixed(2),
-                                    decoration:
-                                        const InputDecoration(labelText: 'Unit price'),
+                                    initialValue: line.unitPrice
+                                        .toStringAsFixed(2),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Unit price',
+                                    ),
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
+                                          decimal: true,
+                                        ),
                                     onChanged: (value) {
-                                      line.unitPrice = double.tryParse(value) ?? 0;
+                                      line.unitPrice =
+                                          double.tryParse(value) ?? 0;
                                       setState(() {});
                                     },
                                   ),
@@ -357,12 +372,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             if (_transactionType == 'exchange') ...[
                               const SizedBox(height: 12),
                               DropdownButtonFormField<String>(
-                                value: line.stockDirection,
-                                decoration:
-                                    const InputDecoration(labelText: 'Stock direction'),
+                                initialValue: line.stockDirection,
+                                decoration: const InputDecoration(
+                                  labelText: 'Stock direction',
+                                ),
                                 items: const [
-                                  DropdownMenuItem(value: 'in', child: Text('Stock In')),
-                                  DropdownMenuItem(value: 'out', child: Text('Stock Out')),
+                                  DropdownMenuItem(
+                                    value: 'in',
+                                    child: Text('Stock In'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'out',
+                                    child: Text('Stock Out'),
+                                  ),
                                 ],
                                 onChanged: (value) {
                                   if (value == null) return;
@@ -397,7 +419,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               Row(
                 children: [
                   OutlinedButton(
-                    onPressed: _saving ? null : () => context.go('/transactions'),
+                    onPressed: _saving
+                        ? null
+                        : () => context.go('/transactions'),
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 12),
@@ -409,7 +433,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(isEditing ? 'Save changes' : 'Create transaction'),
+                        : Text(
+                            isEditing ? 'Save changes' : 'Create transaction',
+                          ),
                   ),
                 ],
               ),

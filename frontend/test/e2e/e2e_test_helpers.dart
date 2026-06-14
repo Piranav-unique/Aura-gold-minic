@@ -6,18 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ags_gold/main.dart';
 import 'package:ags_gold/services/service_providers.dart';
-import 'package:ags_gold/features/dashboard/presentation/providers/dashboard_stats_provider.dart';
-import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
+import '../test_helpers/auth_dashboard_overrides.dart';
 import '../mocks/mock_services.dart';
-
-final _mockDashboardStats = DashboardStats(
-  recentActivity: const [],
-  unreadNotifications: 0,
-  securityAlerts: const [],
-  recentNotifications: const [],
-  loginStatistics: const LoginStatistics(today: 0, week: 0, month: 0),
-);
 
 Future<void> pumpE2eApp(
   WidgetTester tester, {
@@ -32,12 +22,9 @@ Future<void> pumpE2eApp(
   });
 
   final mockMapResponse = MockResponse<Map<String, dynamic>>();
-  when(() => mockMapResponse.data).thenReturn({
-    'items': [],
-    'total': 0,
-    'skip': 0,
-    'limit': 10,
-  });
+  when(
+    () => mockMapResponse.data,
+  ).thenReturn({'items': [], 'total': 0, 'skip': 0, 'limit': 10});
 
   final mockListResponse = MockResponse<List<dynamic>>();
   when(() => mockListResponse.data).thenReturn([]);
@@ -51,17 +38,18 @@ Future<void> pumpE2eApp(
     ),
   ).thenAnswer((invocation) async {
     final path = invocation.positionalArguments[0] as String;
-    if (path.contains('audit-logs') || path.contains('dashboard/stats')) {
-      if (path.contains('dashboard/stats')) {
-        final statsResponse = MockResponse<Map<String, dynamic>>();
-        when(() => statsResponse.data).thenReturn({
-          'recent_activity': [],
+    if (path.contains('audit-logs') || path.contains('dashboard/executive')) {
+      if (path.contains('dashboard/executive')) {
+        final executiveResponse = MockResponse<Map<String, dynamic>>();
+        when(() => executiveResponse.data).thenReturn({
+          'role': 'admin',
+          'display_name': 'E2E User',
           'unread_notifications': 0,
-          'security_alerts': [],
-          'recent_notifications': [],
-          'login_statistics': {'today': 0, 'week': 0, 'month': 0},
+          'refreshed_at': DateTime.utc(2026, 6, 8).toIso8601String(),
+          'revenue_trend': [],
+          'activity_trend': [],
         });
-        return statsResponse;
+        return executiveResponse;
       }
       return mockMapResponse;
     }
@@ -73,9 +61,8 @@ Future<void> pumpE2eApp(
       overrides: [
         apiClientProvider.overrideWithValue(mockApi),
         secureStorageProvider.overrideWithValue(mockStorage),
-        dashboardStatsProvider.overrideWithValue(AsyncValue.data(_mockDashboardStats)),
+        ...authDashboardTestOverrides,
         auditLogsProvider.overrideWithValue(const AsyncValue.data([])),
-        unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
       ],
       child: const AGSGoldApp(),
     ),
@@ -99,8 +86,9 @@ Future<void> completeLogin(
     'access_token': 'e2e-access-token',
     'refresh_token': 'e2e-refresh-token',
   });
-  when(() => mockApi.post('/auth/login', data: any(named: 'data')))
-      .thenAnswer((_) => loginCompleter.future);
+  when(
+    () => mockApi.post('/auth/login', data: any(named: 'data')),
+  ).thenAnswer((_) => loginCompleter.future);
   when(
     () => mockStorage.saveTokens(
       accessToken: any(named: 'accessToken'),

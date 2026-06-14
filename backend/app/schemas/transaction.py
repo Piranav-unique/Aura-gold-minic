@@ -59,8 +59,18 @@ class TransactionCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_customer_and_lines(self) -> "TransactionCreate":
-        if self.transaction_type in ("sale", "return", "exchange") and not self.customer_id:
-            raise ValueError("customer_id is required for sale, return, and exchange transactions")
+        if self.payment_status != "pending":
+            raise ValueError(
+                "payment_status must be pending when creating a transaction; "
+                "mark as paid via update after review"
+            )
+        if (
+            self.transaction_type in ("sale", "return", "exchange")
+            and not self.customer_id
+        ):
+            raise ValueError(
+                "customer_id is required for sale, return, and exchange transactions"
+            )
         if self.transaction_type == "exchange":
             for line in self.lines:
                 if line.stock_direction is None:

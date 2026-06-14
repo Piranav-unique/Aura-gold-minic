@@ -31,8 +31,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('UsersScreen renders XSS payload as literal text in DataTable',
-      (WidgetTester tester) async {
+  testWidgets('UsersScreen renders XSS payload as literal text in DataTable', (
+    WidgetTester tester,
+  ) async {
     final router = GoRouter(
       initialLocation: '/users',
       routes: [
@@ -72,8 +73,9 @@ void main() {
     expect(find.textContaining('<script>'), findsOneWidget);
   });
 
-  testWidgets('ProfileScreen renders XSS payload in name as literal text',
-      (WidgetTester tester) async {
+  testWidgets('ProfileScreen renders XSS payload in name as literal text', (
+    WidgetTester tester,
+  ) async {
     final router = GoRouter(
       initialLocation: '/profile',
       routes: [
@@ -104,7 +106,9 @@ void main() {
             ),
           ),
           profileActivityProvider.overrideWithValue(const AsyncValue.data([])),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

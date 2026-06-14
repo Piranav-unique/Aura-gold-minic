@@ -40,7 +40,12 @@ def make_mock_result(val, is_list=False):
 @pytest.fixture
 def inventory_permissions():
     now = datetime.now(timezone.utc)
-    names = ["inventory.view", "inventory.create", "inventory.update", "inventory.delete"]
+    names = [
+        "inventory.view",
+        "inventory.create",
+        "inventory.update",
+        "inventory.delete",
+    ]
     return {
         name.split(".")[1]: Permission(
             id=uuid.uuid4(), name=name, created_at=now, updated_at=now

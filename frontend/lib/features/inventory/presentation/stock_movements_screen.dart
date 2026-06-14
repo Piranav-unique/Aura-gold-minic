@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
-import 'package:ags_gold/features/inventory/domain/stock_movement.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_permission_gate.dart';
 import 'package:ags_gold/features/inventory/presentation/providers/inventory_provider.dart';
 
@@ -48,7 +47,8 @@ class StockMovementsScreen extends ConsumerWidget {
                       return const EmptyStateWidget(
                         icon: Icons.history,
                         title: 'No stock movements',
-                        subtitle: 'Stock in, out, and adjustments will appear here.',
+                        subtitle:
+                            'Stock in, out, and adjustments will appear here.',
                       );
                     }
                     return ListView.separated(

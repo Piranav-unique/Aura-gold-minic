@@ -103,8 +103,9 @@ class PremiumTimeline extends StatelessWidget {
                             Text(
                               dateFormat.format(entry.timestamp),
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                             ),
                           ],
@@ -113,8 +114,9 @@ class PremiumTimeline extends StatelessWidget {
                         Text(
                           entry.subtitle,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.7),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
                       ],

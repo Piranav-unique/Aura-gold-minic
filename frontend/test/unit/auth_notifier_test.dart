@@ -14,35 +14,40 @@ void main() {
     mockApiClient = MockApiClient();
   });
 
-  testWidgets('AuthNotifier - initial state unauthenticated when no token exists', (tester) async {
-    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
+  testWidgets(
+    'AuthNotifier - initial state unauthenticated when no token exists',
+    (tester) async {
+      when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
 
-    final container = ProviderContainer(
-      overrides: [
-        secureStorageProvider.overrideWithValue(mockStorage),
-        apiClientProvider.overrideWithValue(mockApiClient),
-      ],
-    );
-
-    try {
-      // Trigger build and timer initialization
-      expect(
-        container.read(authNotifierProvider),
-        isA<AsyncLoading<AuthStatus>>(),
+      final container = ProviderContainer(
+        overrides: [
+          secureStorageProvider.overrideWithValue(mockStorage),
+          apiClientProvider.overrideWithValue(mockApiClient),
+        ],
       );
 
-      // Wait for the 2-second artificial delay to resolve
-      await tester.pump(const Duration(seconds: 2));
+      try {
+        // Trigger build and timer initialization
+        expect(
+          container.read(authNotifierProvider),
+          isA<AsyncLoading<AuthStatus>>(),
+        );
 
-      final state = container.read(authNotifierProvider);
-      expect(state.value, AuthStatus.unauthenticated);
-      verify(() => mockStorage.hasAccessToken()).called(1);
-    } finally {
-      container.dispose();
-    }
-  });
+        // Wait for the 2-second artificial delay to resolve
+        await tester.pump(const Duration(seconds: 2));
 
-  testWidgets('AuthNotifier - initial state authenticated when token exists', (tester) async {
+        final state = container.read(authNotifierProvider);
+        expect(state.value, AuthStatus.unauthenticated);
+        verify(() => mockStorage.hasAccessToken()).called(1);
+      } finally {
+        container.dispose();
+      }
+    },
+  );
+
+  testWidgets('AuthNotifier - initial state authenticated when token exists', (
+    tester,
+  ) async {
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
 
     final container = ProviderContainer(
@@ -55,7 +60,7 @@ void main() {
     try {
       // Trigger build
       container.read(authNotifierProvider);
-      
+
       await tester.pump(const Duration(seconds: 2));
 
       final state = container.read(authNotifierProvider);
@@ -65,61 +70,74 @@ void main() {
     }
   });
 
-  testWidgets('AuthNotifier - login success saves tokens and transitions state', (tester) async {
-    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
-    when(() => mockStorage.saveTokens(
+  testWidgets(
+    'AuthNotifier - login success saves tokens and transitions state',
+    (tester) async {
+      when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
+      when(
+        () => mockStorage.saveTokens(
           accessToken: any(named: 'accessToken'),
           refreshToken: any(named: 'refreshToken'),
-        )).thenAnswer((_) async => {});
+        ),
+      ).thenAnswer((_) async => {});
 
-    final mockResponse = MockResponse<Map<String, dynamic>>();
-    when(() => mockResponse.data).thenReturn({
-      'access_token': 'mock_access_token',
-      'refresh_token': 'mock_refresh_token',
-    });
+      final mockResponse = MockResponse<Map<String, dynamic>>();
+      when(() => mockResponse.data).thenReturn({
+        'access_token': 'mock_access_token',
+        'refresh_token': 'mock_refresh_token',
+      });
 
-    when(() => mockApiClient.post(
-          '/auth/login',
-          data: any(named: 'data'),
-        )).thenAnswer((_) async => mockResponse);
+      when(
+        () => mockApiClient.post('/auth/login', data: any(named: 'data')),
+      ).thenAnswer((_) async => mockResponse);
 
-    final container = ProviderContainer(
-      overrides: [
-        secureStorageProvider.overrideWithValue(mockStorage),
-        apiClientProvider.overrideWithValue(mockApiClient),
-      ],
-    );
+      final container = ProviderContainer(
+        overrides: [
+          secureStorageProvider.overrideWithValue(mockStorage),
+          apiClientProvider.overrideWithValue(mockApiClient),
+        ],
+      );
 
-    try {
-      // Trigger build
-      container.read(authNotifierProvider);
-      
-      await tester.pump(const Duration(seconds: 2));
+      try {
+        // Trigger build
+        container.read(authNotifierProvider);
 
-      final notifier = container.read(authNotifierProvider.notifier);
-      final future = notifier.login('test@example.com', 'password123');
+        await tester.pump(const Duration(seconds: 2));
 
-      // State transition to loading during login
-      expect(container.read(authNotifierProvider), isA<AsyncLoading<AuthStatus>>());
+        final notifier = container.read(authNotifierProvider.notifier);
+        final future = notifier.login('test@example.com', 'password123');
 
-      await future;
+        // State transition to loading during login
+        expect(
+          container.read(authNotifierProvider),
+          isA<AsyncLoading<AuthStatus>>(),
+        );
 
-      expect(container.read(authNotifierProvider).value, AuthStatus.authenticated);
-      verify(() => mockStorage.saveTokens(
+        await future;
+
+        expect(
+          container.read(authNotifierProvider).value,
+          AuthStatus.authenticated,
+        );
+        verify(
+          () => mockStorage.saveTokens(
             accessToken: 'mock_access_token',
             refreshToken: 'mock_refresh_token',
-          )).called(1);
-    } finally {
-      container.dispose();
-    }
-  });
+          ),
+        ).called(1);
+      } finally {
+        container.dispose();
+      }
+    },
+  );
 
-  testWidgets('AuthNotifier - login failure sets error state and rethrows', (tester) async {
+  testWidgets('AuthNotifier - login failure sets error state and rethrows', (
+    tester,
+  ) async {
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
-    when(() => mockApiClient.post(
-          '/auth/login',
-          data: any(named: 'data'),
-        )).thenThrow(UnauthorizedException('Invalid credentials'));
+    when(
+      () => mockApiClient.post('/auth/login', data: any(named: 'data')),
+    ).thenThrow(UnauthorizedException('Invalid credentials'));
 
     final container = ProviderContainer(
       overrides: [
@@ -131,11 +149,11 @@ void main() {
     try {
       // Trigger build
       container.read(authNotifierProvider);
-      
+
       await tester.pump(const Duration(seconds: 2));
 
       final notifier = container.read(authNotifierProvider.notifier);
-      
+
       expect(
         () => notifier.login('wrong@example.com', 'badpassword'),
         throwsA(isA<UnauthorizedException>()),
@@ -148,41 +166,50 @@ void main() {
     }
   });
 
-  testWidgets('AuthNotifier - logout clears tokens locally and calls server API', (tester) async {
-    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
-    when(() => mockStorage.getRefreshToken()).thenAnswer((_) async => 'mock_refresh_token');
-    when(() => mockStorage.clearTokens()).thenAnswer((_) async => {});
-    
-    final mockResponse = MockResponse<dynamic>();
-    when(() => mockApiClient.post(
-          '/auth/logout',
-          data: any(named: 'data'),
-        )).thenAnswer((_) async => mockResponse);
+  testWidgets(
+    'AuthNotifier - logout clears tokens locally and calls server API',
+    (tester) async {
+      when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
+      when(
+        () => mockStorage.getRefreshToken(),
+      ).thenAnswer((_) async => 'mock_refresh_token');
+      when(() => mockStorage.clearTokens()).thenAnswer((_) async => {});
 
-    final container = ProviderContainer(
-      overrides: [
-        secureStorageProvider.overrideWithValue(mockStorage),
-        apiClientProvider.overrideWithValue(mockApiClient),
-      ],
-    );
+      final mockResponse = MockResponse<dynamic>();
+      when(
+        () => mockApiClient.post('/auth/logout', data: any(named: 'data')),
+      ).thenAnswer((_) async => mockResponse);
 
-    try {
-      // Trigger build
-      container.read(authNotifierProvider);
-      
-      await tester.pump(const Duration(seconds: 2));
+      final container = ProviderContainer(
+        overrides: [
+          secureStorageProvider.overrideWithValue(mockStorage),
+          apiClientProvider.overrideWithValue(mockApiClient),
+        ],
+      );
 
-      final notifier = container.read(authNotifierProvider.notifier);
-      await notifier.logout();
+      try {
+        // Trigger build
+        container.read(authNotifierProvider);
 
-      expect(container.read(authNotifierProvider).value, AuthStatus.unauthenticated);
-      verify(() => mockStorage.clearTokens()).called(1);
-      verify(() => mockApiClient.post(
+        await tester.pump(const Duration(seconds: 2));
+
+        final notifier = container.read(authNotifierProvider.notifier);
+        await notifier.logout();
+
+        expect(
+          container.read(authNotifierProvider).value,
+          AuthStatus.unauthenticated,
+        );
+        verify(() => mockStorage.clearTokens()).called(1);
+        verify(
+          () => mockApiClient.post(
             '/auth/logout',
             data: {'refresh_token': 'mock_refresh_token'},
-          )).called(1);
-    } finally {
-      container.dispose();
-    }
-  });
+          ),
+        ).called(1);
+      } finally {
+        container.dispose();
+      }
+    },
+  );
 }

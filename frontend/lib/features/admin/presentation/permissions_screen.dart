@@ -62,7 +62,9 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                 Expanded(
                   child: Text(
                     'System Permission Scopes',
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 FilledButton.icon(
@@ -84,7 +86,10 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                     labelText: 'Search Permissions',
                     hintText: 'Search permission name or description...',
                     prefixIcon: const Icon(Icons.search),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
@@ -105,8 +110,10 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                   data: (permissions) {
                     final filtered = permissions.where((p) {
                       final name = (p['name'] as String? ?? '').toLowerCase();
-                      final desc = (p['description'] as String? ?? '').toLowerCase();
-                      return name.contains(_searchQuery) || desc.contains(_searchQuery);
+                      final desc = (p['description'] as String? ?? '')
+                          .toLowerCase();
+                      return name.contains(_searchQuery) ||
+                          desc.contains(_searchQuery);
                     }).toList();
 
                     if (filtered.isEmpty) {
@@ -117,7 +124,11 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.vpn_key_outlined, size: 64, color: theme.colorScheme.secondary),
+                                Icon(
+                                  Icons.vpn_key_outlined,
+                                  size: 64,
+                                  color: theme.colorScheme.secondary,
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchQuery.isEmpty
@@ -127,7 +138,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                                 ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       );
                     }
@@ -137,17 +148,25 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                             clipBehavior: Clip.antiAlias,
                             child: ListView.separated(
                               itemCount: filtered.length,
-                              separatorBuilder: (context, index) => const Divider(height: 1),
-                              itemBuilder: (context, idx) => _buildPermissionListTile(filtered[idx] as Map<String, dynamic>),
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, idx) =>
+                                  _buildPermissionListTile(
+                                    filtered[idx] as Map<String, dynamic>,
+                                  ),
                             ),
                           )
                         : ListView.separated(
                             itemCount: filtered.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemBuilder: (context, idx) => _buildPermissionCard(filtered[idx] as Map<String, dynamic>),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, idx) => _buildPermissionCard(
+                              filtered[idx] as Map<String, dynamic>,
+                            ),
                           );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => ListView(
                     children: [
                       const SizedBox(height: 64),
@@ -181,7 +200,10 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
       ),
       title: Text(
         name,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Courier'),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Courier',
+        ),
       ),
       subtitle: Text(description),
       trailing: const Chip(
@@ -232,7 +254,8 @@ class PermissionFormDialog extends ConsumerStatefulWidget {
   const PermissionFormDialog({super.key});
 
   @override
-  ConsumerState<PermissionFormDialog> createState() => _PermissionFormDialogState();
+  ConsumerState<PermissionFormDialog> createState() =>
+      _PermissionFormDialogState();
 }
 
 class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
@@ -263,10 +286,10 @@ class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
       final name = _nameController.text.trim();
       final description = _descriptionController.text.trim();
 
-      await apiClient.post('/rbac/permissions', data: {
-        'name': name,
-        'description': description,
-      });
+      await apiClient.post(
+        '/rbac/permissions',
+        data: {'name': name, 'description': description},
+      );
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -297,9 +320,14 @@ class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
                   decoration: BoxDecoration(
                     color: Colors.redAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.5),
+                    ),
                   ),
-                  child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -312,7 +340,9 @@ class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
                   helperText: 'Use dot-separated scopes, e.g. domain.action',
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Permission Name is required';
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Permission Name is required';
+                  }
                   return null;
                 },
               ),
@@ -327,7 +357,9 @@ class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
                 ),
                 maxLines: 2,
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Description is required';
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Description is required';
+                  }
                   return null;
                 },
               ),
@@ -343,7 +375,14 @@ class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
         FilledButton(
           onPressed: _loading ? null : _submit,
           child: _loading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : const Text('Save'),
         ),
       ],

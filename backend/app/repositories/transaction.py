@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import asc, desc, func, or_, select
+from sqlalchemy import asc, case, desc, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -60,7 +60,9 @@ class TransactionRepository(BaseRepository[Transaction]):
         direction = asc if sort_order == "asc" else desc
         return query.order_by(direction(column))
 
-    async def get_with_details(self, transaction_id: uuid.UUID) -> Optional[Transaction]:
+    async def get_with_details(
+        self, transaction_id: uuid.UUID
+    ) -> Optional[Transaction]:
         query = (
             select(Transaction)
             .options(
@@ -70,6 +72,19 @@ class TransactionRepository(BaseRepository[Transaction]):
                 selectinload(Transaction.customer),
             )
             .where(Transaction.id == transaction_id)
+        )
+        result = await self.db.execute(query)
+        return result.scalars().first()
+
+    async def get_for_update(self, transaction_id: uuid.UUID) -> Optional[Transaction]:
+        query = (
+            select(Transaction)
+            .options(
+                selectinload(Transaction.lines),
+                selectinload(Transaction.customer),
+            )
+            .where(Transaction.id == transaction_id)
+            .with_for_update()
         )
         result = await self.db.execute(query)
         return result.scalars().first()
@@ -113,6 +128,18 @@ class TransactionRepository(BaseRepository[Transaction]):
         result = await self.db.execute(query)
         return result.scalar() or 0
 
+    @staticmethod
+    def _signed_revenue_amount():
+        """Net revenue: sales/exchanges add, returns subtract."""
+        return case(
+            (Transaction.transaction_type == "return", -Transaction.total_amount),
+            (
+                Transaction.transaction_type.in_(["sale", "exchange"]),
+                Transaction.total_amount,
+            ),
+            else_=0,
+        )
+
     async def revenue_sum(
         self,
         *,
@@ -120,12 +147,11 @@ class TransactionRepository(BaseRepository[Transaction]):
         end: datetime,
         payment_status: str = "paid",
     ) -> Decimal:
-        query = select(
-            func.coalesce(func.sum(Transaction.total_amount), 0)
-        ).where(
+        signed_amount = self._signed_revenue_amount()
+        query = select(func.coalesce(func.sum(signed_amount), 0)).where(
             Transaction.status == "active",
             Transaction.payment_status == payment_status,
-            Transaction.transaction_type.in_(["sale", "exchange"]),
+            Transaction.transaction_type.in_(["sale", "return", "exchange"]),
             Transaction.created_at >= start,
             Transaction.created_at <= end,
         )
@@ -135,11 +161,12 @@ class TransactionRepository(BaseRepository[Transaction]):
     async def top_customers(
         self, limit: int = 5, payment_status: str = "paid"
     ) -> list[dict]:
+        signed_amount = self._signed_revenue_amount()
         query = (
             select(
                 Customer.id,
                 Customer.full_name,
-                func.coalesce(func.sum(Transaction.total_amount), 0).label("revenue"),
+                func.coalesce(func.sum(signed_amount), 0).label("revenue"),
                 func.count(Transaction.id).label("transaction_count"),
             )
             .join(Transaction, Transaction.customer_id == Customer.id)
@@ -165,21 +192,28 @@ class TransactionRepository(BaseRepository[Transaction]):
             for row in rows
         ]
 
+    def _document_column(self, prefix: str):
+        if prefix == "TXN":
+            return Transaction.transaction_number
+        if prefix == "INV":
+            return Transaction.invoice_number
+        return Transaction.receipt_number
+
     async def next_document_number(self, prefix: str) -> str:
+        """Generate next document number with transactional advisory lock."""
         today = datetime.now(timezone.utc).strftime("%Y%m%d")
         base = f"{prefix}-{today}-"
-        if prefix == "TXN":
-            query = select(func.count(Transaction.id)).where(
-                Transaction.transaction_number.like(f"{base}%")
-            )
-        elif prefix == "INV":
-            query = select(func.count(Transaction.id)).where(
-                Transaction.invoice_number.like(f"{base}%")
-            )
+        await self.db.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:lock_key))"),
+            {"lock_key": base},
+        )
+        column = self._document_column(prefix)
+        result = await self.db.execute(
+            select(func.max(column)).where(column.like(f"{base}%"))
+        )
+        last_number = result.scalar()
+        if last_number:
+            seq = int(str(last_number).rsplit("-", 1)[-1]) + 1
         else:
-            query = select(func.count(Transaction.id)).where(
-                Transaction.receipt_number.like(f"{base}%")
-            )
-        result = await self.db.execute(query)
-        seq = (result.scalar() or 0) + 1
+            seq = 1
         return f"{base}{seq:04d}"

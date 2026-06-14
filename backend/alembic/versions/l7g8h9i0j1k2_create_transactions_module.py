@@ -30,7 +30,9 @@ def upgrade() -> None:
         sa.Column("transaction_number", sa.String(length=40), nullable=False),
         sa.Column("transaction_type", sa.String(length=20), nullable=False),
         sa.Column("customer_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column("status", sa.String(length=20), server_default="active", nullable=False),
+        sa.Column(
+            "status", sa.String(length=20), server_default="active", nullable=False
+        ),
         sa.Column(
             "payment_status",
             sa.String(length=20),
@@ -57,7 +59,9 @@ def upgrade() -> None:
         ),
         sa.Column("invoice_number", sa.String(length=40), nullable=True),
         sa.Column("receipt_number", sa.String(length=40), nullable=True),
-        sa.Column("stock_applied", sa.Boolean(), server_default="false", nullable=False),
+        sa.Column(
+            "stock_applied", sa.Boolean(), server_default="false", nullable=False
+        ),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("performed_by", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("cancelled_at", sa.DateTime(timezone=True), nullable=True),
@@ -151,7 +155,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_transaction_lines_inventory_item_id", table_name="transaction_lines")
+    op.drop_index(
+        "ix_transaction_lines_inventory_item_id", table_name="transaction_lines"
+    )
     op.drop_index("ix_transaction_lines_transaction_id", table_name="transaction_lines")
     op.drop_table("transaction_lines")
     op.drop_index("ix_transactions_created_at", table_name="transactions")

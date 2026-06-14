@@ -113,16 +113,16 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               IconButton(
                 onPressed: page.skip > 0
                     ? () => ref
-                        .read(transactionsSkipProvider.notifier)
-                        .update((page.skip - page.limit).clamp(0, page.total))
+                          .read(transactionsSkipProvider.notifier)
+                          .update((page.skip - page.limit).clamp(0, page.total))
                     : null,
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
                 onPressed: page.skip + page.limit < page.total
                     ? () => ref
-                        .read(transactionsSkipProvider.notifier)
-                        .update(page.skip + page.limit)
+                          .read(transactionsSkipProvider.notifier)
+                          .update(page.skip + page.limit)
                     : null,
                 icon: const Icon(Icons.chevron_right),
               ),
@@ -184,7 +184,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               options: paymentStatuses,
               selected: ref.watch(transactionsPaymentFilterProvider),
               onSelected: (value) {
-                ref.read(transactionsPaymentFilterProvider.notifier).update(value);
+                ref
+                    .read(transactionsPaymentFilterProvider.notifier)
+                    .update(value);
                 ref.read(transactionsSkipProvider.notifier).update(0);
               },
             ),
@@ -200,8 +202,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           ? 'Create your first transaction to get started.'
                           : null,
                       actionLabel: canCreate ? 'New Transaction' : null,
-                      onAction:
-                          canCreate ? () => context.go('/transactions/new') : null,
+                      onAction: canCreate
+                          ? () => context.go('/transactions/new')
+                          : null,
                     );
                   }
 
@@ -224,7 +227,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                 '${transactionTypeLabel(txn.transactionType)} • ${currency.format(txn.totalAmount)}',
                               ),
                               trailing: _paymentChip(txn),
-                              onTap: () => context.go('/transactions/${txn.id}'),
+                              onTap: () =>
+                                  context.go('/transactions/${txn.id}'),
                             ),
                           );
                         },
@@ -245,7 +249,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                               label: 'Number',
                               valueGetter: (t) => t.transactionNumber,
                               cellBuilder: (t) => InkWell(
-                                onTap: () => context.go('/transactions/${t.id}'),
+                                onTap: () =>
+                                    context.go('/transactions/${t.id}'),
                                 child: Text(t.transactionNumber),
                               ),
                             ),

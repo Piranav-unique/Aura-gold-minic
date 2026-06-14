@@ -3,7 +3,8 @@ import 'package:ags_gold/features/notifications/domain/notification.dart';
 import 'package:ags_gold/features/inventory/domain/inventory_item.dart';
 import 'package:ags_gold/features/transactions/domain/transaction.dart';
 
-class LoginStatistics {  final int today;
+class LoginStatistics {
+  final int today;
   final int week;
   final int month;
 

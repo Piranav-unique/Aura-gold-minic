@@ -1,77 +1,1 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, Query, status
-
-from app.api.dependencies import get_current_user, get_notification_service
-from app.models.user import User
-from app.schemas.notification import (
-    NotificationListResponse,
-    MarkNotificationsReadRequest,
-    UnreadCountResponse,
-)
-from app.schemas.base import MessageResponse
-from app.services.notification import NotificationService
-
-router = APIRouter()
-
-
-@router.get(
-    "/unread-count",
-    response_model=UnreadCountResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get unread notification count for the current user",
-)
-async def get_unread_count(
-    notification_service: NotificationService = Depends(get_notification_service),
-    current_user: User = Depends(get_current_user),
-) -> UnreadCountResponse:
-    count = await notification_service.get_unread_count(current_user.id)
-    return UnreadCountResponse(unread_count=count)
-
-
-@router.get(
-    "/",
-    response_model=NotificationListResponse,
-    status_code=status.HTTP_200_OK,
-    summary="List notifications for the current user",
-)
-async def list_notifications(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
-    category: Optional[str] = Query(None),
-    is_read: Optional[bool] = Query(None),
-    notification_service: NotificationService = Depends(get_notification_service),
-    current_user: User = Depends(get_current_user),
-) -> NotificationListResponse:
-    items, total, unread = await notification_service.list_notifications(
-        user_id=current_user.id,
-        skip=skip,
-        limit=limit,
-        category=category,
-        is_read=is_read,
-    )
-    return NotificationListResponse(
-        items=items,
-        total=total,
-        unread_count=unread,
-        skip=skip,
-        limit=limit,
-    )
-
-
-@router.post(
-    "/read",
-    response_model=MessageResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Mark notifications as read",
-)
-async def mark_notifications_read(
-    body: MarkNotificationsReadRequest,
-    notification_service: NotificationService = Depends(get_notification_service),
-    current_user: User = Depends(get_current_user),
-) -> MessageResponse:
-    count = await notification_service.mark_read(
-        user_id=current_user.id,
-        notification_ids=body.notification_ids,
-        mark_all=body.mark_all,
-    )
-    return MessageResponse(message=f"Marked {count} notification(s) as read")
+from typing import Optionalfrom fastapi import APIRouter, Depends, Query, statusfrom app.api.dependencies import get_current_user, get_notification_servicefrom app.models.user import Userfrom app.schemas.notification import (    NotificationListResponse,    MarkNotificationsReadRequest,    UnreadCountResponse,)from app.schemas.base import MessageResponsefrom app.services.notification import NotificationServicerouter = APIRouter()@router.get(    "/unread-count",    response_model=UnreadCountResponse,    status_code=status.HTTP_200_OK,    summary="Get unread notification count for the current user",)async def get_unread_count(    notification_service: NotificationService = Depends(get_notification_service),    current_user: User = Depends(get_current_user),) -> UnreadCountResponse:    count = await notification_service.get_unread_count(current_user.id)    return UnreadCountResponse(unread_count=count)@router.get(    "/",    response_model=NotificationListResponse,    status_code=status.HTTP_200_OK,    summary="List notifications for the current user",)async def list_notifications(    skip: int = Query(0, ge=0),    limit: int = Query(50, ge=1, le=100),    category: Optional[str] = Query(None),    is_read: Optional[bool] = Query(None),    notification_service: NotificationService = Depends(get_notification_service),    current_user: User = Depends(get_current_user),) -> NotificationListResponse:    items, total, unread = await notification_service.list_notifications(        user_id=current_user.id,        skip=skip,        limit=limit,        category=category,        is_read=is_read,    )    return NotificationListResponse(        items=items,        total=total,        unread_count=unread,        skip=skip,        limit=limit,    )@router.post(    "/read",    response_model=MessageResponse,    status_code=status.HTTP_200_OK,    summary="Mark notifications as read",)async def mark_notifications_read(    body: MarkNotificationsReadRequest,    notification_service: NotificationService = Depends(get_notification_service),    current_user: User = Depends(get_current_user),) -> MessageResponse:    count = await notification_service.mark_read(        user_id=current_user.id,        notification_ids=body.notification_ids,        mark_all=body.mark_all,    )    return MessageResponse(message=f"Marked {count} notification(s) as read")

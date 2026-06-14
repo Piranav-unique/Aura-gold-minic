@@ -55,10 +55,7 @@ class ServerException extends ApiException {
 
 class RateLimitException extends ApiException {
   RateLimitException([String? message])
-    : super(
-        message ?? 'Too many requests. Please try again later.',
-        429,
-      );
+    : super(message ?? 'Too many requests. Please try again later.', 429);
 }
 
 class UnknownApiException extends ApiException {
@@ -67,8 +64,10 @@ class UnknownApiException extends ApiException {
 
 class ApiClient {
   late final Dio _dio;
+  late final Dio _refreshDio;
   final ISecureStorage storageService;
   final VoidCallback? onUnauthorized;
+  bool _isRefreshing = false;
 
   ApiClient({
     required this.storageService,
@@ -78,8 +77,21 @@ class ApiClient {
   }) {
     if (testDio != null) {
       _dio = testDio;
+      _refreshDio = testDio;
     } else {
       final activeConfig = config ?? EnvConfig.active;
+
+      _refreshDio = Dio(
+        BaseOptions(
+          baseUrl: activeConfig.baseUrl,
+          connectTimeout: activeConfig.connectionTimeout,
+          receiveTimeout: activeConfig.receiveTimeout,
+          headers: {
+            _kContentType: 'application/json',
+            _kAccept: 'application/json',
+          },
+        ),
+      );
 
       _dio = Dio(
         BaseOptions(
@@ -117,7 +129,28 @@ class ApiClient {
           }
           return handler.next(options);
         },
-        onError: (DioException error, handler) {
+        onError: (DioException error, handler) async {
+          final statusCode = error.response?.statusCode;
+          final path = error.requestOptions.path;
+          final isAuthPath =
+              path.contains('/auth/login') ||
+              path.contains('/auth/refresh') ||
+              path.contains('/auth/logout');
+
+          if (statusCode == 401 && !isAuthPath) {
+            final refreshed = await _tryRefreshToken();
+            if (refreshed) {
+              try {
+                final token = await storageService.getAccessToken();
+                error.requestOptions.headers[_kAuthorization] = 'Bearer $token';
+                final retryResponse = await _dio.fetch(error.requestOptions);
+                return handler.resolve(retryResponse);
+              } on DioException catch (retryError) {
+                error = retryError;
+              }
+            }
+          }
+
           final appException = _handleDioException(error);
           if (appException is UnauthorizedException) {
             onUnauthorized?.call();
@@ -133,6 +166,40 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  Future<bool> _tryRefreshToken() async {
+    if (_isRefreshing) {
+      return false;
+    }
+    _isRefreshing = true;
+    try {
+      final refreshToken = await storageService.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        return false;
+      }
+
+      final response = await _refreshDio.post<Map<String, dynamic>>(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+      );
+      final data = response.data;
+      if (data == null ||
+          data['access_token'] == null ||
+          data['refresh_token'] == null) {
+        return false;
+      }
+
+      await storageService.saveTokens(
+        accessToken: data['access_token'] as String,
+        refreshToken: data['refresh_token'] as String,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      _isRefreshing = false;
+    }
   }
 
   ApiException _handleDioException(DioException error) {

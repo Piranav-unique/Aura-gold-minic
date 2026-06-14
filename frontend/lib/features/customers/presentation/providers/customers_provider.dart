@@ -10,8 +10,8 @@ class CustomersSearchNotifier extends Notifier<String> {
 
 final customersSearchProvider =
     NotifierProvider<CustomersSearchNotifier, String>(
-  CustomersSearchNotifier.new,
-);
+      CustomersSearchNotifier.new,
+    );
 
 class CustomersTypeFilterNotifier extends Notifier<String?> {
   @override
@@ -21,8 +21,8 @@ class CustomersTypeFilterNotifier extends Notifier<String?> {
 
 final customersTypeFilterProvider =
     NotifierProvider<CustomersTypeFilterNotifier, String?>(
-  CustomersTypeFilterNotifier.new,
-);
+      CustomersTypeFilterNotifier.new,
+    );
 
 class CustomersStatusFilterNotifier extends Notifier<String?> {
   @override
@@ -32,8 +32,8 @@ class CustomersStatusFilterNotifier extends Notifier<String?> {
 
 final customersStatusFilterProvider =
     NotifierProvider<CustomersStatusFilterNotifier, String?>(
-  CustomersStatusFilterNotifier.new,
-);
+      CustomersStatusFilterNotifier.new,
+    );
 
 class CustomersSortFieldNotifier extends Notifier<String> {
   @override
@@ -43,8 +43,8 @@ class CustomersSortFieldNotifier extends Notifier<String> {
 
 final customersSortFieldProvider =
     NotifierProvider<CustomersSortFieldNotifier, String>(
-  CustomersSortFieldNotifier.new,
-);
+      CustomersSortFieldNotifier.new,
+    );
 
 class CustomersSortAscNotifier extends Notifier<bool> {
   @override
@@ -54,8 +54,8 @@ class CustomersSortAscNotifier extends Notifier<bool> {
 
 final customersSortAscProvider =
     NotifierProvider<CustomersSortAscNotifier, bool>(
-  CustomersSortAscNotifier.new,
-);
+      CustomersSortAscNotifier.new,
+    );
 
 class CustomersSkipNotifier extends Notifier<int> {
   @override
@@ -63,8 +63,9 @@ class CustomersSkipNotifier extends Notifier<int> {
   void update(int value) => state = value;
 }
 
-final customersSkipProvider =
-    NotifierProvider<CustomersSkipNotifier, int>(CustomersSkipNotifier.new);
+final customersSkipProvider = NotifierProvider<CustomersSkipNotifier, int>(
+  CustomersSkipNotifier.new,
+);
 
 class CustomersLimitNotifier extends Notifier<int> {
   @override
@@ -72,18 +73,19 @@ class CustomersLimitNotifier extends Notifier<int> {
   void update(int value) => state = value;
 }
 
-final customersLimitProvider =
-    NotifierProvider<CustomersLimitNotifier, int>(CustomersLimitNotifier.new);
+final customersLimitProvider = NotifierProvider<CustomersLimitNotifier, int>(
+  CustomersLimitNotifier.new,
+);
 
-final customersListProvider =
-    FutureProvider.autoDispose<PaginatedCustomers>((ref) async {
+final customersListProvider = FutureProvider.autoDispose<PaginatedCustomers>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   final search = ref.watch(customersSearchProvider);
   final customerType = ref.watch(customersTypeFilterProvider);
   final status = ref.watch(customersStatusFilterProvider);
   final sortBy = ref.watch(customersSortFieldProvider);
-  final sortOrder =
-      ref.watch(customersSortAscProvider) ? 'asc' : 'desc';
+  final sortOrder = ref.watch(customersSortAscProvider) ? 'asc' : 'desc';
   final skip = ref.watch(customersSkipProvider);
   final limit = ref.watch(customersLimitProvider);
 
@@ -97,20 +99,20 @@ final customersListProvider =
   if (customerType != null) params['customer_type'] = customerType;
   if (status != null) params['status'] = status;
 
-  final response =
-      await apiClient.get('/customers/', queryParameters: params);
+  final response = await apiClient.get('/customers/', queryParameters: params);
   return PaginatedCustomers.fromJson(response.data as Map<String, dynamic>);
 });
 
-final customerDetailProvider =
-    FutureProvider.autoDispose.family<Customer, String>((ref, id) async {
-  final apiClient = ref.watch(apiClientProvider);
-  final response = await apiClient.get('/customers/$id');
-  return Customer.fromJson(response.data as Map<String, dynamic>);
-});
+final customerDetailProvider = FutureProvider.autoDispose
+    .family<Customer, String>((ref, id) async {
+      final apiClient = ref.watch(apiClientProvider);
+      final response = await apiClient.get('/customers/$id');
+      return Customer.fromJson(response.data as Map<String, dynamic>);
+    });
 
-final createCustomerProvider =
-    Provider<Future<Customer> Function(Customer)>((ref) {
+final createCustomerProvider = Provider<Future<Customer> Function(Customer)>((
+  ref,
+) {
   return (Customer customer) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.post(
@@ -122,8 +124,9 @@ final createCustomerProvider =
   };
 });
 
-final updateCustomerProvider =
-    Provider<Future<Customer> Function(Customer)>((ref) {
+final updateCustomerProvider = Provider<Future<Customer> Function(Customer)>((
+  ref,
+) {
   return (Customer customer) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.put(
@@ -136,8 +139,7 @@ final updateCustomerProvider =
   };
 });
 
-final deleteCustomerProvider =
-    Provider<Future<void> Function(String)>((ref) {
+final deleteCustomerProvider = Provider<Future<void> Function(String)>((ref) {
   return (String id) async {
     final apiClient = ref.read(apiClientProvider);
     await apiClient.delete('/customers/$id');

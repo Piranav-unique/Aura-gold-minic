@@ -1,123 +1,1 @@
-import uuid
-from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import StreamingResponse
-
-from app.api.dependencies import get_current_user, get_audit_service
-from app.core.authorization import require_permission
-from app.core import audit_actions
-from app.core.exceptions import NotFoundException
-from app.models.user import User
-from app.schemas.audit_log import AuditLogResponse
-from app.schemas.pagination import PaginatedResponse
-from app.services.audit import AuditService
-
-router = APIRouter()
-
-
-@router.get(
-    "/export",
-    status_code=status.HTTP_200_OK,
-    summary="Export audit logs as CSV",
-)
-@require_permission("audit.view")
-async def export_audit_logs(
-    user_id: Optional[uuid.UUID] = Query(None),
-    action: Optional[str] = Query(None),
-    entity_type: Optional[str] = Query(None),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-    search: Optional[str] = Query(None),
-    audit_service: AuditService = Depends(get_audit_service),
-    current_user: User = Depends(get_current_user),
-) -> StreamingResponse:
-    """Export filtered audit logs as a CSV file."""
-    csv_content, total, truncated = await audit_service.export_audit_logs_csv(
-        user_id=user_id,
-        action=action,
-        entity_type=entity_type,
-        start_date=start_date,
-        end_date=end_date,
-        search=search,
-    )
-
-    await audit_service.log_action(
-        user_id=current_user.id,
-        action=audit_actions.AUDIT_EXPORT,
-        entity_type="AuditLog",
-        metadata={
-            "total_rows": total,
-            "exported_rows": total if not truncated else "truncated",
-            "truncated": truncated,
-        },
-    )
-
-    headers = {
-        "Content-Disposition": "attachment; filename=audit_logs.csv",
-        "X-Export-Total": str(total),
-        "X-Export-Truncated": "true" if truncated else "false",
-    }
-    return StreamingResponse(
-        iter([csv_content]),
-        media_type="text/csv",
-        headers=headers,
-    )
-
-
-@router.get(
-    "/{log_id}",
-    response_model=AuditLogResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Retrieve a single audit log by ID and timestamp",
-)
-@require_permission("audit.view")
-async def get_audit_log(
-    log_id: uuid.UUID,
-    timestamp: datetime = Query(..., description="Timestamp of the audit log entry"),
-    audit_service: AuditService = Depends(get_audit_service),
-    current_user: User = Depends(get_current_user),
-) -> AuditLogResponse:
-    """Retrieve a single audit log. Requires timestamp due to composite primary key."""
-    log = await audit_service.get_audit_log(log_id, timestamp)
-    if not log:
-        raise NotFoundException("Audit log not found")
-    return log
-
-
-@router.get(
-    "/",
-    response_model=PaginatedResponse[AuditLogResponse],
-    status_code=status.HTTP_200_OK,
-    summary="Retrieve audit logs with pagination and filtering",
-)
-@require_permission("audit.view")
-async def list_audit_logs(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    user_id: Optional[uuid.UUID] = Query(None),
-    action: Optional[str] = Query(None),
-    entity_type: Optional[str] = Query(None),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
-    search: Optional[str] = Query(None),
-    audit_service: AuditService = Depends(get_audit_service),
-    current_user: User = Depends(get_current_user),
-) -> PaginatedResponse[AuditLogResponse]:
-    """Retrieve audit logs matching search parameters."""
-    items, total = await audit_service.list_audit_logs(
-        skip=skip,
-        limit=limit,
-        user_id=user_id,
-        action=action,
-        entity_type=entity_type,
-        start_date=start_date,
-        end_date=end_date,
-        search=search,
-    )
-    return PaginatedResponse(
-        items=items,
-        total=total,
-        skip=skip,
-        limit=limit,
-    )
+import uuidfrom datetime import datetimefrom typing import Optionalfrom fastapi import APIRouter, Depends, Query, statusfrom fastapi.responses import StreamingResponsefrom app.api.dependencies import get_current_user, get_audit_servicefrom app.core.authorization import require_permissionfrom app.core import audit_actionsfrom app.core.exceptions import NotFoundExceptionfrom app.models.user import Userfrom app.schemas.audit_log import AuditLogResponsefrom app.schemas.pagination import PaginatedResponsefrom app.services.audit import AuditServicerouter = APIRouter()@router.get(    "/export",    status_code=status.HTTP_200_OK,    summary="Export audit logs as CSV",)@require_permission("audit.view")async def export_audit_logs(    user_id: Optional[uuid.UUID] = Query(None),    action: Optional[str] = Query(None),    entity_type: Optional[str] = Query(None),    start_date: Optional[datetime] = Query(None),    end_date: Optional[datetime] = Query(None),    search: Optional[str] = Query(None),    audit_service: AuditService = Depends(get_audit_service),    current_user: User = Depends(get_current_user),) -> StreamingResponse:    """Export filtered audit logs as a CSV file."""    csv_content, total, truncated = await audit_service.export_audit_logs_csv(        user_id=user_id,        action=action,        entity_type=entity_type,        start_date=start_date,        end_date=end_date,        search=search,    )    await audit_service.log_action(        user_id=current_user.id,        action=audit_actions.AUDIT_EXPORT,        entity_type="AuditLog",        metadata={            "total_rows": total,            "exported_rows": total if not truncated else "truncated",            "truncated": truncated,        },    )    headers = {        "Content-Disposition": "attachment; filename=audit_logs.csv",        "X-Export-Total": str(total),        "X-Export-Truncated": "true" if truncated else "false",    }    return StreamingResponse(        iter([csv_content]),        media_type="text/csv",        headers=headers,    )@router.get(    "/{log_id}",    response_model=AuditLogResponse,    status_code=status.HTTP_200_OK,    summary="Retrieve a single audit log by ID and timestamp",)@require_permission("audit.view")async def get_audit_log(    log_id: uuid.UUID,    timestamp: datetime = Query(..., description="Timestamp of the audit log entry"),    audit_service: AuditService = Depends(get_audit_service),    current_user: User = Depends(get_current_user),) -> AuditLogResponse:    """Retrieve a single audit log. Requires timestamp due to composite primary key."""    log = await audit_service.get_audit_log(log_id, timestamp)    if not log:        raise NotFoundException("Audit log not found")    return log@router.get(    "/",    response_model=PaginatedResponse[AuditLogResponse],    status_code=status.HTTP_200_OK,    summary="Retrieve audit logs with pagination and filtering",)@require_permission("audit.view")async def list_audit_logs(    skip: int = Query(0, ge=0),    limit: int = Query(100, ge=1, le=100),    user_id: Optional[uuid.UUID] = Query(None),    action: Optional[str] = Query(None),    entity_type: Optional[str] = Query(None),    start_date: Optional[datetime] = Query(None),    end_date: Optional[datetime] = Query(None),    search: Optional[str] = Query(None),    audit_service: AuditService = Depends(get_audit_service),    current_user: User = Depends(get_current_user),) -> PaginatedResponse[AuditLogResponse]:    """Retrieve audit logs matching search parameters."""    items, total = await audit_service.list_audit_logs(        skip=skip,        limit=limit,        user_id=user_id,        action=action,        entity_type=entity_type,        start_date=start_date,        end_date=end_date,        search=search,    )    return PaginatedResponse(        items=items,        total=total,        skip=skip,        limit=limit,    )

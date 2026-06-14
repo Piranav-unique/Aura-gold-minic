@@ -14,9 +14,7 @@ import '../mocks/mock_services.dart';
 Widget buildWithProviders(Widget child, {List<dynamic> overrides = const []}) {
   return ProviderScope(
     overrides: overrides.cast(),
-    child: MaterialApp(
-      home: Scaffold(body: child),
-    ),
+    child: MaterialApp(home: Scaffold(body: child)),
   );
 }
 
@@ -29,7 +27,9 @@ void main() {
   });
 
   group('UserFormDialog - Create Mode', () {
-    testWidgets('renders create form with required fields', (WidgetTester tester) async {
+    testWidgets('renders create form with required fields', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -41,7 +41,11 @@ void main() {
             apiClientProvider.overrideWithValue(mockApi),
             rolesListProvider.overrideWithValue(
               const AsyncValue.data([
-                {'id': 'r1', 'name': 'Operator', 'description': 'Operator role'}
+                {
+                  'id': 'r1',
+                  'name': 'Operator',
+                  'description': 'Operator role',
+                },
               ]),
             ),
           ],
@@ -58,7 +62,9 @@ void main() {
       expect(find.text('OPERATOR'), findsOneWidget); // role chip
     });
 
-    testWidgets('shows validation errors when form is submitted empty', (WidgetTester tester) async {
+    testWidgets('shows validation errors when form is submitted empty', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -83,15 +89,18 @@ void main() {
       expect(find.text('Password is required'), findsOneWidget);
     });
 
-    testWidgets('successfully creates user and dismisses dialog', (WidgetTester tester) async {
+    testWidgets('successfully creates user and dismisses dialog', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       final mockResp = MockResponse<dynamic>();
       when(() => mockResp.data).thenReturn({'id': 'new-u1'});
-      when(() => mockApi.post('/users/', data: any(named: 'data')))
-          .thenAnswer((_) async => mockResp);
+      when(
+        () => mockApi.post('/users/', data: any(named: 'data')),
+      ).thenAnswer((_) async => mockResp);
 
       await tester.pumpWidget(
         buildWithProviders(
@@ -122,7 +131,9 @@ void main() {
   });
 
   group('UserFormDialog - Edit Mode', () {
-    testWidgets('pre-fills form fields from user data', (WidgetTester tester) async {
+    testWidgets('pre-fills form fields from user data', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -149,7 +160,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Edit Operator Profile'), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'existing@example.com'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextFormField, 'existing@example.com'),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(TextFormField, 'Existing'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, 'User'), findsOneWidget);
     });
@@ -161,8 +175,9 @@ void main() {
 
       final mockResp = MockResponse<dynamic>();
       when(() => mockResp.data).thenReturn({'id': 'u1'});
-      when(() => mockApi.put(any(), data: any(named: 'data')))
-          .thenAnswer((_) async => mockResp);
+      when(
+        () => mockApi.put(any(), data: any(named: 'data')),
+      ).thenAnswer((_) async => mockResp);
 
       const existingUser = {
         'id': 'u1',
@@ -189,7 +204,9 @@ void main() {
       await tester.tap(saveBtn);
       await tester.pumpAndSettle();
 
-      verify(() => mockApi.put('/users/u1', data: any(named: 'data'))).called(1);
+      verify(
+        () => mockApi.put('/users/u1', data: any(named: 'data')),
+      ).called(1);
     });
   });
 
@@ -212,7 +229,9 @@ void main() {
       expect(find.text('Description'), findsOneWidget);
     });
 
-    testWidgets('shows validation errors when submitted empty', (WidgetTester tester) async {
+    testWidgets('shows validation errors when submitted empty', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 700);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -233,15 +252,18 @@ void main() {
       expect(find.text('Description is required'), findsOneWidget);
     });
 
-    testWidgets('successfully creates permission and dismisses', (WidgetTester tester) async {
+    testWidgets('successfully creates permission and dismisses', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 700);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       final mockResp = MockResponse<dynamic>();
       when(() => mockResp.data).thenReturn({'id': 'p1'});
-      when(() => mockApi.post('/rbac/permissions', data: any(named: 'data')))
-          .thenAnswer((_) async => mockResp);
+      when(
+        () => mockApi.post('/rbac/permissions', data: any(named: 'data')),
+      ).thenAnswer((_) async => mockResp);
 
       await tester.pumpWidget(
         buildWithProviders(
@@ -264,7 +286,9 @@ void main() {
       await tester.tap(saveBtn);
       await tester.pumpAndSettle();
 
-      verify(() => mockApi.post('/rbac/permissions', data: any(named: 'data'))).called(1);
+      verify(
+        () => mockApi.post('/rbac/permissions', data: any(named: 'data')),
+      ).called(1);
     });
   });
 
@@ -281,7 +305,7 @@ void main() {
             apiClientProvider.overrideWithValue(mockApi),
             permissionsListProvider.overrideWithValue(
               const AsyncValue.data([
-                {'id': 'p1', 'name': 'users.read', 'description': 'Read users'}
+                {'id': 'p1', 'name': 'users.read', 'description': 'Read users'},
               ]),
             ),
           ],
@@ -294,7 +318,9 @@ void main() {
       expect(find.text('Map Permissions'), findsOneWidget);
     });
 
-    testWidgets('shows validation errors when name is empty', (WidgetTester tester) async {
+    testWidgets('shows validation errors when name is empty', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1000, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -304,7 +330,9 @@ void main() {
           const RoleFormDialog(),
           overrides: [
             apiClientProvider.overrideWithValue(mockApi),
-            permissionsListProvider.overrideWithValue(const AsyncValue.data([])),
+            permissionsListProvider.overrideWithValue(
+              const AsyncValue.data([]),
+            ),
           ],
         ),
       );
@@ -317,17 +345,24 @@ void main() {
       expect(find.text('Role Name is required'), findsOneWidget);
     });
 
-    testWidgets('successfully creates role with permissions', (WidgetTester tester) async {
+    testWidgets('successfully creates role with permissions', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1000, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       final mockRoleResp = MockResponse<dynamic>();
-      when(() => mockRoleResp.data).thenReturn({'id': 'new-r1', 'name': 'custom_role'});
-      when(() => mockApi.post('/rbac/roles', data: any(named: 'data')))
-          .thenAnswer((_) async => mockRoleResp);
-      when(() => mockApi.post(any(), queryParameters: any(named: 'queryParameters')))
-          .thenAnswer((_) async => MockResponse<dynamic>());
+      when(
+        () => mockRoleResp.data,
+      ).thenReturn({'id': 'new-r1', 'name': 'custom_role'});
+      when(
+        () => mockApi.post('/rbac/roles', data: any(named: 'data')),
+      ).thenAnswer((_) async => mockRoleResp);
+      when(
+        () =>
+            mockApi.post(any(), queryParameters: any(named: 'queryParameters')),
+      ).thenAnswer((_) async => MockResponse<dynamic>());
 
       await tester.pumpWidget(
         buildWithProviders(
@@ -336,7 +371,7 @@ void main() {
             apiClientProvider.overrideWithValue(mockApi),
             permissionsListProvider.overrideWithValue(
               const AsyncValue.data([
-                {'id': 'p1', 'name': 'users.read', 'description': 'Read users'}
+                {'id': 'p1', 'name': 'users.read', 'description': 'Read users'},
               ]),
             ),
           ],
@@ -363,34 +398,45 @@ void main() {
       await tester.tap(saveBtn);
       await tester.pumpAndSettle();
 
-      verify(() => mockApi.post('/rbac/roles', data: {
-            'name': 'new_test_role',
-            'description': 'Custom description',
-          })).called(1);
+      verify(
+        () => mockApi.post(
+          '/rbac/roles',
+          data: {'name': 'new_test_role', 'description': 'Custom description'},
+        ),
+      ).called(1);
 
-      verify(() => mockApi.post('/rbac/roles/new-r1/permissions', queryParameters: {'permission_id': 'p1'})).called(1);
+      verify(
+        () => mockApi.post(
+          '/rbac/roles/new-r1/permissions',
+          queryParameters: {'permission_id': 'p1'},
+        ),
+      ).called(1);
     });
 
-    testWidgets('successfully edits role and syncs permissions', (WidgetTester tester) async {
+    testWidgets('successfully edits role and syncs permissions', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1000, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       final mockResp = MockResponse<dynamic>();
       when(() => mockResp.data).thenReturn({'id': 'r1'});
-      when(() => mockApi.put(any(), data: any(named: 'data')))
-          .thenAnswer((_) async => mockResp);
-      when(() => mockApi.post(any(), queryParameters: any(named: 'queryParameters')))
-          .thenAnswer((_) async => mockResp);
-      when(() => mockApi.delete(any()))
-          .thenAnswer((_) async => mockResp);
+      when(
+        () => mockApi.put(any(), data: any(named: 'data')),
+      ).thenAnswer((_) async => mockResp);
+      when(
+        () =>
+            mockApi.post(any(), queryParameters: any(named: 'queryParameters')),
+      ).thenAnswer((_) async => mockResp);
+      when(() => mockApi.delete(any())).thenAnswer((_) async => mockResp);
 
       const existingRole = {
         'id': 'r1',
         'name': 'operator',
         'description': 'Operator role',
         'permissions': [
-          {'id': 'p1', 'name': 'users.read'}
+          {'id': 'p1', 'name': 'users.read'},
         ],
       };
 
@@ -402,7 +448,11 @@ void main() {
             permissionsListProvider.overrideWithValue(
               const AsyncValue.data([
                 {'id': 'p1', 'name': 'users.read', 'description': 'Read users'},
-                {'id': 'p2', 'name': 'users.write', 'description': 'Write users'}
+                {
+                  'id': 'p2',
+                  'name': 'users.write',
+                  'description': 'Write users',
+                },
               ]),
             ),
           ],
@@ -426,13 +476,20 @@ void main() {
       await tester.tap(saveBtn);
       await tester.pumpAndSettle();
 
-      verify(() => mockApi.put('/rbac/roles/r1', data: {
-            'name': 'operator',
-            'description': 'Operator role',
-          })).called(1);
+      verify(
+        () => mockApi.put(
+          '/rbac/roles/r1',
+          data: {'name': 'operator', 'description': 'Operator role'},
+        ),
+      ).called(1);
 
       // Should have posted p2 and deleted p1
-      verify(() => mockApi.post('/rbac/roles/r1/permissions', queryParameters: {'permission_id': 'p2'})).called(1);
+      verify(
+        () => mockApi.post(
+          '/rbac/roles/r1/permissions',
+          queryParameters: {'permission_id': 'p2'},
+        ),
+      ).called(1);
       verify(() => mockApi.delete('/rbac/roles/r1/permissions/p1')).called(1);
     });
   });

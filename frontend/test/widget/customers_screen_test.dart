@@ -36,7 +36,9 @@ void main() {
     'updated_at': '2026-06-08T10:00:00Z',
   });
 
-  testWidgets('CustomersScreen shows customer list', (WidgetTester tester) async {
+  testWidgets('CustomersScreen shows customer list', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -68,7 +70,9 @@ void main() {
               ),
             ),
           ),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -107,7 +111,9 @@ void main() {
               PaginatedCustomers(items: [], total: 0, skip: 0, limit: 25),
             ),
           ),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

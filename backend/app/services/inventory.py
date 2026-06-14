@@ -460,13 +460,14 @@ class InventoryService:
         now = time.monotonic()
         if (
             _metrics_cache is not None
-            and (now - _metrics_cache[0])
-            < settings.INVENTORY_METRICS_CACHE_TTL_SECONDS
+            and (now - _metrics_cache[0]) < settings.INVENTORY_METRICS_CACHE_TTL_SECONDS
         ):
             return _metrics_cache[1]
 
         metrics = await self.inventory_repo.get_metrics()
-        low_stock_items = await self.inventory_repo.list_low_stock(limit=low_stock_limit)
+        low_stock_items = await self.inventory_repo.list_low_stock(
+            limit=low_stock_limit
+        )
         result = InventoryMetricsResponse(
             total_stock=metrics["total_stock"],
             inventory_value=metrics["inventory_value"],

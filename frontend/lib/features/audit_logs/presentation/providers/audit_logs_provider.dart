@@ -30,8 +30,8 @@ class AuditLogsSearchNotifier extends Notifier<String> {
 
 final auditLogsSearchProvider =
     NotifierProvider<AuditLogsSearchNotifier, String>(
-  AuditLogsSearchNotifier.new,
-);
+      AuditLogsSearchNotifier.new,
+    );
 
 class AuditLogsActionFilterNotifier extends Notifier<String?> {
   @override
@@ -41,8 +41,8 @@ class AuditLogsActionFilterNotifier extends Notifier<String?> {
 
 final auditLogsActionFilterProvider =
     NotifierProvider<AuditLogsActionFilterNotifier, String?>(
-  AuditLogsActionFilterNotifier.new,
-);
+      AuditLogsActionFilterNotifier.new,
+    );
 
 class AuditLogsEntityFilterNotifier extends Notifier<String?> {
   @override
@@ -52,8 +52,8 @@ class AuditLogsEntityFilterNotifier extends Notifier<String?> {
 
 final auditLogsEntityFilterProvider =
     NotifierProvider<AuditLogsEntityFilterNotifier, String?>(
-  AuditLogsEntityFilterNotifier.new,
-);
+      AuditLogsEntityFilterNotifier.new,
+    );
 
 class AuditDateRange {
   final DateTime start;
@@ -69,8 +69,8 @@ class AuditLogsDateRangeNotifier extends Notifier<AuditDateRange?> {
 
 final auditLogsDateRangeProvider =
     NotifierProvider<AuditLogsDateRangeNotifier, AuditDateRange?>(
-  AuditLogsDateRangeNotifier.new,
-);
+      AuditLogsDateRangeNotifier.new,
+    );
 
 class AuditLogsSortNotifier extends Notifier<int> {
   @override
@@ -78,8 +78,9 @@ class AuditLogsSortNotifier extends Notifier<int> {
   void update(int value) => state = value;
 }
 
-final auditLogsSortProvider =
-    NotifierProvider<AuditLogsSortNotifier, int>(AuditLogsSortNotifier.new);
+final auditLogsSortProvider = NotifierProvider<AuditLogsSortNotifier, int>(
+  AuditLogsSortNotifier.new,
+);
 
 class AuditLogsSortAscNotifier extends Notifier<bool> {
   @override
@@ -89,8 +90,8 @@ class AuditLogsSortAscNotifier extends Notifier<bool> {
 
 final auditLogsSortAscProvider =
     NotifierProvider<AuditLogsSortAscNotifier, bool>(
-  AuditLogsSortAscNotifier.new,
-);
+      AuditLogsSortAscNotifier.new,
+    );
 
 class AuditLogsSkipNotifier extends Notifier<int> {
   @override
@@ -98,8 +99,9 @@ class AuditLogsSkipNotifier extends Notifier<int> {
   void update(int value) => state = value;
 }
 
-final auditLogsSkipProvider =
-    NotifierProvider<AuditLogsSkipNotifier, int>(AuditLogsSkipNotifier.new);
+final auditLogsSkipProvider = NotifierProvider<AuditLogsSkipNotifier, int>(
+  AuditLogsSkipNotifier.new,
+);
 
 class AuditLogsLimitNotifier extends Notifier<int> {
   @override
@@ -107,8 +109,9 @@ class AuditLogsLimitNotifier extends Notifier<int> {
   void update(int value) => state = value;
 }
 
-final auditLogsLimitProvider =
-    NotifierProvider<AuditLogsLimitNotifier, int>(AuditLogsLimitNotifier.new);
+final auditLogsLimitProvider = NotifierProvider<AuditLogsLimitNotifier, int>(
+  AuditLogsLimitNotifier.new,
+);
 
 class AuditLogsTimelineViewNotifier extends Notifier<bool> {
   @override
@@ -118,11 +121,12 @@ class AuditLogsTimelineViewNotifier extends Notifier<bool> {
 
 final auditLogsTimelineViewProvider =
     NotifierProvider<AuditLogsTimelineViewNotifier, bool>(
-  AuditLogsTimelineViewNotifier.new,
-);
+      AuditLogsTimelineViewNotifier.new,
+    );
 
-final auditLogsListProvider =
-    FutureProvider.autoDispose<PaginatedAuditLogs>((ref) async {
+final auditLogsListProvider = FutureProvider.autoDispose<PaginatedAuditLogs>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   final search = ref.watch(auditLogsSearchProvider);
   final action = ref.watch(auditLogsActionFilterProvider);

@@ -18,7 +18,9 @@ void main() {
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
   });
 
-  testWidgets('E2E user management: create -> update -> delete', (tester) async {
+  testWidgets('E2E user management: create -> update -> delete', (
+    tester,
+  ) async {
     final users = <Map<String, dynamic>>[];
 
     when(
@@ -30,12 +32,15 @@ void main() {
       ),
     ).thenAnswer((_) async {
       final response = MockResponse<List<dynamic>>();
-      when(() => response.data).thenReturn(List<Map<String, dynamic>>.from(users));
+      when(
+        () => response.data,
+      ).thenReturn(List<Map<String, dynamic>>.from(users));
       return response;
     });
 
-    when(() => mockApi.post('/users/', data: any(named: 'data')))
-        .thenAnswer((invocation) async {
+    when(() => mockApi.post('/users/', data: any(named: 'data'))).thenAnswer((
+      invocation,
+    ) async {
       final data = invocation.namedArguments[#data] as Map<String, dynamic>;
       final created = {
         'id': 'u-new-1',
@@ -52,8 +57,9 @@ void main() {
       return response;
     });
 
-    when(() => mockApi.put('/users/u-new-1', data: any(named: 'data')))
-        .thenAnswer((invocation) async {
+    when(
+      () => mockApi.put('/users/u-new-1', data: any(named: 'data')),
+    ).thenAnswer((invocation) async {
       final data = invocation.namedArguments[#data] as Map<String, dynamic>;
       users[0] = {...users[0], ...data};
       final response = MockResponse<Map<String, dynamic>>();
@@ -132,7 +138,9 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
-    verify(() => mockApi.put('/users/u-new-1', data: any(named: 'data'))).called(1);
+    verify(
+      () => mockApi.put('/users/u-new-1', data: any(named: 'data')),
+    ).called(1);
 
     await tester.tap(find.byIcon(Icons.delete).first);
     await tester.pumpAndSettle();

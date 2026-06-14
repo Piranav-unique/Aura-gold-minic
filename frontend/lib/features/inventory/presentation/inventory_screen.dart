@@ -154,7 +154,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               label: const Text('Low stock only'),
               selected: ref.watch(inventoryLowStockFilterProvider),
               onSelected: (selected) {
-                ref.read(inventoryLowStockFilterProvider.notifier).update(selected);
+                ref
+                    .read(inventoryLowStockFilterProvider.notifier)
+                    .update(selected);
                 ref.read(inventorySkipProvider.notifier).update(0);
               },
             ),
@@ -168,8 +170,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                       title: 'No inventory items',
                       subtitle: 'Add gold inventory items to track stock.',
                       actionLabel: canCreate ? 'New Item' : null,
-                      onAction:
-                          canCreate ? () => context.go('/inventory/new') : null,
+                      onAction: canCreate
+                          ? () => context.go('/inventory/new')
+                          : null,
                     );
                   }
 
@@ -180,7 +183,11 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         if (index == page.items.length) {
                           return _buildPagination(page);
                         }
-                        return _buildMobileCard(page.items[index], currency, canUpdate);
+                        return _buildMobileCard(
+                          page.items[index],
+                          currency,
+                          canUpdate,
+                        );
                       },
                     );
                   }
@@ -266,8 +273,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     );
   }
 
-  Widget _metricCard(String label, String value, IconData icon,
-      {bool highlight = false}) {
+  Widget _metricCard(
+    String label,
+    String value,
+    IconData icon, {
+    bool highlight = false,
+  }) {
     return Expanded(
       child: Card(
         color: highlight ? Colors.orange.withValues(alpha: 0.08) : null,
@@ -281,9 +292,13 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label, style: const TextStyle(fontSize: 12)),
-                  Text(value,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -310,19 +325,17 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final color = item.isLowStock ? Colors.orange : null;
     return Text(
       '${item.stockQuantity}',
-      style: TextStyle(
-        fontWeight: FontWeight.bold,
-        color: color,
-      ),
+      style: TextStyle(fontWeight: FontWeight.bold, color: color),
     );
   }
 
   Widget _statusChip(InventoryItem item) {
     return Chip(
-      label: Text(item.displayStatus,
-          style: const TextStyle(fontSize: 12, color: Colors.white)),
-      backgroundColor:
-          item.status == 'active' ? Colors.green : Colors.orange,
+      label: Text(
+        item.displayStatus,
+        style: const TextStyle(fontSize: 12, color: Colors.white),
+      ),
+      backgroundColor: item.status == 'active' ? Colors.green : Colors.orange,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
     );
@@ -346,12 +359,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   }
 
   Widget _buildMobileCard(
-      InventoryItem item, NumberFormat currency, bool canUpdate) {
+    InventoryItem item,
+    NumberFormat currency,
+    bool canUpdate,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         onTap: () => context.go('/inventory/${item.id}'),
-        title: Text(item.itemName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          item.itemName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(
           '${item.displayCategory} • Stock: ${item.stockQuantity} • ${currency.format(item.currentValue)}',
         ),
@@ -373,22 +392,24 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Showing ${skip + 1}-${skip + page.items.length} of ${page.total}'),
+          Text(
+            'Showing ${skip + 1}-${skip + page.items.length} of ${page.total}',
+          ),
           Row(
             children: [
               IconButton(
                 onPressed: canPrev
                     ? () => ref
-                        .read(inventorySkipProvider.notifier)
-                        .update(skip - limit)
+                          .read(inventorySkipProvider.notifier)
+                          .update(skip - limit)
                     : null,
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
                 onPressed: canNext
                     ? () => ref
-                        .read(inventorySkipProvider.notifier)
-                        .update(skip + limit)
+                          .read(inventorySkipProvider.notifier)
+                          .update(skip + limit)
                     : null,
                 icon: const Icon(Icons.chevron_right),
               ),

@@ -59,12 +59,12 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final newStatus = !currentStatus;
 
     try {
-      await apiClient.put('/users/$id', data: {
-        'is_active': newStatus,
-      });
+      await apiClient.put('/users/$id', data: {'is_active': newStatus});
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('User status updated to ${newStatus ? 'Active' : 'Inactive'}'),
+          content: Text(
+            'User status updated to ${newStatus ? 'Active' : 'Inactive'}',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -89,7 +89,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete User'),
-        content: Text('Are you sure you want to delete $email? This action is soft-delete and reversible in DB.'),
+        content: Text(
+          'Are you sure you want to delete $email? This action is soft-delete and reversible in DB.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -153,7 +155,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 Expanded(
                   child: Text(
                     'Manage Operators',
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 FilledButton.icon(
@@ -187,14 +191,26 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                                       icon: const Icon(Icons.clear),
                                       onPressed: () {
                                         _searchController.clear();
-                                        ref.read(usersSearchQueryProvider.notifier).state = '';
+                                        ref
+                                                .read(
+                                                  usersSearchQueryProvider
+                                                      .notifier,
+                                                )
+                                                .state =
+                                            '';
                                       },
                                     )
                                   : null,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                             onSubmitted: (val) {
-                              ref.read(usersSearchQueryProvider.notifier).state = val;
+                              ref
+                                      .read(usersSearchQueryProvider.notifier)
+                                      .state =
+                                  val;
                             },
                           ),
                         ),
@@ -207,21 +223,38 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                                 initialValue: roleId,
                                 decoration: const InputDecoration(
                                   labelText: 'Role',
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                 ),
                                 items: [
-                                  const DropdownMenuItem(value: null, child: Text('All Roles')),
-                                  ...rolesList.map((r) => DropdownMenuItem(
-                                        value: r['id'] as String,
-                                        child: Text((r['name'] as String).toUpperCase()),
-                                      )),
+                                  const DropdownMenuItem(
+                                    value: null,
+                                    child: Text('All Roles'),
+                                  ),
+                                  ...rolesList.map(
+                                    (r) => DropdownMenuItem(
+                                      value: r['id'] as String,
+                                      child: Text(
+                                        (r['name'] as String).toUpperCase(),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                                 onChanged: (val) {
-                                  ref.read(usersRoleIdFilterProvider.notifier).state = val;
+                                  ref
+                                          .read(
+                                            usersRoleIdFilterProvider.notifier,
+                                          )
+                                          .state =
+                                      val;
                                 },
                               );
                             },
-                            loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                             error: (err, stack) => const SizedBox(),
                           ),
                         ),
@@ -236,15 +269,32 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                             initialValue: isActive,
                             decoration: const InputDecoration(
                               labelText: 'Active Status',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                             ),
                             items: const [
-                              DropdownMenuItem(value: null, child: Text('All Statuses')),
-                              DropdownMenuItem(value: true, child: Text('Active Only')),
-                              DropdownMenuItem(value: false, child: Text('Inactive Only')),
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text('All Statuses'),
+                              ),
+                              DropdownMenuItem(
+                                value: true,
+                                child: Text('Active Only'),
+                              ),
+                              DropdownMenuItem(
+                                value: false,
+                                child: Text('Inactive Only'),
+                              ),
                             ],
                             onChanged: (val) {
-                              ref.read(usersIsActiveFilterProvider.notifier).state = val;
+                              ref
+                                      .read(
+                                        usersIsActiveFilterProvider.notifier,
+                                      )
+                                      .state =
+                                  val;
                             },
                           ),
                         ),
@@ -254,15 +304,32 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                             initialValue: isSuperuser,
                             decoration: const InputDecoration(
                               labelText: 'Account Level',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                             ),
                             items: const [
-                              DropdownMenuItem(value: null, child: Text('All Levels')),
-                              DropdownMenuItem(value: true, child: Text('Superusers Only')),
-                              DropdownMenuItem(value: false, child: Text('Standard Users Only')),
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text('All Levels'),
+                              ),
+                              DropdownMenuItem(
+                                value: true,
+                                child: Text('Superusers Only'),
+                              ),
+                              DropdownMenuItem(
+                                value: false,
+                                child: Text('Standard Users Only'),
+                              ),
                             ],
                             onChanged: (val) {
-                              ref.read(usersIsSuperuserFilterProvider.notifier).state = val;
+                              ref
+                                      .read(
+                                        usersIsSuperuserFilterProvider.notifier,
+                                      )
+                                      .state =
+                                  val;
                             },
                           ),
                         ),
@@ -288,7 +355,11 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.people_outline, size: 64, color: theme.colorScheme.secondary),
+                                Icon(
+                                  Icons.people_outline,
+                                  size: 64,
+                                  color: theme.colorScheme.secondary,
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No users found matching current filters.',
@@ -296,14 +367,17 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                                 ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       );
                     }
 
-                    return isDesktop ? _buildUserTable(users) : _buildUserCards(users);
+                    return isDesktop
+                        ? _buildUserTable(users)
+                        : _buildUserCards(users);
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => ListView(
                     children: [
                       const SizedBox(height: 64),
@@ -350,7 +424,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
             return DataRow(
               cells: [
-                DataCell(Text('$firstName $lastName'.trim().isNotEmpty ? '$firstName $lastName' : '-')),
+                DataCell(
+                  Text(
+                    '$firstName $lastName'.trim().isNotEmpty
+                        ? '$firstName $lastName'
+                        : '-',
+                  ),
+                ),
                 DataCell(
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -360,7 +440,11 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         const SizedBox(width: 8),
                         Tooltip(
                           message: 'Superuser access',
-                          child: Icon(Icons.security, size: 16, color: theme.colorScheme.primary),
+                          child: Icon(
+                            Icons.security,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                       ],
                     ],
@@ -369,11 +453,19 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 DataCell(
                   Wrap(
                     spacing: 4,
-                    children: roles.map((r) => Chip(
-                          label: Text((r['name'] as String).toUpperCase(), style: const TextStyle(fontSize: 10)),
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        )).toList(),
+                    children: roles
+                        .map(
+                          (r) => Chip(
+                            label: Text(
+                              (r['name'] as String).toUpperCase(),
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            padding: EdgeInsets.zero,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
                 DataCell(
@@ -392,7 +484,11 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         tooltip: 'Edit Operator',
                       ),
                       IconButton(
-                        icon: Icon(Icons.delete, size: 20, color: theme.colorScheme.error),
+                        icon: Icon(
+                          Icons.delete,
+                          size: 20,
+                          color: theme.colorScheme.error,
+                        ),
                         onPressed: () => _deleteUser(userMap),
                         tooltip: 'Delete Operator',
                       ),
@@ -434,7 +530,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       backgroundColor: theme.colorScheme.secondaryContainer,
                       child: Text(
                         firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
-                        style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSecondaryContainer,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -443,8 +541,12 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '$firstName $lastName'.trim().isNotEmpty ? '$firstName $lastName' : 'Unnamed Operator',
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            '$firstName $lastName'.trim().isNotEmpty
+                                ? '$firstName $lastName'
+                                : 'Unnamed Operator',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Text(email, style: theme.textTheme.bodyMedium),
                         ],
@@ -460,25 +562,49 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 if (isSuper) ...[
                   Row(
                     children: [
-                      Icon(Icons.security, size: 16, color: theme.colorScheme.primary),
+                      Icon(
+                        Icons.security,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
                       const SizedBox(width: 4),
-                      Text('Superuser account', style: TextStyle(color: theme.colorScheme.primary, fontSize: 12)),
+                      Text(
+                        'Superuser account',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                 ],
-                const Text('Assigned Roles:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                const Text(
+                  'Assigned Roles:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
                 const SizedBox(height: 4),
                 if (roles.isEmpty)
-                  const Text('No roles assigned', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic))
+                  const Text(
+                    'No roles assigned',
+                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                  )
                 else
                   Wrap(
                     spacing: 4,
-                    children: roles.map((r) => Chip(
-                          label: Text((r['name'] as String).toUpperCase(), style: const TextStyle(fontSize: 10)),
-                          padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        )).toList(),
+                    children: roles
+                        .map(
+                          (r) => Chip(
+                            label: Text(
+                              (r['name'] as String).toUpperCase(),
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                            padding: EdgeInsets.zero,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                        .toList(),
                   ),
                 const Divider(height: 24),
                 Row(
@@ -492,8 +618,15 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                     const SizedBox(width: 12),
                     TextButton.icon(
                       onPressed: () => _deleteUser(userMap),
-                      icon: Icon(Icons.delete, size: 18, color: theme.colorScheme.error),
-                      label: Text('Delete', style: TextStyle(color: theme.colorScheme.error)),
+                      icon: Icon(
+                        Icons.delete,
+                        size: 18,
+                        color: theme.colorScheme.error,
+                      ),
+                      label: Text(
+                        'Delete',
+                        style: TextStyle(color: theme.colorScheme.error),
+                      ),
                     ),
                   ],
                 ),
@@ -619,9 +752,14 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                     decoration: BoxDecoration(
                       color: Colors.redAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.5),
+                      ),
                     ),
-                    child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -635,7 +773,9 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Email is required';
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Email is required';
+                    }
                     if (!val.contains('@')) return 'Please enter a valid email';
                     return null;
                   },
@@ -646,9 +786,13 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: isEdit ? 'Change Password (Optional)' : 'Password',
+                    labelText: isEdit
+                        ? 'Change Password (Optional)'
+                        : 'Password',
                     prefixIcon: const Icon(Icons.lock),
-                    helperText: isEdit ? 'Leave empty to keep existing password' : 'Minimum 8 characters',
+                    helperText: isEdit
+                        ? 'Leave empty to keep existing password'
+                        : 'Minimum 8 characters',
                   ),
                   obscureText: true,
                   validator: (val) {
@@ -690,14 +834,18 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                 // Switches
                 SwitchListTile(
                   title: const Text('Active Account'),
-                  subtitle: const Text('Enable/disable user session authorization'),
+                  subtitle: const Text(
+                    'Enable/disable user session authorization',
+                  ),
                   value: _isActive,
                   onChanged: (val) => setState(() => _isActive = val),
                   contentPadding: EdgeInsets.zero,
                 ),
                 SwitchListTile(
                   title: const Text('Superuser Permissions'),
-                  subtitle: const Text('Grants full database/action security bypasses'),
+                  subtitle: const Text(
+                    'Grants full database/action security bypasses',
+                  ),
                   value: _isSuperuser,
                   onChanged: (val) => setState(() => _isSuperuser = val),
                   contentPadding: EdgeInsets.zero,
@@ -707,14 +855,19 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                 // Roles check list
                 Text(
                   'Assigned Roles',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Divider(height: 16),
 
                 rolesAsync.when(
                   data: (rolesList) {
                     if (rolesList.isEmpty) {
-                      return const Text('No roles found in system database.', style: TextStyle(fontStyle: FontStyle.italic));
+                      return const Text(
+                        'No roles found in system database.',
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      );
                     }
                     return Column(
                       children: rolesList.map((r) {
@@ -746,7 +899,10 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
-                  error: (err, stack) => Text('Failed to load roles: $err', style: const TextStyle(color: Colors.redAccent)),
+                  error: (err, stack) => Text(
+                    'Failed to load roles: $err',
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
                 ),
               ],
             ),
@@ -761,7 +917,14 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
         FilledButton(
           onPressed: _loading ? null : _submit,
           child: _loading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : const Text('Save'),
         ),
       ],

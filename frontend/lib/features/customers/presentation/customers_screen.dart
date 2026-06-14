@@ -155,8 +155,9 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       title: 'No customers found',
                       subtitle: 'Create your first customer to get started.',
                       actionLabel: canCreate ? 'New Customer' : null,
-                      onAction:
-                          canCreate ? () => context.go('/customers/new') : null,
+                      onAction: canCreate
+                          ? () => context.go('/customers/new')
+                          : null,
                     );
                   }
 
@@ -358,16 +359,16 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
               IconButton(
                 onPressed: canPrev
                     ? () => ref
-                        .read(customersSkipProvider.notifier)
-                        .update(skip - limit)
+                          .read(customersSkipProvider.notifier)
+                          .update(skip - limit)
                     : null,
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
                 onPressed: canNext
                     ? () => ref
-                        .read(customersSkipProvider.notifier)
-                        .update(skip + limit)
+                          .read(customersSkipProvider.notifier)
+                          .update(skip + limit)
                     : null,
                 icon: const Icon(Icons.chevron_right),
               ),

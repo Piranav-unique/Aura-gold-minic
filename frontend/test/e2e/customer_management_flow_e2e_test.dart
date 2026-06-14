@@ -18,8 +18,9 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
-  testWidgets('E2E customer management: create -> list -> delete',
-      (WidgetTester tester) async {
+  testWidgets('E2E customer management: create -> list -> delete', (
+    WidgetTester tester,
+  ) async {
     final customers = <Map<String, dynamic>>[];
 
     when(
@@ -40,8 +41,9 @@ void main() {
       return response;
     });
 
-    when(() => mockApi.post('/customers/', data: any(named: 'data')))
-        .thenAnswer((invocation) async {
+    when(
+      () => mockApi.post('/customers/', data: any(named: 'data')),
+    ).thenAnswer((invocation) async {
       final data = invocation.namedArguments[#data] as Map<String, dynamic>;
       final created = {
         'id': 'c-new-1',
@@ -74,7 +76,9 @@ void main() {
     ).thenAnswer((_) async {
       customers.clear();
       final response = MockResponse<Map<String, dynamic>>();
-      when(() => response.data).thenReturn({'message': 'Customer deleted successfully'});
+      when(
+        () => response.data,
+      ).thenReturn({'message': 'Customer deleted successfully'});
       return response;
     });
 
@@ -106,7 +110,9 @@ void main() {
       ProviderScope(
         overrides: [
           apiClientProvider.overrideWithValue(mockApi),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(0)),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(0),
+          ),
           profileProvider.overrideWithValue(
             AsyncValue.data(
               UserProfile(
@@ -149,7 +155,9 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Create Customer'));
     await tester.pumpAndSettle();
 
-    verify(() => mockApi.post('/customers/', data: any(named: 'data'))).called(1);
+    verify(
+      () => mockApi.post('/customers/', data: any(named: 'data')),
+    ).called(1);
     expect(find.text('Detail c-new-1'), findsOneWidget);
   });
 }

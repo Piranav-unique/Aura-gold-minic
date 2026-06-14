@@ -5,6 +5,8 @@ from httpx import AsyncClient
 from unittest.mock import AsyncMock, MagicMock
 
 from app.core.security import create_access_token
+from app.models.permission import Permission
+from app.models.role import Role
 from app.models.user import User
 from app.main import app
 from app.api.dependencies import get_dashboard_service
@@ -13,6 +15,16 @@ from app.api.dependencies import get_dashboard_service
 @pytest.fixture
 def test_user():
     now = datetime.now(timezone.utc)
+    perm = Permission(
+        id=uuid.uuid4(), name="dashboard.view", created_at=now, updated_at=now
+    )
+    role = Role(
+        id=uuid.uuid4(),
+        name="DashboardViewer",
+        permissions=[perm],
+        created_at=now,
+        updated_at=now,
+    )
     return User(
         id=uuid.uuid4(),
         email="user@example.com",
@@ -21,7 +33,7 @@ def test_user():
         is_active=True,
         is_deleted=False,
         is_superuser=False,
-        roles=[],
+        roles=[role],
         created_at=now,
         updated_at=now,
     )

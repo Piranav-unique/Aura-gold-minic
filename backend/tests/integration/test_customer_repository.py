@@ -3,7 +3,6 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.customer import Customer
 from app.repositories.customer import CustomerRepository
 
 pytestmark = pytest.mark.integration

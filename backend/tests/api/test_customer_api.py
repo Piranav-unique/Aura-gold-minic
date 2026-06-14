@@ -215,6 +215,7 @@ async def test_list_customers_api_paginated(
         if call_count == 2:
             return make_mock_result(customers, is_list=True)
         if call_count == 3:
+
             class CountResult:
                 def scalar(self):
                     return 2
@@ -263,9 +264,7 @@ async def test_get_customer_api_details(
 
 
 @pytest.mark.asyncio
-async def test_update_customer_api(
-    client: AsyncClient, db_session, authorized_user
-):
+async def test_update_customer_api(client: AsyncClient, db_session, authorized_user):
     access_token = create_access_token(subject=authorized_user.id)
     target = _sample_customer()
 
@@ -293,9 +292,7 @@ async def test_update_customer_api(
 
 
 @pytest.mark.asyncio
-async def test_delete_customer_api(
-    client: AsyncClient, db_session, authorized_user
-):
+async def test_delete_customer_api(client: AsyncClient, db_session, authorized_user):
     access_token = create_access_token(subject=authorized_user.id)
     target = _sample_customer()
 

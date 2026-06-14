@@ -88,15 +88,20 @@ Future<void> showStockMovementDialog(
                   : () async {
                       final qtyText = quantityController.text.trim();
                       final qty = int.tryParse(qtyText);
-                      if (qty == null || (mode != StockMovementMode.adjust && qty <= 0)) {
+                      if (qty == null ||
+                          (mode != StockMovementMode.adjust && qty <= 0)) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Enter a valid quantity')),
+                          const SnackBar(
+                            content: Text('Enter a valid quantity'),
+                          ),
                         );
                         return;
                       }
                       if (mode == StockMovementMode.adjust && qty < 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Quantity cannot be negative')),
+                          const SnackBar(
+                            content: Text('Quantity cannot be negative'),
+                          ),
                         );
                         return;
                       }
@@ -147,9 +152,9 @@ Future<void> showStockMovementDialog(
                       } catch (e) {
                         setState(() => isLoading = false);
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed: $e')),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Failed: $e')));
                         }
                       }
                     },

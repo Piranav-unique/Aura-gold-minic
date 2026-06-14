@@ -62,9 +62,7 @@ async def list_suppliers(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    return PaginatedResponse(
-        items=items, total=total, skip=skip, limit=limit
-    )
+    return PaginatedResponse(items=items, total=total, skip=skip, limit=limit)
 
 
 @router.get(

@@ -85,7 +85,9 @@ class ProfileScreen extends ConsumerWidget {
                           Column(
                             children: [
                               Chip(
-                                label: Text(user.isActive ? 'ACTIVE' : 'INACTIVE'),
+                                label: Text(
+                                  user.isActive ? 'ACTIVE' : 'INACTIVE',
+                                ),
                                 backgroundColor: user.isActive
                                     ? Colors.green.withValues(alpha: 0.1)
                                     : Colors.red.withValues(alpha: 0.1),
@@ -94,8 +96,11 @@ class ProfileScreen extends ConsumerWidget {
                               Row(
                                 children: [
                                   IconButton(
-                                    onPressed: () =>
-                                        showEditProfileDialog(context, ref, user),
+                                    onPressed: () => showEditProfileDialog(
+                                      context,
+                                      ref,
+                                      user,
+                                    ),
                                     icon: const Icon(Icons.edit_outlined),
                                     tooltip: 'Edit profile',
                                   ),
@@ -169,7 +174,8 @@ class ProfileScreen extends ConsumerWidget {
                             loading: () => const Center(
                               child: CircularProgressIndicator(),
                             ),
-                            error: (e, _) => Text('Failed to load activity: $e'),
+                            error: (e, _) =>
+                                Text('Failed to load activity: $e'),
                           ),
                         ],
                       ),
@@ -236,7 +242,10 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             if (user.roles.isEmpty)
-              const Text('No roles assigned.', style: TextStyle(color: Colors.grey))
+              const Text(
+                'No roles assigned.',
+                style: TextStyle(color: Colors.grey),
+              )
             else
               Wrap(
                 spacing: 8,
@@ -245,7 +254,10 @@ class ProfileScreen extends ConsumerWidget {
                     .map<Widget>(
                       (r) => Chip(
                         label: Text(r.name.toUpperCase()),
-                        avatar: const Icon(Icons.admin_panel_settings, size: 16),
+                        avatar: const Icon(
+                          Icons.admin_panel_settings,
+                          size: 16,
+                        ),
                       ),
                     )
                     .toList(),
@@ -271,8 +283,10 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const Divider(height: 24),
             if (permissions.isEmpty)
-              const Text('No permissions resolved.',
-                  style: TextStyle(color: Colors.grey))
+              const Text(
+                'No permissions resolved.',
+                style: TextStyle(color: Colors.grey),
+              )
             else
               ListView.separated(
                 shrinkWrap: true,
@@ -289,7 +303,10 @@ class ProfileScreen extends ConsumerWidget {
                         size: 20,
                       ),
                       const SizedBox(width: 12),
-                      Text(perm, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        perm,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ],
                   );
                 },
@@ -317,10 +334,7 @@ class _AvatarWidget extends ConsumerWidget {
     return avatarAsync.when(
       data: (bytes) {
         if (bytes != null) {
-          return CircleAvatar(
-            radius: 36,
-            backgroundImage: MemoryImage(bytes),
-          );
+          return CircleAvatar(radius: 36, backgroundImage: MemoryImage(bytes));
         }
         return _initialsAvatar();
       },

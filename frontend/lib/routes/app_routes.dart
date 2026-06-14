@@ -24,6 +24,13 @@ import 'package:ags_gold/features/transactions/presentation/transactions_screen.
 import 'package:ags_gold/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_permission_gate.dart';
+import 'package:ags_gold/features/reports/presentation/reports_screen.dart';
+import 'package:ags_gold/features/reports/presentation/report_permission_gate.dart';
+import 'package:ags_gold/features/workflows/presentation/workflows_screen.dart';
+import 'package:ags_gold/features/workflows/presentation/workflow_detail_screen.dart';
+import 'package:ags_gold/features/workflows/presentation/workflow_form_screen.dart';
+import 'package:ags_gold/features/workflows/presentation/workflow_permission_gate.dart';
+import 'package:ags_gold/core/widgets/permission_gate.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
@@ -70,7 +77,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/dashboard',
-        builder: (context, state) => const DashboardScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'dashboard.view',
+          child: DashboardScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile',
@@ -78,26 +88,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/audit-logs',
-        builder: (context, state) => const AuditLogsScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'audit.view',
+          child: AuditLogsScreen(),
+        ),
       ),
       GoRoute(
         path: '/customers',
-        builder: (context, state) => const CustomersScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'customer.view',
+          child: CustomersScreen(),
+        ),
       ),
       GoRoute(
         path: '/customers/new',
-        builder: (context, state) => const CustomerFormScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'customer.create',
+          deniedSubtitle: 'You need customer.create to add customers.',
+          child: CustomerFormScreen(),
+        ),
       ),
       GoRoute(
         path: '/customers/:id/edit',
-        builder: (context, state) => CustomerFormScreen(
-          customerId: state.pathParameters['id'],
+        builder: (context, state) => PermissionGate(
+          requiredPermission: 'customer.update',
+          deniedSubtitle: 'You need customer.update to edit customers.',
+          child: CustomerFormScreen(customerId: state.pathParameters['id']),
         ),
       ),
       GoRoute(
         path: '/customers/:id',
-        builder: (context, state) => CustomerDetailScreen(
-          customerId: state.pathParameters['id']!,
+        builder: (context, state) => PermissionGate(
+          requiredPermission: 'customer.view',
+          child: CustomerDetailScreen(customerId: state.pathParameters['id']!),
         ),
       ),
       GoRoute(
@@ -109,7 +132,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/inventory/movements',
-        builder: (context, state) => const StockMovementsScreen(),
+        builder: (context, state) => const InventoryPermissionGate(
+          requiredPermission: 'inventory.view',
+          child: StockMovementsScreen(),
+        ),
       ),
       GoRoute(
         path: '/inventory/new',
@@ -124,18 +150,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => InventoryPermissionGate(
           requiredPermission: 'inventory.update',
           deniedSubtitle: 'You need inventory.update to edit items.',
-          child: InventoryFormScreen(
-            itemId: state.pathParameters['id'],
-          ),
+          child: InventoryFormScreen(itemId: state.pathParameters['id']),
         ),
       ),
       GoRoute(
         path: '/inventory/:id',
         builder: (context, state) => InventoryPermissionGate(
           requiredPermission: 'inventory.view',
-          child: InventoryDetailScreen(
-            itemId: state.pathParameters['id']!,
-          ),
+          child: InventoryDetailScreen(itemId: state.pathParameters['id']!),
         ),
       ),
       GoRoute(
@@ -180,20 +202,64 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/reports',
+        builder: (context, state) =>
+            const ReportPermissionGate(child: ReportsScreen()),
+      ),
+      GoRoute(
+        path: '/workflows',
+        builder: (context, state) => const WorkflowPermissionGate(
+          requiredPermission: 'workflow.view',
+          child: WorkflowsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/workflows/new',
+        builder: (context, state) => const WorkflowPermissionGate(
+          requiredPermission: 'workflow.create',
+          deniedSubtitle: 'You need workflow.create to create requests.',
+          child: WorkflowFormScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/workflows/:id/edit',
+        builder: (context, state) => WorkflowPermissionGate(
+          requiredPermission: 'workflow.create',
+          deniedSubtitle: 'You need workflow.create to edit requests.',
+          child: WorkflowFormScreen(requestId: state.pathParameters['id']),
+        ),
+      ),
+      GoRoute(
+        path: '/workflows/:id',
+        builder: (context, state) => WorkflowPermissionGate(
+          requiredPermission: 'workflow.view',
+          child: WorkflowDetailScreen(requestId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/admin/users',
-        builder: (context, state) => const UsersScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'user.view',
+          child: UsersScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin/roles',
-        builder: (context, state) => const RolesScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'role:read',
+          child: RolesScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin/permissions',
-        builder: (context, state) => const PermissionsScreen(),
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'role:read',
+          child: PermissionsScreen(),
+        ),
       ),
     ],
   );

@@ -51,15 +51,18 @@ void main() {
   });
 
   test('Customer.toUpdateJson includes gst when set', () {
-    final customer = Customer.fromJson(_minimalJson()).copyWith(
-      gstNumber: '27AAAAA0000A1Z5',
-    );
+    final customer = Customer.fromJson(
+      _minimalJson(),
+    ).copyWith(gstNumber: '27AAAAA0000A1Z5');
     expect(customer.toUpdateJson()['gst_number'], '27AAAAA0000A1Z5');
   });
 
   test('Customer.copyWith updates selected fields', () {
     final customer = Customer.fromJson(_minimalJson());
-    final updated = customer.copyWith(fullName: 'Updated Name', status: 'inactive');
+    final updated = customer.copyWith(
+      fullName: 'Updated Name',
+      status: 'inactive',
+    );
     expect(updated.fullName, 'Updated Name');
     expect(updated.status, 'inactive');
     expect(updated.email, customer.email);

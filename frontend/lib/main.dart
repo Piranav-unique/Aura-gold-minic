@@ -10,7 +10,9 @@ import 'package:ags_gold/features/settings/presentation/providers/settings_provi
 final appLocaleProvider = Provider<Locale?>((ref) {
   final auth = ref.watch(authNotifierProvider);
   if (auth.value != AuthStatus.authenticated) return null;
-  return ref.watch(userSettingsProvider).whenOrNull(
+  return ref
+      .watch(userSettingsProvider)
+      .whenOrNull(
         data: (settings) {
           final code = settings.locale;
           if (code.isEmpty) return null;
@@ -44,11 +46,7 @@ class AGSGoldApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       locale: locale,
-      supportedLocales: const [
-        Locale('en'),
-        Locale('es'),
-        Locale('fr'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('es'), Locale('fr')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

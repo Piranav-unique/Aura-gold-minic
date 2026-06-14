@@ -138,60 +138,64 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                   const SizedBox(height: 12),
                   Expanded(
                     child: suppliersAsync.when(
-                data: (page) {
-                  if (page.items.isEmpty) {
-                    return const EmptyStateWidget(
-                      icon: Icons.local_shipping_outlined,
-                      title: 'No suppliers',
-                      subtitle: 'Add suppliers for inventory procurement.',
-                    );
-                  }
-                  return ListView.separated(
-                    itemCount: page.items.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final supplier = page.items[index];
-                      return ListTile(
-                        title: Text(supplier.name),
-                        subtitle: Text(
-                          [
-                            if (supplier.contactPerson != null)
-                              supplier.contactPerson,
-                            if (supplier.mobileNumber != null)
-                              supplier.mobileNumber,
-                          ].whereType<String>().join(' • '),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (!supplier.isActive)
-                              const Chip(label: Text('Inactive')),
-                            if (canUpdate)
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined),
-                                onPressed: () {
-                                  _loadSupplier(supplier);
-                                  setState(() {});
-                                },
+                      data: (page) {
+                        if (page.items.isEmpty) {
+                          return const EmptyStateWidget(
+                            icon: Icons.local_shipping_outlined,
+                            title: 'No suppliers',
+                            subtitle:
+                                'Add suppliers for inventory procurement.',
+                          );
+                        }
+                        return ListView.separated(
+                          itemCount: page.items.length,
+                          separatorBuilder: (_, _) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final supplier = page.items[index];
+                            return ListTile(
+                              title: Text(supplier.name),
+                              subtitle: Text(
+                                [
+                                  if (supplier.contactPerson != null)
+                                    supplier.contactPerson,
+                                  if (supplier.mobileNumber != null)
+                                    supplier.mobileNumber,
+                                ].whereType<String>().join(' • '),
                               ),
-                            if (canDelete)
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    color: Colors.redAccent),
-                                onPressed: () => _deleteSupplier(supplier.id),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (!supplier.isActive)
+                                    const Chip(label: Text('Inactive')),
+                                  if (canUpdate)
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined),
+                                      onPressed: () {
+                                        _loadSupplier(supplier);
+                                        setState(() {});
+                                      },
+                                    ),
+                                  if (canDelete)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.redAccent,
+                                      ),
+                                      onPressed: () =>
+                                          _deleteSupplier(supplier.id),
+                                    ),
+                                ],
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const PremiumSkeletonList(itemCount: 5),
-                error: (e, _) => EmptyStateWidget(
-                  icon: Icons.error_outline,
-                  title: 'Failed to load suppliers',
-                  subtitle: e.toString(),
-                ),
+                            );
+                          },
+                        );
+                      },
+                      loading: () => const PremiumSkeletonList(itemCount: 5),
+                      error: (e, _) => EmptyStateWidget(
+                        icon: Icons.error_outline,
+                        title: 'Failed to load suppliers',
+                        subtitle: e.toString(),
+                      ),
                     ),
                   ),
                 ],
@@ -213,19 +217,23 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                         const SizedBox(height: 16),
                         TextField(
                           controller: _nameController,
-                          decoration: const InputDecoration(labelText: 'Name *'),
+                          decoration: const InputDecoration(
+                            labelText: 'Name *',
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _contactController,
-                          decoration:
-                              const InputDecoration(labelText: 'Contact Person'),
+                          decoration: const InputDecoration(
+                            labelText: 'Contact Person',
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _mobileController,
-                          decoration:
-                              const InputDecoration(labelText: 'Mobile'),
+                          decoration: const InputDecoration(
+                            labelText: 'Mobile',
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
@@ -235,7 +243,9 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                         const SizedBox(height: 12),
                         TextField(
                           controller: _addressController,
-                          decoration: const InputDecoration(labelText: 'Address'),
+                          decoration: const InputDecoration(
+                            labelText: 'Address',
+                          ),
                           maxLines: 2,
                         ),
                         const SizedBox(height: 12),
@@ -251,7 +261,8 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                             FilledButton(
                               onPressed: canEdit ? _saveSupplier : null,
                               child: Text(
-                                  _editingId != null ? 'Update' : 'Create'),
+                                _editingId != null ? 'Update' : 'Create',
+                              ),
                             ),
                             const SizedBox(width: 8),
                             TextButton(

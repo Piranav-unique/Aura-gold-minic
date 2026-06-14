@@ -106,8 +106,7 @@ class NotificationService:
             minutes=settings.NOTIFICATION_LOW_STOCK_COOLDOWN_MINUTES
         )
         message = (
-            f"'{item_name}' is at or below reorder level "
-            f"({quantity_after} units)."
+            f"'{item_name}' is at or below reorder level ({quantity_after} units)."
         )
 
         user_ids = await self.user_repo.get_user_ids_with_permission("inventory.view")
@@ -287,11 +286,15 @@ class NotificationService:
                 category=self.CATEGORY_SYSTEM,
                 metadata=metadata,
             )
-        elif action in (
-            audit_actions.STOCK_MOVEMENT_IN,
-            audit_actions.STOCK_MOVEMENT_OUT,
-            audit_actions.STOCK_MOVEMENT_ADJUST,
-        ) and user_id:
+        elif (
+            action
+            in (
+                audit_actions.STOCK_MOVEMENT_IN,
+                audit_actions.STOCK_MOVEMENT_OUT,
+                audit_actions.STOCK_MOVEMENT_ADJUST,
+            )
+            and user_id
+        ):
             item_name = metadata.get("item_name", "An item")
             movement = metadata.get("movement_type", "movement")
             await self.create_notification(

@@ -50,14 +50,14 @@ class Customer {
   }
 
   Map<String, dynamic> toCreateJson() => {
-        'customer_type': customerType,
-        'full_name': fullName,
-        'mobile_number': mobileNumber,
-        'email': email,
-        'address': address,
-        if (gstNumber != null && gstNumber!.isNotEmpty) 'gst_number': gstNumber,
-        'status': status,
-      };
+    'customer_type': customerType,
+    'full_name': fullName,
+    'mobile_number': mobileNumber,
+    'email': email,
+    'address': address,
+    if (gstNumber != null && gstNumber!.isNotEmpty) 'gst_number': gstNumber,
+    'status': status,
+  };
 
   Map<String, dynamic> toUpdateJson() {
     final json = <String, dynamic>{

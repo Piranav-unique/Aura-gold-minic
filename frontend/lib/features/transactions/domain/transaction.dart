@@ -29,12 +29,17 @@ class TransactionLine {
     );
   }
 
-  Map<String, dynamic> toCreateJson({String? stockDirection}) => {
-        'inventory_item_id': inventoryItemId,
-        'quantity': quantity,
-        'unit_price': unitPrice.toStringAsFixed(2),
-        if (stockDirection != null) 'stock_direction': stockDirection,
-      };
+  Map<String, dynamic> toCreateJson({String? stockDirection}) {
+    final payload = <String, dynamic>{
+      'inventory_item_id': inventoryItemId,
+      'quantity': quantity,
+      'unit_price': unitPrice.toStringAsFixed(2),
+    };
+    if (stockDirection != null) {
+      payload['stock_direction'] = stockDirection;
+    }
+    return payload;
+  }
 }
 
 class TransactionCustomerSummary {
@@ -142,34 +147,37 @@ class Transaction {
   }
 
   Map<String, dynamic> toCreateJson() => {
-        'transaction_type': transactionType,
-        if (customerId != null && customerId!.isNotEmpty)
-          'customer_id': customerId,
-        'payment_status': paymentStatus,
-        'tax_amount': taxAmount.toStringAsFixed(2),
-        if (notes != null && notes!.isNotEmpty) 'notes': notes,
-        'lines': lines
-            .map((line) => line.toCreateJson(
-                  stockDirection: transactionType == 'exchange'
-                      ? line.stockDirection
-                      : null,
-                ))
-            .toList(),
-      };
+    'transaction_type': transactionType,
+    if (customerId != null && customerId!.isNotEmpty) 'customer_id': customerId,
+    'payment_status': paymentStatus,
+    'tax_amount': taxAmount.toStringAsFixed(2),
+    if (notes != null && notes!.isNotEmpty) 'notes': notes,
+    'lines': lines
+        .map(
+          (line) => line.toCreateJson(
+            stockDirection: transactionType == 'exchange'
+                ? line.stockDirection
+                : null,
+          ),
+        )
+        .toList(),
+  };
 
   Map<String, dynamic> toUpdateJson() => {
-        if (customerId != null) 'customer_id': customerId,
-        'payment_status': paymentStatus,
-        'tax_amount': taxAmount.toStringAsFixed(2),
-        if (notes != null) 'notes': notes,
-        'lines': lines
-            .map((line) => line.toCreateJson(
-                  stockDirection: transactionType == 'exchange'
-                      ? line.stockDirection
-                      : null,
-                ))
-            .toList(),
-      };
+    if (customerId != null) 'customer_id': customerId,
+    'payment_status': paymentStatus,
+    'tax_amount': taxAmount.toStringAsFixed(2),
+    if (notes != null) 'notes': notes,
+    'lines': lines
+        .map(
+          (line) => line.toCreateJson(
+            stockDirection: transactionType == 'exchange'
+                ? line.stockDirection
+                : null,
+          ),
+        )
+        .toList(),
+  };
 }
 
 class PaginatedTransactions {
@@ -243,11 +251,13 @@ class TransactionDocument {
       totalAmount: _parseDecimal(json['total_amount']),
       issuedAt: DateTime.parse(json['issued_at'] as String),
       lines: (json['lines'] as List<dynamic>? ?? [])
-          .map((e) => TransactionLine.fromJson({
-                ...e as Map<String, dynamic>,
-                'id': e['id'] ?? '',
-                'inventory_item_id': e['inventory_item_id'] ?? '',
-              }))
+          .map(
+            (e) => TransactionLine.fromJson({
+              ...e as Map<String, dynamic>,
+              'id': e['id'] ?? '',
+              'inventory_item_id': e['inventory_item_id'] ?? '',
+            }),
+          )
           .toList(),
     );
   }

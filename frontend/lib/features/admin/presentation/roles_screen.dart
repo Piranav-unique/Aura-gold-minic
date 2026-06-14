@@ -44,7 +44,9 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Role'),
-        content: Text('Are you sure you want to delete the role "${name.toUpperCase()}"? This action is soft-delete and reversible.'),
+        content: Text(
+          'Are you sure you want to delete the role "${name.toUpperCase()}"? This action is soft-delete and reversible.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -101,7 +103,9 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                 Expanded(
                   child: Text(
                     'Access Control Roles',
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 FilledButton.icon(
@@ -125,7 +129,11 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.admin_panel_settings_outlined, size: 64, color: theme.colorScheme.secondary),
+                                Icon(
+                                  Icons.admin_panel_settings_outlined,
+                                  size: 64,
+                                  color: theme.colorScheme.secondary,
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No roles exist in the database.',
@@ -133,29 +141,36 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                                 ),
                               ],
                             ),
-                          )
+                          ),
                         ],
                       );
                     }
 
                     return isDesktop
                         ? GridView.builder(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 1.3,
-                            ),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 1.3,
+                                ),
                             itemCount: roles.length,
-                            itemBuilder: (context, idx) => _buildRoleCard(roles[idx] as Map<String, dynamic>),
+                            itemBuilder: (context, idx) => _buildRoleCard(
+                              roles[idx] as Map<String, dynamic>,
+                            ),
                           )
                         : ListView.separated(
                             itemCount: roles.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 16),
-                            itemBuilder: (context, idx) => _buildRoleCard(roles[idx] as Map<String, dynamic>),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 16),
+                            itemBuilder: (context, idx) => _buildRoleCard(
+                              roles[idx] as Map<String, dynamic>,
+                            ),
                           );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => ListView(
                     children: [
                       const SizedBox(height: 64),
@@ -193,12 +208,17 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.admin_panel_settings, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.admin_panel_settings,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       name.toUpperCase(),
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   PopupMenuButton<String>(
@@ -224,9 +244,16 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete, size: 18, color: theme.colorScheme.error),
+                            Icon(
+                              Icons.delete,
+                              size: 18,
+                              color: theme.colorScheme.error,
+                            ),
                             SizedBox(width: 8),
-                            Text('Delete Role', style: TextStyle(color: theme.colorScheme.error)),
+                            Text(
+                              'Delete Role',
+                              style: TextStyle(color: theme.colorScheme.error),
+                            ),
                           ],
                         ),
                       ),
@@ -236,7 +263,9 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                description.isNotEmpty ? description : 'No description provided.',
+                description.isNotEmpty
+                    ? description
+                    : 'No description provided.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
@@ -249,7 +278,9 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                 children: [
                   Text(
                     '${permissions.length} Permissions',
-                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Spacer(),
                   Wrap(
@@ -336,21 +367,28 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
       if (isEdit) {
         final id = widget.role!['id'] as String;
         // Update basic role details
-        await apiClient.put('/rbac/roles/$id', data: {
-          'name': name,
-          'description': description,
-        });
+        await apiClient.put(
+          '/rbac/roles/$id',
+          data: {'name': name, 'description': description},
+        );
 
         // Sync permissions (Note: In the backend, we assign/remove individual mappings)
         final originalPermIds = (widget.role!['permissions'] as List<dynamic>)
             .map((p) => p['id'] as String)
             .toList();
 
-        final toAdd = _selectedPermissionIds.where((id) => !originalPermIds.contains(id)).toList();
-        final toRemove = originalPermIds.where((id) => !_selectedPermissionIds.contains(id)).toList();
+        final toAdd = _selectedPermissionIds
+            .where((id) => !originalPermIds.contains(id))
+            .toList();
+        final toRemove = originalPermIds
+            .where((id) => !_selectedPermissionIds.contains(id))
+            .toList();
 
         for (var permId in toAdd) {
-          await apiClient.post('/rbac/roles/$id/permissions', queryParameters: {'permission_id': permId});
+          await apiClient.post(
+            '/rbac/roles/$id/permissions',
+            queryParameters: {'permission_id': permId},
+          );
         }
 
         for (var permId in toRemove) {
@@ -358,16 +396,19 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
         }
       } else {
         // Create role
-        final response = await apiClient.post('/rbac/roles', data: {
-          'name': name,
-          'description': description,
-        });
+        final response = await apiClient.post(
+          '/rbac/roles',
+          data: {'name': name, 'description': description},
+        );
         final newRole = response.data as Map<String, dynamic>;
         final newRoleId = newRole['id'] as String;
 
         // Associate permissions
         for (var permId in _selectedPermissionIds) {
-          await apiClient.post('/rbac/roles/$newRoleId/permissions', queryParameters: {'permission_id': permId});
+          await apiClient.post(
+            '/rbac/roles/$newRoleId/permissions',
+            queryParameters: {'permission_id': permId},
+          );
         }
       }
 
@@ -405,9 +446,14 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
                     decoration: BoxDecoration(
                       color: Colors.redAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.5),
+                      ),
                     ),
-                    child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -420,7 +466,9 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
                     helperText: 'Use lowercase, e.g. operator_level_1',
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Role Name is required';
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Role Name is required';
+                    }
                     return null;
                   },
                 ),
@@ -440,14 +488,19 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
                 // Permissions Checklist
                 Text(
                   'Map Permissions',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Divider(height: 16),
 
                 permissionsAsync.when(
                   data: (permissionsList) {
                     if (permissionsList.isEmpty) {
-                      return const Text('No permissions in system database.', style: TextStyle(fontStyle: FontStyle.italic));
+                      return const Text(
+                        'No permissions in system database.',
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      );
                     }
                     return Column(
                       children: permissionsList.map((p) {
@@ -479,7 +532,10 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
-                  error: (err, stack) => Text('Failed to load permissions: $err', style: const TextStyle(color: Colors.redAccent)),
+                  error: (err, stack) => Text(
+                    'Failed to load permissions: $err',
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
                 ),
               ],
             ),
@@ -494,7 +550,14 @@ class _RoleFormDialogState extends ConsumerState<RoleFormDialog> {
         FilledButton(
           onPressed: _loading ? null : _submit,
           child: _loading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : const Text('Save'),
         ),
       ],

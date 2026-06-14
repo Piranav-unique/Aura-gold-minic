@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -8,7 +7,7 @@ import pytest
 from app.core.exceptions import NotFoundException, ValidationException
 from app.models.supplier import Supplier
 from app.repositories.supplier import SupplierRepository
-from app.schemas.supplier import SupplierCreate, SupplierUpdate
+from app.schemas.supplier import SupplierCreate
 from app.services.audit import AuditService
 from app.services.supplier import SupplierService
 
@@ -70,9 +69,7 @@ async def test_create_supplier_success(
 
 
 @pytest.mark.asyncio
-async def test_create_supplier_duplicate_name(
-    supplier_service, mock_supplier_repo
-):
+async def test_create_supplier_duplicate_name(supplier_service, mock_supplier_repo):
     existing = _sample_supplier()
     mock_supplier_repo.get_by_name = AsyncMock(return_value=existing)
 

@@ -5,8 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
-import 'package:ags_gold/core/responsive/responsive_layout.dart';
-import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
@@ -54,18 +52,20 @@ class TransactionDetailScreen extends ConsumerWidget {
     if (confirmed != true || reasonController.text.trim().isEmpty) return;
 
     try {
-      await ref
-          .read(cancelTransactionProvider)(transactionId, reasonController.text.trim());
+      await ref.read(cancelTransactionProvider)(
+        transactionId,
+        reasonController.text.trim(),
+      );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction cancelled')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Transaction cancelled')));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to cancel: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to cancel: $e')));
       }
     }
   }
@@ -78,17 +78,18 @@ class TransactionDetailScreen extends ConsumerWidget {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          doc.documentType == 'invoice' ? 'Invoice' : 'Receipt',
-        ),
+        title: Text(doc.documentType == 'invoice' ? 'Invoice' : 'Receipt'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Number: ${doc.documentNumber}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Number: ${doc.documentNumber}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               Text('Transaction: ${doc.transactionNumber}'),
-              if (doc.customerName != null) Text('Customer: ${doc.customerName}'),
+              if (doc.customerName != null)
+                Text('Customer: ${doc.customerName}'),
               Text('Total: ${currency.format(doc.totalAmount)}'),
               const SizedBox(height: 12),
               ...doc.lines.map(
@@ -149,9 +150,8 @@ class TransactionDetailScreen extends ConsumerWidget {
                       children: [
                         Text(
                           txn.transactionNumber,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '${transactionTypeLabel(txn.transactionType)} • ${paymentStatusLabel(txn.paymentStatus)}',
@@ -183,8 +183,9 @@ class TransactionDetailScreen extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () async {
                       try {
-                        final doc =
-                            await ref.read(generateInvoiceProvider)(transactionId);
+                        final doc = await ref.read(generateInvoiceProvider)(
+                          transactionId,
+                        );
                         if (context.mounted) await _showDocument(context, doc);
                       } catch (e) {
                         if (context.mounted) {
@@ -201,9 +202,12 @@ class TransactionDetailScreen extends ConsumerWidget {
                     OutlinedButton.icon(
                       onPressed: () async {
                         try {
-                          final doc =
-                              await ref.read(generateReceiptProvider)(transactionId);
-                          if (context.mounted) await _showDocument(context, doc);
+                          final doc = await ref.read(generateReceiptProvider)(
+                            transactionId,
+                          );
+                          if (context.mounted) {
+                            await _showDocument(context, doc);
+                          }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -232,12 +236,18 @@ class TransactionDetailScreen extends ConsumerWidget {
                         currency.format(txn.totalAmount),
                         bold: true,
                       ),
-                      _detailRow('Stock applied', txn.stockApplied ? 'Yes' : 'No'),
+                      _detailRow(
+                        'Stock applied',
+                        txn.stockApplied ? 'Yes' : 'No',
+                      ),
                       _detailRow('Created', dateFormat.format(txn.createdAt)),
                       if (txn.notes != null && txn.notes!.isNotEmpty)
                         _detailRow('Notes', txn.notes!),
                       if (txn.isCancelled) ...[
-                        _detailRow('Cancelled', dateFormat.format(txn.cancelledAt!)),
+                        _detailRow(
+                          'Cancelled',
+                          dateFormat.format(txn.cancelledAt!),
+                        ),
                         _detailRow('Reason', txn.cancellationReason ?? '—'),
                       ],
                     ],
@@ -247,9 +257,9 @@ class TransactionDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 'Line Items',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Expanded(
@@ -305,7 +315,9 @@ class TransactionDetailScreen extends ConsumerWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal),
+              style: TextStyle(
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
         ],

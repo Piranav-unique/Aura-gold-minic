@@ -13,13 +13,17 @@ void main() {
     mockStorage = MockSecureStorage();
     registerFallbackValue(<String, dynamic>{});
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
-    when(() => mockStorage.saveTokens(
-          accessToken: any(named: 'accessToken'),
-          refreshToken: any(named: 'refreshToken'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockStorage.saveTokens(
+        accessToken: any(named: 'accessToken'),
+        refreshToken: any(named: 'refreshToken'),
+      ),
+    ).thenAnswer((_) async {});
   });
 
-  testWidgets('E2E RBAC: admin can access users and audit endpoints', (tester) async {
+  testWidgets('E2E RBAC: admin can access users and audit endpoints', (
+    tester,
+  ) async {
     await pumpE2eApp(tester, mockApi: mockApi, mockStorage: mockStorage);
     await completeLogin(tester, mockApi, mockStorage);
 
@@ -37,12 +41,9 @@ void main() {
     ).thenAnswer((_) async => usersResponse);
 
     final auditResponse = MockResponse<Map<String, dynamic>>();
-    when(() => auditResponse.data).thenReturn({
-      'items': [],
-      'total': 0,
-      'skip': 0,
-      'limit': 10,
-    });
+    when(
+      () => auditResponse.data,
+    ).thenReturn({'items': [], 'total': 0, 'skip': 0, 'limit': 10});
     when(
       () => mockApi.get(
         '/audit-logs/',
@@ -73,25 +74,40 @@ void main() {
     ).called(1);
   });
 
-  testWidgets('E2E RBAC: manager receives forbidden on user create', (tester) async {
+  testWidgets('E2E RBAC: manager receives forbidden on user create', (
+    tester,
+  ) async {
     await pumpE2eApp(tester, mockApi: mockApi, mockStorage: mockStorage);
-    await completeLogin(tester, mockApi, mockStorage, email: 'manager@e2e.test');
+    await completeLogin(
+      tester,
+      mockApi,
+      mockStorage,
+      email: 'manager@e2e.test',
+    );
 
-    when(() => mockApi.post('/users/', data: any(named: 'data')))
-        .thenAnswer((_) async => throw ForbiddenException('Permission denied'));
+    when(
+      () => mockApi.post('/users/', data: any(named: 'data')),
+    ).thenAnswer((_) async => throw ForbiddenException('Permission denied'));
 
     expect(
-      () => mockApi.post('/users/', data: {
-        'email': 'blocked@example.com',
-        'password': 'password123',
-      }),
+      () => mockApi.post(
+        '/users/',
+        data: {'email': 'blocked@example.com', 'password': 'password123'},
+      ),
       throwsA(isA<ForbiddenException>()),
     );
   });
 
-  testWidgets('E2E RBAC: employee receives forbidden on RBAC roles', (tester) async {
+  testWidgets('E2E RBAC: employee receives forbidden on RBAC roles', (
+    tester,
+  ) async {
     await pumpE2eApp(tester, mockApi: mockApi, mockStorage: mockStorage);
-    await completeLogin(tester, mockApi, mockStorage, email: 'employee@e2e.test');
+    await completeLogin(
+      tester,
+      mockApi,
+      mockStorage,
+      email: 'employee@e2e.test',
+    );
 
     when(
       () => mockApi.get(

@@ -92,9 +92,7 @@ async def test_create_customer_duplicate_email(
         address="123 Main Street",
     )
 
-    mock_customer_repository.get_by_email = AsyncMock(
-        return_value=_sample_customer()
-    )
+    mock_customer_repository.get_by_email = AsyncMock(return_value=_sample_customer())
 
     with pytest.raises(ValidationException, match="already registered"):
         await customer_service.create_customer(customer_in)
@@ -113,18 +111,14 @@ async def test_create_customer_duplicate_mobile(
     )
 
     mock_customer_repository.get_by_email = AsyncMock(return_value=None)
-    mock_customer_repository.get_by_mobile = AsyncMock(
-        return_value=_sample_customer()
-    )
+    mock_customer_repository.get_by_mobile = AsyncMock(return_value=_sample_customer())
 
     with pytest.raises(ValidationException, match="already registered"):
         await customer_service.create_customer(customer_in)
 
 
 @pytest.mark.asyncio
-async def test_get_customer_by_id_not_found(
-    customer_service, mock_customer_repository
-):
+async def test_get_customer_by_id_not_found(customer_service, mock_customer_repository):
     mock_customer_repository.get_active = AsyncMock(return_value=None)
 
     with pytest.raises(NotFoundException, match="Customer not found"):
@@ -230,9 +224,7 @@ async def test_create_customer_handles_integrity_error(
 
 
 @pytest.mark.asyncio
-async def test_record_transaction_metrics(
-    customer_service, mock_customer_repository
-):
+async def test_record_transaction_metrics(customer_service, mock_customer_repository):
     customer = _sample_customer()
     mock_customer_repository.get_active = AsyncMock(return_value=customer)
     mock_customer_repository.db = MagicMock()

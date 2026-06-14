@@ -1,125 +1,1 @@
-import uuid
-from datetime import datetime, timezone
-import pytest
-from unittest.mock import AsyncMock, MagicMock
-
-from app.models.notification import Notification
-from app.models.user_settings import UserSettings
-from app.repositories.notification import NotificationRepository
-from app.repositories.user import UserRepository
-from app.repositories.user_settings import UserSettingsRepository
-from app.services.notification import NotificationService
-from app.core import audit_actions
-
-
-@pytest.fixture
-def mock_notification_repo():
-    return MagicMock(spec=NotificationRepository)
-
-
-@pytest.fixture
-def mock_user_repo():
-    return MagicMock(spec=UserRepository)
-
-
-@pytest.fixture
-def mock_settings_repo():
-    repo = MagicMock(spec=UserSettingsRepository)
-    repo.get_or_create = AsyncMock(
-        return_value=UserSettings(
-            locale="en",
-            notification_email_enabled=True,
-            notification_push_enabled=True,
-            notification_security_alerts=True,
-            notification_system_updates=True,
-        )
-    )
-    return repo
-
-
-@pytest.fixture
-def notification_service(mock_notification_repo, mock_user_repo, mock_settings_repo):
-    return NotificationService(
-        mock_notification_repo, mock_user_repo, mock_settings_repo
-    )
-
-
-@pytest.mark.asyncio
-async def test_create_notification(notification_service, mock_notification_repo):
-    mock_notification_repo.create = AsyncMock(
-        return_value=Notification(title="Test", message="Msg", category="system")
-    )
-    user_id = uuid.uuid4()
-    result = await notification_service.create_notification(
-        user_id=user_id,
-        title="Test",
-        message="Msg",
-        category="system",
-    )
-    assert result.title == "Test"
-    mock_notification_repo.create.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_create_notification_respects_disabled_settings(
-    notification_service, mock_notification_repo, mock_settings_repo
-):
-    mock_settings_repo.get_or_create = AsyncMock(
-        return_value=UserSettings(
-            locale="en",
-            notification_security_alerts=False,
-            notification_system_updates=True,
-        )
-    )
-    mock_notification_repo.create = AsyncMock()
-    user_id = uuid.uuid4()
-    result = await notification_service.create_notification(
-        user_id=user_id,
-        title="Security",
-        message="Alert",
-        category=NotificationService.CATEGORY_SECURITY,
-    )
-    assert result is None
-    mock_notification_repo.create.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_handle_login_success_notification(
-    notification_service, mock_notification_repo
-):
-    mock_notification_repo.has_recent_notification = AsyncMock(return_value=False)
-    mock_notification_repo.create = AsyncMock()
-    user_id = uuid.uuid4()
-    await notification_service.handle_audit_event(
-        action=audit_actions.LOGIN_SUCCESS,
-        user_id=user_id,
-        entity_type="User",
-        entity_id=str(user_id),
-        metadata={"ip": "127.0.0.1"},
-    )
-    mock_notification_repo.create.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_handle_login_success_skips_recent_duplicate(
-    notification_service, mock_notification_repo
-):
-    mock_notification_repo.has_recent_notification = AsyncMock(return_value=True)
-    mock_notification_repo.create = AsyncMock()
-    user_id = uuid.uuid4()
-    await notification_service.handle_audit_event(
-        action=audit_actions.LOGIN_SUCCESS,
-        user_id=user_id,
-        entity_type="User",
-        entity_id=str(user_id),
-        metadata={},
-    )
-    mock_notification_repo.create.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_mark_read(notification_service, mock_notification_repo):
-    mock_notification_repo.mark_read = AsyncMock(return_value=2)
-    user_id = uuid.uuid4()
-    count = await notification_service.mark_read(user_id=user_id, mark_all=True)
-    assert count == 2
+import uuidimport pytestfrom unittest.mock import AsyncMock, MagicMockfrom app.models.notification import Notificationfrom app.models.user_settings import UserSettingsfrom app.repositories.notification import NotificationRepositoryfrom app.repositories.user import UserRepositoryfrom app.repositories.user_settings import UserSettingsRepositoryfrom app.services.notification import NotificationServicefrom app.core import audit_actions@pytest.fixturedef mock_notification_repo():    return MagicMock(spec=NotificationRepository)@pytest.fixturedef mock_user_repo():    return MagicMock(spec=UserRepository)@pytest.fixturedef mock_settings_repo():    repo = MagicMock(spec=UserSettingsRepository)    repo.get_or_create = AsyncMock(        return_value=UserSettings(            locale="en",            notification_email_enabled=True,            notification_push_enabled=True,            notification_security_alerts=True,            notification_system_updates=True,        )    )    return repo@pytest.fixturedef notification_service(mock_notification_repo, mock_user_repo, mock_settings_repo):    return NotificationService(        mock_notification_repo, mock_user_repo, mock_settings_repo    )@pytest.mark.asyncioasync def test_create_notification(notification_service, mock_notification_repo):    mock_notification_repo.create = AsyncMock(        return_value=Notification(title="Test", message="Msg", category="system")    )    user_id = uuid.uuid4()    result = await notification_service.create_notification(        user_id=user_id,        title="Test",        message="Msg",        category="system",    )    assert result.title == "Test"    mock_notification_repo.create.assert_called_once()@pytest.mark.asyncioasync def test_create_notification_respects_disabled_settings(    notification_service, mock_notification_repo, mock_settings_repo):    mock_settings_repo.get_or_create = AsyncMock(        return_value=UserSettings(            locale="en",            notification_security_alerts=False,            notification_system_updates=True,        )    )    mock_notification_repo.create = AsyncMock()    user_id = uuid.uuid4()    result = await notification_service.create_notification(        user_id=user_id,        title="Security",        message="Alert",        category=NotificationService.CATEGORY_SECURITY,    )    assert result is None    mock_notification_repo.create.assert_not_called()@pytest.mark.asyncioasync def test_handle_login_success_notification(    notification_service, mock_notification_repo):    mock_notification_repo.has_recent_notification = AsyncMock(return_value=False)    mock_notification_repo.create = AsyncMock()    user_id = uuid.uuid4()    await notification_service.handle_audit_event(        action=audit_actions.LOGIN_SUCCESS,        user_id=user_id,        entity_type="User",        entity_id=str(user_id),        metadata={"ip": "127.0.0.1"},    )    mock_notification_repo.create.assert_called_once()@pytest.mark.asyncioasync def test_handle_login_success_skips_recent_duplicate(    notification_service, mock_notification_repo):    mock_notification_repo.has_recent_notification = AsyncMock(return_value=True)    mock_notification_repo.create = AsyncMock()    user_id = uuid.uuid4()    await notification_service.handle_audit_event(        action=audit_actions.LOGIN_SUCCESS,        user_id=user_id,        entity_type="User",        entity_id=str(user_id),        metadata={},    )    mock_notification_repo.create.assert_not_called()@pytest.mark.asyncioasync def test_mark_read(notification_service, mock_notification_repo):    mock_notification_repo.mark_read = AsyncMock(return_value=2)    user_id = uuid.uuid4()    count = await notification_service.mark_read(user_id=user_id, mark_all=True)    assert count == 2

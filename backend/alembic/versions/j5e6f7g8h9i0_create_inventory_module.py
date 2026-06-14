@@ -115,8 +115,12 @@ def upgrade() -> None:
             "status IN ('active', 'inactive', 'discontinued')",
             name="ck_inventory_items_status",
         ),
-        sa.CheckConstraint("stock_quantity >= 0", name="ck_inventory_items_stock_nonneg"),
-        sa.CheckConstraint("reorder_level >= 0", name="ck_inventory_items_reorder_nonneg"),
+        sa.CheckConstraint(
+            "stock_quantity >= 0", name="ck_inventory_items_stock_nonneg"
+        ),
+        sa.CheckConstraint(
+            "reorder_level >= 0", name="ck_inventory_items_reorder_nonneg"
+        ),
     )
     op.create_index("ix_inventory_items_item_name", "inventory_items", ["item_name"])
     op.create_index(
@@ -168,9 +172,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_stock_movements_movement_type", "stock_movements", ["movement_type"]
     )
-    op.create_index(
-        "ix_stock_movements_created_at", "stock_movements", ["created_at"]
-    )
+    op.create_index("ix_stock_movements_created_at", "stock_movements", ["created_at"])
 
 
 def downgrade() -> None:

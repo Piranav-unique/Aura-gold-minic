@@ -96,8 +96,7 @@ async def test_e2e_customer_rbac_enforcement(
 ):
     """Users without customer permissions cannot create customers."""
     admin_user, password = admin_actor
-    tokens = await login(db_client, admin_user.email, password)
-    headers = bearer_headers(tokens["access_token"])
+    await login(db_client, admin_user.email, password)
 
     view_only_role = await create_role_with_permissions(
         test_db,

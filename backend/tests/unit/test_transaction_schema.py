@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
@@ -42,13 +41,28 @@ def test_transaction_create_exchange_requires_stock_direction():
         )
 
 
+def test_transaction_create_rejects_paid_on_create():
+    with pytest.raises(ValidationError, match="pending"):
+        TransactionCreate(
+            transaction_type="sale",
+            customer_id=uuid.uuid4(),
+            payment_status="paid",
+            lines=[
+                TransactionLineCreate(
+                    inventory_item_id=uuid.uuid4(),
+                    quantity=1,
+                    unit_price=Decimal("100.00"),
+                )
+            ],
+        )
+
+
 def test_transaction_create_valid_sale():
     customer_id = uuid.uuid4()
     item_id = uuid.uuid4()
     txn = TransactionCreate(
         transaction_type="sale",
         customer_id=customer_id,
-        payment_status="paid",
         tax_amount=Decimal("18.00"),
         lines=[
             TransactionLineCreate(
@@ -59,7 +73,7 @@ def test_transaction_create_valid_sale():
         ],
     )
     assert txn.customer_id == customer_id
-    assert txn.payment_status == "paid"
+    assert txn.payment_status == "pending"
     assert len(txn.lines) == 1
 
 

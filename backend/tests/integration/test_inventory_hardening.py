@@ -5,7 +5,6 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.inventory_item import InventoryItemRepository
-from app.schemas.inventory import StockOutRequest
 from app.services.inventory import InventoryService
 from app.repositories.stock_movement import StockMovementRepository
 from app.repositories.supplier import SupplierRepository

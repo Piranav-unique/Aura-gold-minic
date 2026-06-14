@@ -43,15 +43,23 @@ def _validate_magic_bytes(image_bytes: bytes, content_type: str) -> None:
         raise ValidationException(f"Unsupported image type: {content_type}")
 
     if content_type == "image/webp":
-        if len(image_bytes) < 12 or image_bytes[:4] != b"RIFF" or image_bytes[8:12] != b"WEBP":
-            raise ValidationException("Avatar content does not match declared image type")
+        if (
+            len(image_bytes) < 12
+            or image_bytes[:4] != b"RIFF"
+            or image_bytes[8:12] != b"WEBP"
+        ):
+            raise ValidationException(
+                "Avatar content does not match declared image type"
+            )
         return
 
     if not any(image_bytes.startswith(sig) for sig in signatures):
         raise ValidationException("Avatar content does not match declared image type")
 
 
-def validate_and_encode_avatar(raw_base64: str, declared_content_type: str) -> tuple[str, str]:
+def validate_and_encode_avatar(
+    raw_base64: str, declared_content_type: str
+) -> tuple[str, str]:
     """Validate avatar bytes and return normalized base64 + content type."""
     image_bytes, detected_type = _decode_avatar_payload(raw_base64)
 

@@ -11,18 +11,20 @@ import 'package:ags_gold/services/api_client.dart';
 import '../mocks/mock_services.dart';
 
 EnvConfig _testConfig() => EnvConfig(
-      environment: AppEnvironment.dev,
-      baseUrl: 'http://localhost:8000',
-      connectionTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
-    );
+  environment: AppEnvironment.dev,
+  baseUrl: 'http://localhost:8000',
+  connectionTimeout: const Duration(seconds: 5),
+  receiveTimeout: const Duration(seconds: 5),
+);
 
 void main() {
   late MockSecureStorage mockStorage;
 
   setUp(() {
     mockStorage = MockSecureStorage();
-    when(() => mockStorage.getAccessToken()).thenAnswer((_) async => 'test_token');
+    when(
+      () => mockStorage.getAccessToken(),
+    ).thenAnswer((_) async => 'test_token');
   });
 
   group('ApiException class hierarchy', () {
@@ -38,11 +40,14 @@ void main() {
       expect(ex.message, 'Custom network error');
     });
 
-    test('UnauthorizedException has correct default message and status code', () {
-      final ex = UnauthorizedException();
-      expect(ex.message, contains('Session expired'));
-      expect(ex.statusCode, 401);
-    });
+    test(
+      'UnauthorizedException has correct default message and status code',
+      () {
+        final ex = UnauthorizedException();
+        expect(ex.message, contains('Session expired'));
+        expect(ex.statusCode, 401);
+      },
+    );
 
     test('UnauthorizedException accepts a custom message', () {
       final ex = UnauthorizedException('Token invalid');
@@ -136,7 +141,10 @@ void main() {
 
     setUp(() {
       dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000'));
-      dioAdapter = DioAdapter(dio: dio, matcher: const FullHttpRequestMatcher());
+      dioAdapter = DioAdapter(
+        dio: dio,
+        matcher: const FullHttpRequestMatcher(),
+      );
       client = ApiClient(
         storageService: mockStorage,
         config: _testConfig(),
@@ -179,10 +187,7 @@ void main() {
     });
 
     test('DELETE request returns 204', () async {
-      dioAdapter.onDelete(
-        '/items/1',
-        (server) => server.reply(204, null),
-      );
+      dioAdapter.onDelete('/items/1', (server) => server.reply(204, null));
 
       final response = await client.delete('/items/1');
       expect(response.statusCode, 204);
@@ -206,10 +211,7 @@ void main() {
         (server) => server.reply(403, {'detail': 'Forbidden'}),
       );
 
-      expect(
-        () => client.get('/admin'),
-        throwsA(isA<ForbiddenException>()),
-      );
+      expect(() => client.get('/admin'), throwsA(isA<ForbiddenException>()));
     });
 
     test('404 response throws NotFoundException', () async {
@@ -218,19 +220,16 @@ void main() {
         (server) => server.reply(404, {'detail': 'Not Found'}),
       );
 
-      expect(
-        () => client.get('/missing'),
-        throwsA(isA<NotFoundException>()),
-      );
+      expect(() => client.get('/missing'), throwsA(isA<NotFoundException>()));
     });
 
     test('422 response throws ValidationException', () async {
       dioAdapter.onPost(
         '/validate',
-        (server) => server.reply(
-          422,
-          {'detail': 'Validation failed', 'errors': {'email': 'invalid'}},
-        ),
+        (server) => server.reply(422, {
+          'detail': 'Validation failed',
+          'errors': {'email': 'invalid'},
+        }),
         data: {'email': 'bad'},
       );
 
@@ -246,10 +245,7 @@ void main() {
         (server) => server.reply(500, {'detail': 'Internal Server Error'}),
       );
 
-      expect(
-        () => client.get('/crash'),
-        throwsA(isA<ServerException>()),
-      );
+      expect(() => client.get('/crash'), throwsA(isA<ServerException>()));
     });
 
     test('GET with query parameters passes them correctly', () async {
@@ -259,18 +255,20 @@ void main() {
         queryParameters: {'skip': 0, 'limit': 10},
       );
 
-      final response = await client.get('/users', queryParameters: {'skip': 0, 'limit': 10});
+      final response = await client.get(
+        '/users',
+        queryParameters: {'skip': 0, 'limit': 10},
+      );
       expect(response.statusCode, 200);
     });
 
     test('Authorization header is set from access token', () async {
-      dioAdapter.onGet(
-        '/me',
-        (server) => server.reply(200, {'id': 'user1'}),
-      );
+      dioAdapter.onGet('/me', (server) => server.reply(200, {'id': 'user1'}));
 
       await client.get('/me');
-      verify(() => mockStorage.getAccessToken()).called(greaterThanOrEqualTo(1));
+      verify(
+        () => mockStorage.getAccessToken(),
+      ).called(greaterThanOrEqualTo(1));
     });
   });
 }

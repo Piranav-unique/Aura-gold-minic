@@ -2,29 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ags_gold/features/dashboard/domain/executive_dashboard.dart';
 import 'package:ags_gold/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:ags_gold/features/dashboard/presentation/providers/dashboard_stats_provider.dart';
-import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
+import 'package:ags_gold/features/dashboard/presentation/providers/executive_dashboard_provider.dart';
 import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
-void main() {
-  late MockApiClient mockApi;
+final _adminProfile = UserProfile(
+  id: '11111111-1111-1111-1111-111111111111',
+  email: 'admin@agsgold.com',
+  firstName: 'Admin',
+  lastName: 'User',
+  isActive: true,
+  isSuperuser: true,
+  createdAt: DateTime.utc(2026, 6, 8),
+  updatedAt: DateTime.utc(2026, 6, 8),
+);
 
-  final mockStats = DashboardStats(
-    recentActivity: const [],
+ExecutiveDashboard _mockExecutive({String role = 'admin'}) {
+  return ExecutiveDashboard(
+    role: role,
+    displayName: 'Admin User',
     unreadNotifications: 2,
-    securityAlerts: const [],
-    recentNotifications: const [],
-    loginStatistics: const LoginStatistics(today: 5, week: 12, month: 40),
+    refreshedAt: DateTime.utc(2026, 6, 8, 10),
+    customerMetrics: const CustomerDashboardMetrics(
+      totalCustomers: 120,
+      activeCustomers: 110,
+      newThisMonth: 8,
+    ),
+    transactionMetrics: null,
   );
+}
 
-  setUp(() {
-    mockApi = MockApiClient();
-  });
-
-  testWidgets('DashboardScreen shows stats and chart', (WidgetTester tester) async {
+void main() {
+  testWidgets('DashboardScreen shows executive hero and admin KPIs', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1600, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -45,10 +60,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          apiClientProvider.overrideWithValue(mockApi),
-          dashboardStatsProvider.overrideWithValue(AsyncValue.data(mockStats)),
-          auditLogsProvider.overrideWithValue(const AsyncValue.data([])),
-          unreadNotificationsCountProvider.overrideWithValue(const AsyncValue.data(2)),
+          apiClientProvider.overrideWithValue(MockApiClient()),
+          profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
+          executiveDashboardProvider.overrideWith(
+            (ref) => Stream.value(_mockExecutive()),
+          ),
+          unreadNotificationsCountProvider.overrideWithValue(
+            const AsyncValue.data(2),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -56,10 +75,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Logins Today'), findsOneWidget);
-    expect(find.text('5'), findsWidgets);
-    expect(find.text('Unread Alerts'), findsOneWidget);
-    expect(find.byType(PremiumFintechChart), findsOneWidget);
+    expect(find.text('Executive Dashboard'), findsOneWidget);
+    expect(find.text('ADMINISTRATOR'), findsOneWidget);
+    expect(find.text('Customers'), findsWidgets);
+    expect(find.text('120'), findsOneWidget);
   });
-
 }

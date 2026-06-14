@@ -8,8 +8,9 @@ import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
 void main() {
-  testWidgets('NotificationDrawer shows notifications and mark all read',
-      (WidgetTester tester) async {
+  testWidgets('NotificationDrawer shows notifications and mark all read', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -39,7 +40,9 @@ void main() {
             ({List<String>? ids, bool markAll = false}) async {},
           ),
         ],
-        child: const MaterialApp(home: Scaffold(endDrawer: NotificationDrawer())),
+        child: const MaterialApp(
+          home: Scaffold(endDrawer: NotificationDrawer()),
+        ),
       ),
     );
 

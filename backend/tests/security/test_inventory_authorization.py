@@ -36,13 +36,11 @@ async def test_inventory_create_forbidden_without_permission(
 
 
 @pytest.mark.asyncio
-async def test_stock_out_requires_update_permission(
-    db_client: AsyncClient, test_db
-):
+async def test_stock_out_requires_update_permission(db_client: AsyncClient, test_db):
     _, headers = await create_user_with_permissions(test_db, ["inventory.view"])
 
     response = await db_client.post(
-        f"/api/v1/inventory/00000000-0000-0000-0000-000000000001/stock-out",
+        "/api/v1/inventory/00000000-0000-0000-0000-000000000001/stock-out",
         json={"quantity": 1},
         headers=headers,
     )

@@ -15,20 +15,27 @@ void main() {
   });
 
   test('SecureStorageService - saveTokens writes tokens to storage', () async {
-    when(() => mockSecureStorage.write(
-          key: any(named: 'key'),
-          value: any(named: 'value'),
-        )).thenAnswer((_) async => {});
+    when(
+      () => mockSecureStorage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((_) async => {});
 
     await service.saveTokens(accessToken: 'access', refreshToken: 'refresh');
 
-    verify(() => mockSecureStorage.write(key: 'access_token', value: 'access')).called(1);
-    verify(() => mockSecureStorage.write(key: 'refresh_token', value: 'refresh')).called(1);
+    verify(
+      () => mockSecureStorage.write(key: 'access_token', value: 'access'),
+    ).called(1);
+    verify(
+      () => mockSecureStorage.write(key: 'refresh_token', value: 'refresh'),
+    ).called(1);
   });
 
   test('SecureStorageService - getAccessToken reads token', () async {
-    when(() => mockSecureStorage.read(key: 'access_token'))
-        .thenAnswer((_) async => 'access');
+    when(
+      () => mockSecureStorage.read(key: 'access_token'),
+    ).thenAnswer((_) async => 'access');
 
     final token = await service.getAccessToken();
 
@@ -36,8 +43,9 @@ void main() {
   });
 
   test('SecureStorageService - getRefreshToken reads token', () async {
-    when(() => mockSecureStorage.read(key: 'refresh_token'))
-        .thenAnswer((_) async => 'refresh');
+    when(
+      () => mockSecureStorage.read(key: 'refresh_token'),
+    ).thenAnswer((_) async => 'refresh');
 
     final token = await service.getRefreshToken();
 
@@ -45,8 +53,9 @@ void main() {
   });
 
   test('SecureStorageService - clearTokens deletes tokens', () async {
-    when(() => mockSecureStorage.delete(key: any(named: 'key')))
-        .thenAnswer((_) async => {});
+    when(
+      () => mockSecureStorage.delete(key: any(named: 'key')),
+    ).thenAnswer((_) async => {});
 
     await service.clearTokens();
 
@@ -54,15 +63,20 @@ void main() {
     verify(() => mockSecureStorage.delete(key: 'refresh_token')).called(1);
   });
 
-  test('SecureStorageService - hasAccessToken returns correct boolean', () async {
-    when(() => mockSecureStorage.read(key: 'access_token'))
-        .thenAnswer((_) async => null);
+  test(
+    'SecureStorageService - hasAccessToken returns correct boolean',
+    () async {
+      when(
+        () => mockSecureStorage.read(key: 'access_token'),
+      ).thenAnswer((_) async => null);
 
-    expect(await service.hasAccessToken(), isFalse);
+      expect(await service.hasAccessToken(), isFalse);
 
-    when(() => mockSecureStorage.read(key: 'access_token'))
-        .thenAnswer((_) async => 'access');
+      when(
+        () => mockSecureStorage.read(key: 'access_token'),
+      ).thenAnswer((_) async => 'access');
 
-    expect(await service.hasAccessToken(), isTrue);
-  });
+      expect(await service.hasAccessToken(), isTrue);
+    },
+  );
 }

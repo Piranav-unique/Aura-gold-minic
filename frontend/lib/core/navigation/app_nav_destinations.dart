@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
-import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 
 /// Canonical app navigation destinations with optional RBAC gates.
@@ -70,6 +69,20 @@ List<AppNavDestination> buildNavDestinations(UserProfile? profile) {
       requiredPermission: 'transaction.view',
     ),
     const AppNavDestination(
+      routePrefix: '/reports',
+      label: 'Reports',
+      icon: Icons.analytics_outlined,
+      selectedIcon: Icons.analytics,
+      requiredPermission: 'report.view',
+    ),
+    const AppNavDestination(
+      routePrefix: '/workflows',
+      label: 'Workflows',
+      icon: Icons.approval_outlined,
+      selectedIcon: Icons.approval,
+      requiredPermission: 'workflow.view',
+    ),
+    const AppNavDestination(
       routePrefix: '/admin/users',
       label: 'Users',
       icon: Icons.people_outline,
@@ -110,7 +123,11 @@ int selectedNavIndex(String path, List<AppNavDestination> destinations) {
   return 0;
 }
 
-void navigateToIndex(BuildContext context, int index, List<AppNavDestination> destinations) {
+void navigateToIndex(
+  BuildContext context,
+  int index,
+  List<AppNavDestination> destinations,
+) {
   if (index < 0 || index >= destinations.length) return;
   context.go(destinations[index].routePrefix);
 }

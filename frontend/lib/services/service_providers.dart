@@ -91,12 +91,15 @@ final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthStatus>(
   AuthNotifier.new,
 );
 
-final auditLogsProvider = FutureProvider.autoDispose<List<AuditLog>>((ref) async {
+final auditLogsProvider = FutureProvider.autoDispose<List<AuditLog>>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   try {
-    final response = await apiClient.get('/audit-logs/', queryParameters: {
-      'limit': 10,
-    });
+    final response = await apiClient.get(
+      '/audit-logs/',
+      queryParameters: {'limit': 10},
+    );
     final data = response.data as Map<String, dynamic>;
     final items = data['items'] as List<dynamic>? ?? [];
     return items
@@ -123,8 +126,9 @@ final avatarBytesProvider = FutureProvider.autoDispose<Uint8List?>((ref) async {
   return Uint8List.fromList(data);
 });
 
-final profileActivityProvider =
-    FutureProvider.autoDispose<List<AuditLog>>((ref) async {
+final profileActivityProvider = FutureProvider.autoDispose<List<AuditLog>>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/profile/activity');
   final data = response.data as Map<String, dynamic>;
@@ -143,8 +147,8 @@ class UsersSearchQueryNotifier extends Notifier<String> {
 
 final usersSearchQueryProvider =
     NotifierProvider<UsersSearchQueryNotifier, String>(
-  UsersSearchQueryNotifier.new,
-);
+      UsersSearchQueryNotifier.new,
+    );
 
 class UsersIsActiveFilterNotifier extends Notifier<bool?> {
   @override
@@ -155,8 +159,8 @@ class UsersIsActiveFilterNotifier extends Notifier<bool?> {
 
 final usersIsActiveFilterProvider =
     NotifierProvider<UsersIsActiveFilterNotifier, bool?>(
-  UsersIsActiveFilterNotifier.new,
-);
+      UsersIsActiveFilterNotifier.new,
+    );
 
 class UsersIsSuperuserFilterNotifier extends Notifier<bool?> {
   @override
@@ -167,8 +171,8 @@ class UsersIsSuperuserFilterNotifier extends Notifier<bool?> {
 
 final usersIsSuperuserFilterProvider =
     NotifierProvider<UsersIsSuperuserFilterNotifier, bool?>(
-  UsersIsSuperuserFilterNotifier.new,
-);
+      UsersIsSuperuserFilterNotifier.new,
+    );
 
 class UsersRoleIdFilterNotifier extends Notifier<String?> {
   @override
@@ -179,8 +183,8 @@ class UsersRoleIdFilterNotifier extends Notifier<String?> {
 
 final usersRoleIdFilterProvider =
     NotifierProvider<UsersRoleIdFilterNotifier, String?>(
-  UsersRoleIdFilterNotifier.new,
-);
+      UsersRoleIdFilterNotifier.new,
+    );
 
 class UsersLimitNotifier extends Notifier<int> {
   @override
@@ -189,8 +193,9 @@ class UsersLimitNotifier extends Notifier<int> {
   set state(int value) => super.state = value;
 }
 
-final usersLimitProvider =
-    NotifierProvider<UsersLimitNotifier, int>(UsersLimitNotifier.new);
+final usersLimitProvider = NotifierProvider<UsersLimitNotifier, int>(
+  UsersLimitNotifier.new,
+);
 
 class UsersSkipNotifier extends Notifier<int> {
   @override
@@ -199,10 +204,13 @@ class UsersSkipNotifier extends Notifier<int> {
   set state(int value) => super.state = value;
 }
 
-final usersSkipProvider =
-    NotifierProvider<UsersSkipNotifier, int>(UsersSkipNotifier.new);
+final usersSkipProvider = NotifierProvider<UsersSkipNotifier, int>(
+  UsersSkipNotifier.new,
+);
 
-final usersListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final usersListProvider = FutureProvider.autoDispose<List<dynamic>>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   final search = ref.watch(usersSearchQueryProvider);
   final isActive = ref.watch(usersIsActiveFilterProvider);
@@ -221,14 +229,17 @@ final usersListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async 
   return response.data as List<dynamic>;
 });
 
-final rolesListProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final rolesListProvider = FutureProvider.autoDispose<List<dynamic>>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/rbac/roles');
   return response.data as List<dynamic>;
 });
 
-final permissionsListProvider =
-    FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final permissionsListProvider = FutureProvider.autoDispose<List<dynamic>>((
+  ref,
+) async {
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/rbac/permissions');
   return response.data as List<dynamic>;
@@ -274,5 +285,6 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   }
 }
 
-final themeModeProvider =
-    NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
+);

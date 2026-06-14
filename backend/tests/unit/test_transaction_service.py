@@ -12,8 +12,6 @@ from app.repositories.inventory_item import InventoryItemRepository
 from app.repositories.transaction import TransactionRepository
 from app.schemas.transaction import (
     TransactionCancelRequest,
-    TransactionCreate,
-    TransactionLineCreate,
     TransactionUpdate,
 )
 from app.services.audit import AuditService
@@ -108,38 +106,32 @@ async def test_get_transaction_not_found(transaction_service, mock_transaction_r
 
 
 @pytest.mark.asyncio
-async def test_create_paid_sale_applies_stock_and_metrics(
+async def test_mark_paid_sale_applies_stock_and_metrics(
     transaction_service,
     mock_transaction_repo,
-    mock_customer_repo,
-    mock_inventory_repo,
     mock_inventory_service,
     mock_customer_service,
 ):
     customer_id = uuid.uuid4()
     item_id = uuid.uuid4()
-    mock_customer_repo.get_active = AsyncMock(return_value=_sample_customer(customer_id))
-    mock_inventory_repo.get_active = AsyncMock(return_value=_sample_item(item_id))
-    mock_transaction_repo.next_document_number = AsyncMock(return_value="TXN-20260608-0001")
-
-    created_txn = Transaction(
+    txn = Transaction(
         id=uuid.uuid4(),
         transaction_number="TXN-20260608-0001",
         transaction_type="sale",
         customer_id=customer_id,
         status="active",
-        payment_status="paid",
+        payment_status="pending",
         subtotal=Decimal("1000.00"),
         tax_amount=Decimal("0"),
         total_amount=Decimal("1000.00"),
-        stock_applied=True,
+        stock_applied=False,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )
-    created_txn.lines = [
+    txn.lines = [
         TransactionLine(
             id=uuid.uuid4(),
-            transaction_id=created_txn.id,
+            transaction_id=txn.id,
             inventory_item_id=item_id,
             item_name="Gold Bar",
             quantity=1,
@@ -148,26 +140,14 @@ async def test_create_paid_sale_applies_stock_and_metrics(
             stock_direction="out",
         )
     ]
-    mock_transaction_repo.get_with_details = AsyncMock(return_value=created_txn)
+    mock_transaction_repo.get_with_details = AsyncMock(return_value=txn)
 
-    txn_in = TransactionCreate(
-        transaction_type="sale",
-        customer_id=customer_id,
-        payment_status="paid",
-        lines=[
-            TransactionLineCreate(
-                inventory_item_id=item_id,
-                quantity=1,
-                unit_price=Decimal("1000.00"),
-            )
-        ],
+    await transaction_service.update_transaction(
+        txn.id,
+        TransactionUpdate(payment_status="paid"),
+        performing_user_id=uuid.uuid4(),
     )
 
-    result = await transaction_service.create_transaction(
-        txn_in, performing_user_id=uuid.uuid4()
-    )
-
-    assert result.transaction_number.startswith("TXN-")
     mock_inventory_service.apply_transaction_stock_line.assert_called_once()
     mock_customer_service.record_transaction_metrics.assert_called_once()
     mock_transaction_repo.db.commit.assert_called_once()
@@ -215,7 +195,10 @@ async def test_cancel_transaction_reverses_stock(
     )
 
     mock_inventory_service.apply_transaction_stock_line.assert_called_once()
-    assert mock_inventory_service.apply_transaction_stock_line.call_args.kwargs["reverse"] is True
+    assert (
+        mock_inventory_service.apply_transaction_stock_line.call_args.kwargs["reverse"]
+        is True
+    )
 
 
 @pytest.mark.asyncio
@@ -230,4 +213,40 @@ async def test_update_cancelled_transaction_raises(
         await transaction_service.update_transaction(
             uuid.uuid4(),
             TransactionUpdate(notes="Nope"),
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_tax_blocked_after_stock_applied(
+    transaction_service, mock_transaction_repo
+):
+    txn = MagicMock()
+    txn.status = "active"
+    txn.stock_applied = True
+    txn.payment_status = "paid"
+    txn.lines = []
+    mock_transaction_repo.get_with_details = AsyncMock(return_value=txn)
+
+    with pytest.raises(ValidationException, match="side effects"):
+        await transaction_service.update_transaction(
+            uuid.uuid4(),
+            TransactionUpdate(tax_amount=Decimal("50.00")),
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_customer_blocked_after_stock_applied(
+    transaction_service, mock_transaction_repo
+):
+    txn = MagicMock()
+    txn.status = "active"
+    txn.stock_applied = True
+    txn.payment_status = "paid"
+    txn.lines = []
+    mock_transaction_repo.get_with_details = AsyncMock(return_value=txn)
+
+    with pytest.raises(ValidationException, match="side effects"):
+        await transaction_service.update_transaction(
+            uuid.uuid4(),
+            TransactionUpdate(customer_id=uuid.uuid4()),
         )

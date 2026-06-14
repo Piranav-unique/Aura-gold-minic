@@ -38,7 +38,9 @@ void main() {
     'updated_at': '2026-06-08T10:00:00Z',
   });
 
-  testWidgets('InventoryScreen shows inventory list', (WidgetTester tester) async {
+  testWidgets('InventoryScreen shows inventory list', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {

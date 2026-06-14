@@ -13,3 +13,9 @@ from app.models.supplier import Supplier  # noqa: F401
 from app.models.inventory_item import InventoryItem  # noqa: F401
 from app.models.stock_movement import StockMovement  # noqa: F401
 from app.models.transaction import Transaction, TransactionLine  # noqa: F401
+from app.models.workflow import (  # noqa: F401
+    WorkflowApprovalHistory,
+    WorkflowComment,
+    WorkflowEscalationRule,
+    WorkflowRequest,
+)

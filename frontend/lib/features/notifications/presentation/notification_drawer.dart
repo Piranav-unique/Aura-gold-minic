@@ -78,8 +78,9 @@ class NotificationDrawer extends ConsumerWidget {
                         return Material(
                           color: n.isRead
                               ? theme.cardColor
-                              : theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.35),
+                              : theme.colorScheme.primaryContainer.withValues(
+                                  alpha: 0.35,
+                                ),
                           borderRadius: BorderRadius.circular(12),
                           child: ListTile(
                             leading: Icon(
@@ -93,8 +94,9 @@ class NotificationDrawer extends ConsumerWidget {
                             title: Text(
                               n.title,
                               style: TextStyle(
-                                fontWeight:
-                                    n.isRead ? FontWeight.normal : FontWeight.bold,
+                                fontWeight: n.isRead
+                                    ? FontWeight.normal
+                                    : FontWeight.bold,
                               ),
                             ),
                             subtitle: Column(

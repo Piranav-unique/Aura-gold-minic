@@ -81,9 +81,11 @@ class TransactionService:
     ) -> tuple[list[dict], Decimal]:
         subtotal = Decimal("0")
         line_payloads: list[dict] = []
+        item_ids = [line_in.inventory_item_id for line_in in lines_in]
+        items_by_id = await self.inventory_repo.get_active_by_ids(item_ids)
 
         for line_in in lines_in:
-            item = await self.inventory_repo.get_active(line_in.inventory_item_id)
+            item = items_by_id.get(line_in.inventory_item_id)
             if not item:
                 raise NotFoundException(
                     f"Inventory item not found: {line_in.inventory_item_id}"
@@ -181,9 +183,7 @@ class TransactionService:
     ) -> None:
         if not txn.stock_applied:
             return
-        await self._apply_stock_for_transaction(
-            txn, performing_user_id, reverse=True
-        )
+        await self._apply_stock_for_transaction(txn, performing_user_id, reverse=True)
         if txn.customer_id and txn.transaction_type in CUSTOMER_METRIC_TYPES:
             await self._apply_customer_metrics(txn, reverse=True)
         txn.stock_applied = False
@@ -309,6 +309,15 @@ class TransactionService:
         previous_payment = txn.payment_status
         was_stock_applied = txn.stock_applied
 
+        if was_stock_applied:
+            blocked = {"customer_id", "tax_amount", "lines"} & update_data.keys()
+            if blocked:
+                raise ValidationException(
+                    "Cannot change customer, tax, or line items after payment "
+                    "side effects have been applied "
+                    f"(blocked: {', '.join(sorted(blocked))})"
+                )
+
         if "customer_id" in update_data:
             await self._validate_customer(update_data["customer_id"])
 
@@ -321,9 +330,9 @@ class TransactionService:
             line_payloads, subtotal = await self._build_line_models(
                 txn.transaction_type, line_models
             )
-            tax_amount = (
-                update_data.get("tax_amount", txn.tax_amount)
-            ).quantize(Decimal("0.01"))
+            tax_amount = (update_data.get("tax_amount", txn.tax_amount)).quantize(
+                Decimal("0.01")
+            )
             txn.subtotal = subtotal
             txn.tax_amount = tax_amount
             txn.total_amount = (subtotal + tax_amount).quantize(Decimal("0.01"))
@@ -401,6 +410,42 @@ class TransactionService:
         refreshed = await self.transaction_repo.get_with_details(transaction_id)
         return TransactionDetailResponse.from_model(refreshed)
 
+    async def _assign_document_number(
+        self,
+        transaction_id: uuid.UUID,
+        *,
+        field: str,
+        prefix: str,
+    ) -> Transaction:
+        db = self.transaction_repo.db
+        for attempt in range(2):
+            txn = await self.transaction_repo.get_for_update(transaction_id)
+            if not txn:
+                raise NotFoundException("Transaction not found")
+
+            existing = getattr(txn, field)
+            if existing:
+                return txn
+
+            setattr(
+                txn,
+                field,
+                await self.transaction_repo.next_document_number(prefix),
+            )
+            try:
+                await db.commit()
+                refreshed = await self.transaction_repo.get_with_details(transaction_id)
+                if not refreshed:
+                    raise NotFoundException("Transaction not found")
+                return refreshed
+            except IntegrityError:
+                await db.rollback()
+                if attempt == 1:
+                    raise ValidationException(
+                        f"Failed to assign {field.replace('_', ' ')}"
+                    ) from None
+        raise ValidationException(f"Failed to assign {field.replace('_', ' ')}")
+
     async def generate_invoice(
         self, transaction_id: uuid.UUID
     ) -> TransactionDocumentResponse:
@@ -408,14 +453,14 @@ class TransactionService:
         if not txn:
             raise NotFoundException("Transaction not found")
         if txn.status == "cancelled":
-            raise ValidationException("Cannot generate invoice for cancelled transaction")
+            raise ValidationException(
+                "Cannot generate invoice for cancelled transaction"
+            )
 
         if not txn.invoice_number:
-            txn.invoice_number = await self.transaction_repo.next_document_number("INV")
-            await self.transaction_repo.db.commit()
-            txn = await self.transaction_repo.get_with_details(transaction_id)
-            if not txn:
-                raise NotFoundException("Transaction not found")
+            txn = await self._assign_document_number(
+                transaction_id, field="invoice_number", prefix="INV"
+            )
 
         return self._build_document(txn, "invoice", txn.invoice_number)
 
@@ -426,16 +471,16 @@ class TransactionService:
         if not txn:
             raise NotFoundException("Transaction not found")
         if txn.status == "cancelled":
-            raise ValidationException("Cannot generate receipt for cancelled transaction")
+            raise ValidationException(
+                "Cannot generate receipt for cancelled transaction"
+            )
         if txn.payment_status != "paid":
             raise ValidationException("Receipt is only available for paid transactions")
 
         if not txn.receipt_number:
-            txn.receipt_number = await self.transaction_repo.next_document_number("RCP")
-            await self.transaction_repo.db.commit()
-            txn = await self.transaction_repo.get_with_details(transaction_id)
-            if not txn:
-                raise NotFoundException("Transaction not found")
+            txn = await self._assign_document_number(
+                transaction_id, field="receipt_number", prefix="RCP"
+            )
 
         return self._build_document(txn, "receipt", txn.receipt_number)
 

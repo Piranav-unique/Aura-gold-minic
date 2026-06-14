@@ -74,8 +74,12 @@ class DashboardService:
         )
 
         inventory_metrics_coro = None
-        if self.inventory_service and user_has_permission(current_user, "inventory.view"):
-            inventory_metrics_coro = self.inventory_service.get_metrics(low_stock_limit=5)
+        if self.inventory_service and user_has_permission(
+            current_user, "inventory.view"
+        ):
+            inventory_metrics_coro = self.inventory_service.get_metrics(
+                low_stock_limit=5
+            )
 
         transaction_metrics_coro = None
         if self.transaction_service and user_has_permission(
