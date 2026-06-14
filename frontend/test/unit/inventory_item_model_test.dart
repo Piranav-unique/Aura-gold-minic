@@ -66,4 +66,96 @@ void main() {
     expect(metrics.totalStock, 100);
     expect(metrics.lowStockCount, 2);
   });
+
+  test('InventoryItem serializers and display helpers', () {
+    final now = DateTime.utc(2026, 6, 8);
+    final item = InventoryItem(
+      id: '1',
+      itemName: 'Coin',
+      itemCategory: 'gold_coin',
+      weight: 5,
+      purity: 99.9,
+      purchasePrice: 1000,
+      currentValue: 1100,
+      stockQuantity: 3,
+      reorderLevel: 2,
+      supplierId: 'sup-1',
+      status: 'inactive',
+      notes: 'Vault',
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    expect(item.displayCategory, 'Gold Coin');
+    expect(item.displayStatus, 'Inactive');
+    expect(item.toCreateJson()['supplier_id'], 'sup-1');
+    expect(item.toUpdateJson()['notes'], 'Vault');
+    expect(item.copyWith(status: 'active').status, 'active');
+  });
+
+  test('PaginatedInventoryItems and inventory constants', () {
+    final page = PaginatedInventoryItems.fromJson({
+      'items': [
+        {
+          'id': '1',
+          'item_name': 'Bar',
+          'created_at': '2026-06-08T10:00:00Z',
+          'updated_at': '2026-06-08T10:00:00Z',
+        },
+      ],
+      'total': 1,
+    });
+    expect(page.items.single.itemName, 'Bar');
+    expect(inventoryCategoryOptions, contains('raw_gold'));
+  });
+
+  test('StockMovement display types and pagination', () {
+    expect(
+      StockMovement.fromJson({
+        'id': '1',
+        'inventory_item_id': '2',
+        'movement_type': 'adjustment',
+        'quantity_change': 0,
+        'quantity_before': 5,
+        'quantity_after': 5,
+        'created_at': '2026-06-08T10:00:00Z',
+      }).displayType,
+      'Adjustment',
+    );
+
+    final page = PaginatedStockMovements.fromJson({'items': []});
+    expect(page.total, 0);
+  });
+
+  test('Supplier serializers and pagination', () {
+    final now = DateTime.utc(2026, 6, 8);
+    final supplier = Supplier(
+      id: '1',
+      name: 'Gold Co',
+      contactPerson: 'Alice',
+      mobileNumber: '9999999999',
+      email: 'alice@gold.com',
+      address: 'Main St',
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    final json = supplier.toCreateJson();
+    expect(json['contact_person'], 'Alice');
+    expect(json['email'], 'alice@gold.com');
+    expect(supplier.copyWith(name: 'New Co').name, 'New Co');
+
+    final page = PaginatedSuppliers.fromJson({
+      'items': [
+        {
+          'id': '1',
+          'name': 'Gold Co',
+          'created_at': '2026-06-08T10:00:00Z',
+          'updated_at': '2026-06-08T10:00:00Z',
+        },
+      ],
+    });
+    expect(page.items.single.name, 'Gold Co');
+  });
 }

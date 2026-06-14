@@ -305,7 +305,7 @@ class ReportService:
             report = await self.get_inventory_report(user)
             headers = ["Category", "Items", "Stock", "Value"]
             rows = [
-                [c["category"], c["item_count"], c["total_stock"], c["category_value"]]
+                [c.category, c.item_count, c.total_stock, c.category_value]
                 for c in report.by_category
             ]
             rows.insert(
@@ -327,7 +327,7 @@ class ReportService:
                 for c in report.top_customers
             ]
             for bt in report.by_type:
-                rows.append([f"TYPE:{bt['customer_type']}", bt["revenue"], bt["count"]])
+                rows.append([f"TYPE:{bt.customer_type}", bt.revenue, bt.count])
             return headers, rows, len(rows), False
 
         if report_type == "transaction":

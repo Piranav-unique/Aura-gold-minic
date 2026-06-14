@@ -25,5 +25,19 @@ void main() {
 
     expect(profile.displayName, 'Jane Doe');
     expect(profile.effectivePermissions, contains('user.view'));
+    expect(profile.initials, 'J');
+  });
+
+  test('UserProfile displayName falls back to email', () {
+    final profile = UserProfile(
+      id: '1',
+      email: 'solo@test.com',
+      isActive: true,
+      isSuperuser: false,
+      createdAt: DateTime.utc(2026, 6, 8),
+      updatedAt: DateTime.utc(2026, 6, 8),
+    );
+    expect(profile.displayName, 'solo@test.com');
+    expect(profile.initials, 'S');
   });
 }

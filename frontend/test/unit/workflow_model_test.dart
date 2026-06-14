@@ -85,5 +85,43 @@ void main() {
   test('workflowStateLabel returns readable labels', () {
     expect(workflowStateLabel('pending'), 'Pending');
     expect(workflowActionLabel('escalated'), 'Escalated');
+    expect(workflowTypeLabel('inventory'), 'Inventory');
+  });
+
+  test('WorkflowRequest toUpdateJson and pagination', () {
+    final now = DateTime.utc(2026, 6, 8);
+    final request = WorkflowRequest(
+      id: 'req-2',
+      requestNumber: 'WR-2',
+      title: 'Update me',
+      description: 'Changed',
+      requestType: 'customer',
+      state: 'approved',
+      requesterId: 'user-1',
+      payload: const {'amount': 100},
+      escalationLevel: 0,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    expect(request.isTerminal, isTrue);
+    expect(request.toUpdateJson()['payload'], {'amount': 100});
+
+    final page = PaginatedWorkflowRequests.fromJson({
+      'items': [
+        {
+          'id': 'req-2',
+          'request_number': 'WR-2',
+          'title': 'Update me',
+          'request_type': 'customer',
+          'state': 'approved',
+          'requester_id': 'user-1',
+          'escalation_level': 0,
+          'created_at': '2026-06-08T10:00:00Z',
+          'updated_at': '2026-06-08T10:00:00Z',
+        },
+      ],
+    });
+    expect(page.items.single.isTerminal, isTrue);
   });
 }
