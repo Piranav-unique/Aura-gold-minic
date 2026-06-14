@@ -13,9 +13,7 @@ from app.core.security import get_password_hash
 from app.models.user import User
 from datetime import datetime, timezone
 
-_TINY_PNG = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-)
+_TINY_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
 
 def _user(**kwargs) -> User:
@@ -74,9 +72,7 @@ async def test_change_password_success(profile_service, mock_user_repo):
 
     assert await profile_service.change_password(
         user.id,
-        ChangePasswordRequest(
-            current_password="correct", new_password="newpassword1"
-        ),
+        ChangePasswordRequest(current_password="correct", new_password="newpassword1"),
     )
 
 

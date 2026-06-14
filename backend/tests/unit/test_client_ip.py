@@ -4,12 +4,16 @@ from app.core import client_ip as client_ip_module
 from app.core.client_ip import resolve_client_ip
 
 
-def _request(headers: dict | None = None, client_host: str | None = "127.0.0.1") -> Request:
+def _request(
+    headers: dict | None = None, client_host: str | None = "127.0.0.1"
+) -> Request:
     scope = {
         "type": "http",
         "method": "GET",
         "path": "/",
-        "headers": [(k.lower().encode(), v.encode()) for k, v in (headers or {}).items()],
+        "headers": [
+            (k.lower().encode(), v.encode()) for k, v in (headers or {}).items()
+        ],
         "client": (client_host, 1234) if client_host else None,
         "server": ("testserver", 80),
         "scheme": "http",

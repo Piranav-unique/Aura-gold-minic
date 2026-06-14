@@ -80,7 +80,9 @@ def clear_executive_cache():
 @pytest.fixture
 def executive_service():
     audit_service = MagicMock()
-    audit_service.get_activity_trend = AsyncMock(return_value=[{"label": "Mon", "count": 2}])
+    audit_service.get_activity_trend = AsyncMock(
+        return_value=[{"label": "Mon", "count": 2}]
+    )
     audit_service.get_login_statistics = AsyncMock(
         return_value={"today": 3, "week": 10, "month": 30}
     )

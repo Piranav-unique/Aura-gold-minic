@@ -247,7 +247,13 @@ async def test_get_audit_report(report_service):
 @pytest.mark.asyncio
 async def test_export_report_csv_revenue(report_service):
     user = _user("report.export", "report.view", "transaction.view")
-    content, filename, media_type, row_count, truncated = await report_service.export_report(
+    (
+        content,
+        filename,
+        media_type,
+        row_count,
+        truncated,
+    ) = await report_service.export_report(
         "revenue", "csv", user, performing_user_id=user.id
     )
     assert isinstance(content, str)
@@ -292,9 +298,7 @@ async def test_export_report_transaction_and_audit(report_service):
     )
     assert "TXN-1" in txn_content
 
-    audit_content, _, _, _, _ = await report_service.export_report(
-        "audit", "csv", user
-    )
+    audit_content, _, _, _, _ = await report_service.export_report("audit", "csv", user)
     assert "login_success" in audit_content
 
 
