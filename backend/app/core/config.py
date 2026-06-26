@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Any, List, Union
 from pydantic import field_validator, model_validator
@@ -142,7 +143,17 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def assemble_db_url(self) -> "Settings":
-        if self.DATABASE_URL:
+        env_url = os.getenv("DATABASE_URL", "").strip()
+        on_railway = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+
+        if env_url:
+            self.DATABASE_URL = normalize_database_url(env_url)
+        elif on_railway:
+            raise ValueError(
+                "DATABASE_URL is required on Railway. Add PostgreSQL, then in API "
+                "service Variables set DATABASE_URL as a reference to Postgres."
+            )
+        elif self.DATABASE_URL:
             self.DATABASE_URL = normalize_database_url(self.DATABASE_URL)
         else:
             self.DATABASE_URL = (
