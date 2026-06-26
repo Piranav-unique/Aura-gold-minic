@@ -19,7 +19,7 @@ void main() {
     test('EnvConfig prod has correct defaults', () {
       final prodConfig = EnvConfig.prod;
       expect(prodConfig.environment, AppEnvironment.prod);
-      expect(prodConfig.baseUrl, 'https://api.agsgold.com/api/v1');
+      expect(prodConfig.baseUrl, EnvConfig.hostedApiBaseUrl);
     });
   });
 }

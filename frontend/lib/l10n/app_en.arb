@@ -557,5 +557,18 @@
       "amount": {"type": "String"}
     }
   },
+  "goldCurrentValue": "Current value: {amount}",
+  "@goldCurrentValue": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "goldGramsOwned": "{grams} g owned",
+  "@goldGramsOwned": {
+    "placeholders": {
+      "grams": {"type": "String"}
+    }
+  },
+  "goldLiveAtMarketRate": "At live 24K market rate",
   "navPaymentSettlements": "Payment Settlements"
 }

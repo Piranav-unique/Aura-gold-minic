@@ -389,5 +389,8 @@
   "sellGoldInquirySubmitFailed": "கோரிக்கையை சமர்ப்பிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
   "navSellInquiries": "விற்பனை விசாரணைகள்",
   "goldInvestedAmount": "முதலீடு: {amount}",
+  "goldCurrentValue": "தற்போதைய மதிப்பு: {amount}",
+  "goldGramsOwned": "{grams} g உங்கள் வைப்பு",
+  "goldLiveAtMarketRate": "நேரடி 24K சந்தை விலையில்",
   "navPaymentSettlements": "கட்டண தீர்வுகள்"
 }

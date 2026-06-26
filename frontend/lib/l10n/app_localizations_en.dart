@@ -1241,5 +1241,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String goldCurrentValue(String amount) {
+    return 'Current value: $amount';
+  }
+
+  @override
+  String goldGramsOwned(String grams) {
+    return '$grams g owned';
+  }
+
+  @override
+  String get goldLiveAtMarketRate => 'At live 24K market rate';
+
+  @override
   String get navPaymentSettlements => 'Payment Settlements';
 }

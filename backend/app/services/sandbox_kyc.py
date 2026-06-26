@@ -33,13 +33,22 @@ class SandboxKycClient:
         payload = {
             "@entity": "in.co.sandbox.kyc.aadhaar.okyc.otp.request",
             "aadhaar_number": aadhaar_number,
-            "consent": "y",
+            "consent": "Y",
             "reason": self.reason,
         }
         data = await self._post("/kyc/aadhaar/okyc/otp", payload)
         reference_id = self._extract_reference_id(data)
         if not reference_id:
-            raise ValidationException("Unable to send Aadhaar OTP. Please try again.")
+            message = (
+                self._extract_error_message(data)
+                or "Unable to send Aadhaar OTP. Please try again."
+            )
+            logger.error(
+                "sandbox_aadhaar_otp_failed",
+                message=message,
+                transaction_id=data.get("transaction_id"),
+            )
+            raise ValidationException(message)
         return reference_id
 
     async def verify_aadhaar_otp(self, reference_id: str, otp: str) -> dict[str, Any]:
@@ -69,7 +78,7 @@ class SandboxKycClient:
             "@entity": "in.co.sandbox.kyc.pan_aadhaar.status",
             "pan": pan_number,
             "aadhaar_number": aadhaar_number,
-            "consent": "y",
+            "consent": "Y",
             "reason": self.reason,
         }
         return await self._post("/kyc/pan-aadhaar/status", payload)
@@ -85,7 +94,7 @@ class SandboxKycClient:
             "pan": pan_number,
             "name_as_per_pan": name_as_per_pan,
             "date_of_birth": date_of_birth,
-            "consent": "y",
+            "consent": "Y",
             "reason": self.reason,
         }
         return await self._post("/kyc/pan/verify", payload)
@@ -133,6 +142,11 @@ class SandboxKycClient:
 
             if response.status_code >= 400:
                 message = self._friendly_error_message(last_body, last_status)
+                raise ValidationException(message)
+
+            api_code = last_body.get("code")
+            if isinstance(api_code, int) and api_code >= 400:
+                message = self._friendly_error_message(last_body, api_code)
                 raise ValidationException(message)
 
             return last_body

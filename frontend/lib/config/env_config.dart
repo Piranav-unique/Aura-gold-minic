@@ -5,6 +5,10 @@ import 'platform_stub.dart' if (dart.library.io) 'platform_io.dart' as platform;
 enum AppEnvironment { dev, prod }
 
 class EnvConfig {
+  /// Hosted backend on Railway (used by default on Android / release builds).
+  static const String hostedApiBaseUrl =
+      'https://aura-gold-minic-production.up.railway.app/api/v1';
+
   final AppEnvironment environment;
   final String baseUrl;
   final Duration connectionTimeout;
@@ -22,9 +26,12 @@ class EnvConfig {
     if (override.isNotEmpty) return override;
 
     if (!kIsWeb && platform.isAndroid) {
-      // Emulator default: 10.0.2.2. Physical device: flutter run --dart-define=API_HOST=<your-pc-lan-ip>
-      const host = String.fromEnvironment('API_HOST', defaultValue: '10.0.2.2');
-      return 'http://$host:8000/api/v1';
+      // Local backend: flutter run --dart-define=API_HOST=<your-pc-lan-ip>
+      const host = String.fromEnvironment('API_HOST');
+      if (host.isNotEmpty) {
+        return 'http://$host:8000/api/v1';
+      }
+      return hostedApiBaseUrl;
     }
     return 'http://localhost:8000/api/v1';
   }
@@ -38,7 +45,7 @@ class EnvConfig {
     environment: AppEnvironment.prod,
     baseUrl: const String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'https://api.agsgold.com/api/v1',
+      defaultValue: hostedApiBaseUrl,
     ),
   );
 

@@ -2312,6 +2312,24 @@ abstract class AppLocalizations {
   /// **'Invested: {amount}'**
   String goldInvestedAmount(String amount);
 
+  /// No description provided for @goldCurrentValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Current value: {amount}'**
+  String goldCurrentValue(String amount);
+
+  /// No description provided for @goldGramsOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'{grams} g owned'**
+  String goldGramsOwned(String grams);
+
+  /// No description provided for @goldLiveAtMarketRate.
+  ///
+  /// In en, this message translates to:
+  /// **'At live 24K market rate'**
+  String get goldLiveAtMarketRate;
+
   /// No description provided for @navPaymentSettlements.
   ///
   /// In en, this message translates to:

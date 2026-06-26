@@ -1256,5 +1256,18 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
+  String goldCurrentValue(String amount) {
+    return 'தற்போதைய மதிப்பு: $amount';
+  }
+
+  @override
+  String goldGramsOwned(String grams) {
+    return '$grams g உங்கள் வைப்பு';
+  }
+
+  @override
+  String get goldLiveAtMarketRate => 'நேரடி 24K சந்தை விலையில்';
+
+  @override
   String get navPaymentSettlements => 'கட்டண தீர்வுகள்';
 }
