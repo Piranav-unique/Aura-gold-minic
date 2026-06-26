@@ -1,6 +1,6 @@
-# Secrets — never commit
+# Secrets — never commit (backend/.env is tracked for Railway deploy per project owner)
 .env
-backend/.env
+backend/.env.railway
 *.pem
 *.key
 
