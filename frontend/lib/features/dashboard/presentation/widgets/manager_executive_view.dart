@@ -116,7 +116,7 @@ class ManagerExecutiveView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         DashboardSection(
-          title: 'Inventory Alerts',
+          title: 'Stock alerts',
           actionLabel: 'Inventory',
           onAction: () => context.go('/inventory'),
           child: Card(
@@ -133,7 +133,7 @@ class ManagerExecutiveView extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final item = data.inventoryAlerts[index];
                       return ListTile(
-                        onTap: () => context.push('/inventory/${item.id}'),
+                        onTap: () => context.go('/inventory'),
                         leading: const Icon(
                           Icons.warning_amber_rounded,
                           color: Colors.orange,

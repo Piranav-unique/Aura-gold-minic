@@ -570,5 +570,6 @@
     }
   },
   "goldLiveAtMarketRate": "At live 24K market rate",
-  "navPaymentSettlements": "Payment Settlements"
+  "navPaymentSettlements": "Payment Settlements",
+  "navUserWallets": "User Wallets"
 }

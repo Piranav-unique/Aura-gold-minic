@@ -60,14 +60,20 @@ class GoldSchemeService:
 
     @staticmethod
     def can_sell_gold(user: User) -> bool:
-        holdings = Decimal(str(user.gold_savings_grams or 0))
-        return holdings > 0
+        return GoldSchemeService.sell_locked_reason(user) is None
 
     @staticmethod
     def sell_locked_reason(user: User) -> str | None:
+        if user.kyc_status != "verified":
+            return "Complete your KYC before selling."
         holdings = Decimal(str(user.gold_savings_grams or 0))
         if holdings <= 0:
             return "Buy gold first to unlock selling."
+        scheme_status = user.gold_scheme_status or "not_selected"
+        if scheme_status == "active":
+            return "Your savings scheme has not yet matured for selling."
+        if scheme_status == "not_selected":
+            return "Choose and complete your gold savings scheme before selling."
         return None
 
     @classmethod

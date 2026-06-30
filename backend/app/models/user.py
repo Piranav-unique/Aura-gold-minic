@@ -67,6 +67,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     wallet_balance_inr: Mapped[Decimal] = mapped_column(
         Numeric(18, 2), default=Decimal("0"), nullable=False
     )
+    razorpay_contact_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Relationships
     roles: Mapped[List["Role"]] = relationship(

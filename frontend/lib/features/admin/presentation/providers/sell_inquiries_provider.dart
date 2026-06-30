@@ -13,11 +13,18 @@ final sellInquiriesListProvider =
       .toList();
 });
 
+final sellInquiryDetailProvider = FutureProvider.autoDispose
+    .family<SellInquiryDetail, String>((ref, inquiryId) async {
+  final apiClient = ref.read(apiClientProvider);
+  final response = await apiClient.get('/sell-inquiries/$inquiryId');
+  return SellInquiryDetail.fromJson(response.data as Map<String, dynamic>);
+});
+
 final respondSellInquiryProvider = Provider((ref) {
   return ({
     required String inquiryId,
     required String adminResponse,
-    String status = 'responded',
+    String status = 'needs_info',
   }) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.patch(
@@ -26,6 +33,31 @@ final respondSellInquiryProvider = Provider((ref) {
         'admin_response': adminResponse,
         'status': status,
       },
+    );
+    return AdminSellGoldInquiry.fromJson(response.data as Map<String, dynamic>);
+  };
+});
+
+final approveSellInquiryProvider = Provider((ref) {
+  return ({required String inquiryId}) async {
+    final apiClient = ref.read(apiClientProvider);
+    final response = await apiClient.post(
+      '/sell-inquiries/$inquiryId/approve',
+      data: {'confirm': true},
+    );
+    return AdminSellGoldInquiry.fromJson(response.data as Map<String, dynamic>);
+  };
+});
+
+final rejectSellInquiryProvider = Provider((ref) {
+  return ({
+    required String inquiryId,
+    required String rejectionReason,
+  }) async {
+    final apiClient = ref.read(apiClientProvider);
+    final response = await apiClient.post(
+      '/sell-inquiries/$inquiryId/reject',
+      data: {'rejection_reason': rejectionReason},
     );
     return AdminSellGoldInquiry.fromJson(response.data as Map<String, dynamic>);
   };

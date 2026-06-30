@@ -18,6 +18,7 @@ from app.services.payment_settlement import (
 )
 from app.services.dashboard_cache import clear_personal_dashboard_cache
 from app.services.razorpay_client import RazorpayClient
+from app.services.digital_metal_inventory import DigitalMetalInventoryService
 
 _MIN_GRAMS = Decimal("0.0001")
 
@@ -29,11 +30,13 @@ class GoldPaymentService:
         payment_repo: PaymentOrderRepository,
         metal_prices: MetalPriceService,
         razorpay: RazorpayClient,
+        digital_inventory_service: DigitalMetalInventoryService | None = None,
     ):
         self.user_repo = user_repo
         self.payment_repo = payment_repo
         self.metal_prices = metal_prices
         self.razorpay = razorpay
+        self.digital_inventory_service = digital_inventory_service
 
     async def create_buy_order(
         self,
@@ -69,6 +72,9 @@ class GoldPaymentService:
         else:
             amount = amount_inr.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             grams = grams_from_payment_amount(amount, rate, metal=metal)
+
+        if self.digital_inventory_service:
+            await self.digital_inventory_service.ensure_available(metal, grams)
 
         amount_paise = int((amount * 100).to_integral_value(rounding=ROUND_HALF_UP))
         settlement = compute_purchase_settlement(amount, metal=metal)
@@ -159,6 +165,15 @@ class GoldPaymentService:
             await self.user_repo.db.commit()
             raise ValidationException("Payment verification failed.")
 
+        if self.digital_inventory_service:
+            await self.digital_inventory_service.consume_for_paid_order(
+                metal=order.metal,
+                grams=Decimal(str(order.grams)),
+                payment_order_id=order.id,
+                user_id=user.id,
+                commit=False,
+            )
+
         order.status = "paid"
         order.razorpay_payment_id = razorpay_payment_id
         order.paid_at = datetime.now(timezone.utc)
@@ -178,6 +193,8 @@ class GoldPaymentService:
 
         await self.user_repo.db.commit()
         await self.user_repo.db.refresh(user)
+        if self.digital_inventory_service:
+            await self.digital_inventory_service.notify_metal_status(order.metal)
         clear_personal_dashboard_cache(str(user.id))
         return self._build_verify_response(user, order)
 

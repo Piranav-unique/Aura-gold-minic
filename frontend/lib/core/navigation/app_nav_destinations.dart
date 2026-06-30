@@ -84,6 +84,13 @@ List<AppNavDestination> buildNavDestinations(
       requiredPermission: 'transaction.view',
     ),
     AppNavDestination(
+      routePrefix: '/admin/user-wallets',
+      label: l10n.navUserWallets,
+      icon: Icons.account_balance_wallet_outlined,
+      selectedIcon: Icons.account_balance_wallet,
+      requiredPermission: 'wallet.view',
+    ),
+    AppNavDestination(
       routePrefix: '/admin/payment-settlements',
       label: l10n.navPaymentSettlements,
       icon: Icons.payments_outlined,
@@ -96,6 +103,13 @@ List<AppNavDestination> buildNavDestinations(
       icon: Icons.sell_outlined,
       selectedIcon: Icons.sell,
       requiredPermission: 'transaction.view',
+    ),
+    AppNavDestination(
+      routePrefix: '/admin/profile',
+      label: 'Org profile',
+      icon: Icons.business_outlined,
+      selectedIcon: Icons.business,
+      requiredPermission: 'organization.view',
     ),
     AppNavDestination(
       routePrefix: '/reports',
@@ -142,6 +156,9 @@ List<AppNavDestination> buildNavDestinations(
 
   return all.where((d) {
     if (!visible(d.requiredPermission)) return false;
+    if (audience == AppAudience.staffAdmin && d.routePrefix == '/user-dashboard') {
+      return false;
+    }
     if (audience == AppAudience.endUser) {
       const staffOnlyRoutes = {
         '/dashboard',
@@ -151,6 +168,8 @@ List<AppNavDestination> buildNavDestinations(
         '/transactions',
         '/admin/payment-settlements',
         '/admin/sell-inquiries',
+        '/admin/profile',
+        '/admin/user-wallets',
         '/reports',
         '/workflows',
         '/admin/users',
@@ -193,7 +212,10 @@ void navigateToIndex(
 
 bool matchesNavRoute(String path, String routePrefix) {
   if (routePrefix == '/inventory') {
-    return path.startsWith('/inventory') || path.startsWith('/suppliers');
+    return path == '/inventory' || path.startsWith('/inventory/');
+  }
+  if (routePrefix == '/admin/user-wallets') {
+    return path.startsWith('/admin/user-wallets');
   }
   return path.startsWith(routePrefix);
 }

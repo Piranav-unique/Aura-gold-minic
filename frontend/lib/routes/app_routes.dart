@@ -17,15 +17,23 @@ import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/kyc_verification_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/sell_gold_inquiry_screen.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/sell_gold_screen.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/sell_gold_inquiry_success_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/my_savings_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/user_transactions_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/bank_accounts_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/add_bank_account_screen.dart';
 import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
 import 'package:ags_gold/features/legal/presentation/privacy_policy_screen.dart';
+import 'package:ags_gold/features/admin/presentation/metal_inventory_screen.dart';
+import 'package:ags_gold/features/admin/presentation/metal_inventory_movements_screen.dart';
 import 'package:ags_gold/features/admin/presentation/payment_settlements_screen.dart';
+import 'package:ags_gold/features/admin/presentation/user_wallets_screen.dart';
+import 'package:ags_gold/features/admin/presentation/user_wallet_detail_screen.dart';
+import 'package:ags_gold/features/admin/presentation/user_wallet_transactions_screen.dart';
+import 'package:ags_gold/features/admin/presentation/wallet_transaction_detail_screen.dart';
 import 'package:ags_gold/features/admin/presentation/sell_inquiries_screen.dart';
+import 'package:ags_gold/features/admin/presentation/sell_inquiry_detail_screen.dart';
+import 'package:ags_gold/features/admin/presentation/admin_organization_profile_screen.dart';
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/admin/presentation/roles_screen.dart';
 import 'package:ags_gold/features/admin/presentation/permissions_screen.dart';
@@ -36,12 +44,6 @@ import 'package:ags_gold/features/referral/presentation/refer_and_earn_screen.da
 import 'package:ags_gold/features/customers/presentation/customers_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_detail_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_form_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/inventory_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/inventory_detail_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/inventory_form_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/suppliers_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/stock_movements_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/inventory_permission_gate.dart';
 import 'package:ags_gold/features/transactions/presentation/transactions_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_form_screen.dart';
@@ -137,12 +139,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (audience == AppAudience.endUser && location.startsWith('/dashboard')) {
           return '/user-dashboard';
         }
+        if (audience == AppAudience.staffAdmin) {
+          const endUserRoutes = [
+            '/user-dashboard',
+            '/buy-gold',
+            '/sell-gold',
+            '/my-savings',
+            '/user-transactions',
+            '/bank-accounts',
+            '/refer-and-earn',
+            '/live-price',
+            '/kyc',
+          ];
+          if (endUserRoutes.any(
+            (route) => location == route || location.startsWith('$route/'),
+          )) {
+            return '/dashboard';
+          }
+        }
         if (audience == AppAudience.endUser) {
           const staffRoutes = [
             '/audit-logs',
             '/customers',
             '/inventory',
-            '/suppliers',
             '/transactions',
             '/reports',
             '/workflows',
@@ -243,11 +262,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SellGoldInquiryScreen(),
       ),
       GoRoute(
+        path: '/sell-gold-inquiry/success',
+        builder: (context, state) => const SellGoldInquirySuccessScreen(),
+      ),
+      GoRoute(
         path: '/sell-gold',
-        builder: (context, state) => KycTradingGate(
-          title: AppLocalizations.of(context).sellGold,
-          child: const SellGoldScreen(),
-        ),
+        redirect: (context, state) => '/sell-gold-inquiry',
       ),
       GoRoute(
         path: '/my-savings',
@@ -318,55 +338,56 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/inventory',
-        builder: (context, state) => const InventoryPermissionGate(
-          requiredPermission: 'inventory.view',
-          child: InventoryScreen(),
-        ),
-      ),
-      GoRoute(
         path: '/inventory/movements',
-        builder: (context, state) => const InventoryPermissionGate(
+        builder: (context, state) => const PermissionGate(
           requiredPermission: 'inventory.view',
-          child: StockMovementsScreen(),
+          child: MetalInventoryMovementsScreen(),
         ),
       ),
       GoRoute(
-        path: '/inventory/new',
-        builder: (context, state) => const InventoryPermissionGate(
-          requiredPermission: 'inventory.create',
-          deniedSubtitle: 'You need inventory.create to add items.',
-          child: InventoryFormScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/inventory/:id/edit',
-        builder: (context, state) => InventoryPermissionGate(
-          requiredPermission: 'inventory.update',
-          deniedSubtitle: 'You need inventory.update to edit items.',
-          child: InventoryFormScreen(itemId: state.pathParameters['id']),
-        ),
-      ),
-      GoRoute(
-        path: '/inventory/:id',
-        builder: (context, state) => InventoryPermissionGate(
+        path: '/inventory',
+        builder: (context, state) => const PermissionGate(
           requiredPermission: 'inventory.view',
-          child: InventoryDetailScreen(itemId: state.pathParameters['id']!),
+          child: MetalInventoryScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/inventory/:subpath',
+        redirect: (context, state) => '/inventory',
       ),
       GoRoute(
         path: '/suppliers',
-        builder: (context, state) => const InventoryPermissionGate(
-          requiredPermission: 'inventory.view',
-          child: SuppliersScreen(),
-        ),
+        redirect: (context, state) => '/inventory',
+      ),
+      GoRoute(
+        path: '/admin/metal-inventory',
+        redirect: (context, state) => '/inventory',
       ),
       GoRoute(
         path: '/transactions',
-        builder: (context, state) => const TransactionPermissionGate(
-          requiredPermission: 'transaction.view',
-          child: TransactionsScreen(),
-        ),
+        builder: (context, state) {
+          final userSearch = state.uri.queryParameters['user'];
+          return TransactionPermissionGate(
+            requiredPermission: 'transaction.view',
+            child: TransactionsScreen(initialUserSearch: userSearch),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/transactions/wallet-transaction',
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'];
+          if (id == null || id.isEmpty) {
+            return const TransactionPermissionGate(
+              requiredPermission: 'transaction.view',
+              child: TransactionsScreen(),
+            );
+          }
+          return TransactionPermissionGate(
+            requiredPermission: 'transaction.view',
+            child: WalletTransactionDetailScreen(transactionId: id),
+          );
+        },
       ),
       GoRoute(
         path: '/transactions/new',
@@ -435,6 +456,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: '/admin/user-wallets',
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'wallet.view',
+          child: UserWalletsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/user-wallets/:userId',
+        builder: (context, state) => PermissionGate(
+          requiredPermission: 'wallet.view',
+          child: UserWalletDetailScreen(
+            userId: state.pathParameters['userId']!,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/user-wallets/:userId/transactions',
+        builder: (context, state) => PermissionGate(
+          requiredPermission: 'wallet.view',
+          child: UserWalletTransactionsScreen(
+            userId: state.pathParameters['userId']!,
+          ),
+        ),
+      ),
+      GoRoute(
         path: '/admin/payment-settlements',
         builder: (context, state) => const PermissionGate(
           requiredPermission: 'transaction.view',
@@ -446,6 +492,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PermissionGate(
           requiredPermission: 'transaction.view',
           child: SellInquiriesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/sell-inquiries/:id',
+        builder: (context, state) => PermissionGate(
+          requiredPermission: 'transaction.view',
+          child: SellInquiryDetailScreen(
+            inquiryId: state.pathParameters['id']!,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/profile',
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'organization.view',
+          child: AdminOrganizationProfileScreen(),
         ),
       ),
       GoRoute(

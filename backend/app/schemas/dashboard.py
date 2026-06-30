@@ -68,6 +68,22 @@ class CustomerDashboardMetrics(BaseModel):
     new_this_month: int
 
 
+class AppDashboardMetrics(BaseModel):
+    """Gold app KPIs: Razorpay buys, wallet activity, members, digital metal stock."""
+
+    total_revenue: Decimal
+    monthly_revenue: Decimal
+    daily_revenue: Decimal
+    total_transactions: int
+    monthly_transactions: int
+    member_count: int
+    members_new_this_month: int
+    metal_inventory_value: Decimal
+    gold_available_grams: Decimal
+    silver_available_grams: Decimal
+    low_stock_metal_count: int = 0
+
+
 class TeamDashboardMetrics(BaseModel):
     active_users: int
     pending_approvals: int
@@ -182,6 +198,7 @@ class ExecutiveDashboardResponse(BaseModel):
     revenue_trend: List[RevenueTrendPoint] = []
     revenue_growth_percent: Optional[Decimal] = None
     customer_metrics: Optional[CustomerDashboardMetrics] = None
+    app_metrics: Optional[AppDashboardMetrics] = None
     inventory_metrics: Optional[InventoryDashboardMetrics] = None
     transaction_metrics: Optional[TransactionDashboardMetrics] = None
     team_metrics: Optional[TeamDashboardMetrics] = None

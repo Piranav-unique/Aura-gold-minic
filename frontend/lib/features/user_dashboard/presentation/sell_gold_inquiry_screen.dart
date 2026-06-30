@@ -22,6 +22,7 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
+  final _quantityController = TextEditingController();
   final _messageController = TextEditingController();
   bool _loading = false;
   String? _error;
@@ -31,6 +32,7 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
   void dispose() {
     _nameController.dispose();
     _mobileController.dispose();
+    _quantityController.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -57,14 +59,12 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
       await ref.read(submitSellGoldInquiryProvider)(
         name: _nameController.text.trim(),
         mobileNumber: _mobileController.text.trim(),
+        quantityGrams: double.parse(_quantityController.text.trim()),
         message: _messageController.text.trim(),
       );
       ref.invalidate(mySellGoldInquiriesProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.sellGoldInquirySubmitted)),
-      );
-      context.pop();
+      context.go('/sell-gold-inquiry/success');
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
@@ -148,9 +148,34 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
                           LengthLimitingTextInputFormatter(10),
                         ],
                         validator: (value) {
-                          final digits = value?.replaceAll(RegExp(r'\D'), '') ?? '';
+                          final digits =
+                              value?.replaceAll(RegExp(r'\D'), '') ?? '';
                           if (digits.length != 10) {
                             return l10n.sellGoldInquiryMobileRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _quantityController,
+                        decoration: const InputDecoration(
+                          labelText: 'Quantity to sell (grams)',
+                          prefixIcon: Icon(Icons.scale_outlined),
+                          suffixText: 'g',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d{0,4}'),
+                          ),
+                        ],
+                        validator: (value) {
+                          final parsed = double.tryParse(value?.trim() ?? '');
+                          if (parsed == null || parsed <= 0) {
+                            return 'Enter a valid quantity in grams';
                           }
                           return null;
                         },
@@ -187,7 +212,8 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : Text(l10n.sellGoldInquirySubmit),
                       ),

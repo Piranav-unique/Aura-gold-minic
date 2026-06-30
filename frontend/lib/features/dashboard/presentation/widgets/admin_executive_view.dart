@@ -11,70 +11,84 @@ class AdminExecutiveView extends StatelessWidget {
 
   const AdminExecutiveView({super.key, required this.data});
 
+  static String _formatGrams(double grams) {
+    final kg = grams / 1000;
+    final fmt = NumberFormat('#,##0.##');
+    if (kg >= 1) {
+      return '${fmt.format(kg)} KG';
+    }
+    return '${fmt.format(grams)} g';
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
-    final txn = data.transactionMetrics;
-    final customers = data.customerMetrics;
-    final inventory = data.inventoryMetrics;
+    final countFmt = NumberFormat.decimalPattern();
+    final app = data.appMetrics;
 
     final kpis = <Widget>[
-      if (txn != null)
+      if (app != null) ...[
         DashboardKpiCard(
-          label: 'Daily Revenue',
-          value: currency.format(txn.dailyRevenue),
-          trend: 'Paid transactions today',
+          label: 'Total App Revenue',
+          value: currency.format(app.totalRevenue),
+          trend: 'All paid gold purchases',
           icon: Icons.payments_outlined,
           color: AppTheme.emerald,
         ),
-      if (txn != null)
         DashboardKpiCard(
           label: 'Monthly Revenue',
-          value: currency.format(txn.monthlyRevenue),
-          trend: 'Month to date',
+          value: currency.format(app.monthlyRevenue),
+          trend: 'Paid purchases this month',
           icon: Icons.calendar_month_outlined,
           color: AppTheme.primaryGold,
         ),
-      if (customers != null)
         DashboardKpiCard(
-          label: 'Customers',
-          value: '${customers.totalCustomers}',
-          trend: '${customers.newThisMonth} new this month',
-          icon: Icons.storefront_outlined,
+          label: 'Transactions',
+          value: countFmt.format(app.totalTransactions),
+          trend: '${countFmt.format(app.monthlyTransactions)} this month',
+          icon: Icons.receipt_long_outlined,
           color: AppTheme.sapphireBlue,
         ),
-      if (inventory != null)
         DashboardKpiCard(
-          label: 'Inventory Value',
-          value: currency.format(inventory.inventoryValue),
-          trend: '${inventory.totalStock} units in stock',
+          label: 'App Members',
+          value: countFmt.format(app.memberCount),
+          trend: '${countFmt.format(app.membersNewThisMonth)} new this month',
+          icon: Icons.people_outline,
+          color: AppTheme.sapphireBlue,
+        ),
+        DashboardKpiCard(
+          label: 'Metal Inventory Value',
+          value: currency.format(app.metalInventoryValue),
+          trend:
+              'Gold ${_formatGrams(app.goldAvailableGrams)} · Silver ${_formatGrams(app.silverAvailableGrams)} available',
           icon: Icons.inventory_2_outlined,
           color: AppTheme.amber,
         ),
-      if (inventory != null && inventory.lowStockCount > 0)
-        DashboardKpiCard(
-          label: 'Low Stock',
-          value: '${inventory.lowStockCount}',
-          trend: 'Items below reorder level',
-          icon: Icons.warning_amber_outlined,
-          color: Colors.orange,
-          positive: false,
-        ),
+        if (app.lowStockMetalCount > 0)
+          DashboardKpiCard(
+            label: 'Metal Stock Alerts',
+            value: '${app.lowStockMetalCount}',
+            trend: 'Metals low or out of stock',
+            icon: Icons.warning_amber_outlined,
+            color: Colors.orange,
+            positive: false,
+          ),
+      ],
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        dashboardKpiGrid(context, kpis),
-        const SizedBox(height: 24),
+        if (kpis.isNotEmpty) dashboardKpiGrid(context, kpis),
+        if (kpis.isNotEmpty) const SizedBox(height: 24),
         if (data.revenueTrend.isNotEmpty)
           DashboardSection(
             title: 'Revenue',
-            actionLabel: 'Reports',
-            onAction: () => context.go('/reports'),
+            actionLabel: 'Transactions',
+            onAction: () => context.go('/transactions'),
             child: PremiumTrendChart(
-              title: 'Revenue Performance',
-              subtitle: 'Net revenue over the last 30 days',
+              title: 'App Revenue',
+              subtitle: 'Paid gold purchases over the last 30 days',
               values: data.revenueTrend.map((p) => p.revenue).toList(),
               labels: data.revenueTrend
                   .map(
@@ -88,76 +102,70 @@ class AdminExecutiveView extends StatelessWidget {
             ),
           ),
         if (data.revenueTrend.isNotEmpty) const SizedBox(height: 24),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final stacked = constraints.maxWidth < 900;
-            final txnCard = _moduleCard(
-              context,
-              title: 'Transactions',
-              icon: Icons.receipt_long_outlined,
-              color: AppTheme.emerald,
-              onTap: () => context.go('/transactions'),
-              lines: txn == null
-                  ? const ['No transaction access']
-                  : [
-                      'Daily: ${currency.format(txn.dailyRevenue)}',
-                      'Monthly: ${currency.format(txn.monthlyRevenue)}',
-                      if (txn.topCustomers.isNotEmpty)
-                        'Top: ${txn.topCustomers.first.fullName}',
-                    ],
-            );
-            final customerCard = _moduleCard(
-              context,
-              title: 'Customers',
-              icon: Icons.people_outline,
-              color: AppTheme.sapphireBlue,
-              onTap: () => context.go('/customers'),
-              lines: customers == null
-                  ? const ['No customer access']
-                  : [
-                      'Total: ${customers.totalCustomers}',
-                      'Active: ${customers.activeCustomers}',
-                      'New: ${customers.newThisMonth} this month',
-                    ],
-            );
-            final inventoryCard = _moduleCard(
-              context,
-              title: 'Inventory',
-              icon: Icons.inventory_2_outlined,
-              color: AppTheme.amber,
-              onTap: () => context.go('/inventory'),
-              lines: inventory == null
-                  ? const ['No inventory access']
-                  : [
-                      'Value: ${currency.format(inventory.inventoryValue)}',
-                      'Stock: ${inventory.totalStock} units',
-                      'Alerts: ${inventory.lowStockCount} low stock',
-                    ],
-            );
-
-            if (stacked) {
-              return Column(
-                children: [
-                  txnCard,
-                  const SizedBox(height: 12),
-                  customerCard,
-                  const SizedBox(height: 12),
-                  inventoryCard,
+        if (app != null)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 900;
+              final revenueCard = _moduleCard(
+                context,
+                title: 'Revenue',
+                icon: Icons.payments_outlined,
+                color: AppTheme.emerald,
+                onTap: () => context.go('/admin/payment-settlements'),
+                lines: [
+                  'Total: ${currency.format(app.totalRevenue)}',
+                  'Monthly: ${currency.format(app.monthlyRevenue)}',
+                  'Today: ${currency.format(app.dailyRevenue)}',
                 ],
               );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: txnCard),
-                const SizedBox(width: 12),
-                Expanded(child: customerCard),
-                const SizedBox(width: 12),
-                Expanded(child: inventoryCard),
-              ],
-            );
-          },
-        ),
+              final membersCard = _moduleCard(
+                context,
+                title: 'App Members',
+                icon: Icons.people_outline,
+                color: AppTheme.sapphireBlue,
+                onTap: () => context.go('/admin/user-wallets'),
+                lines: [
+                  'Members: ${countFmt.format(app.memberCount)}',
+                  'New this month: ${countFmt.format(app.membersNewThisMonth)}',
+                  'Wallet activity: ${countFmt.format(app.totalTransactions)} txns',
+                ],
+              );
+              final inventoryCard = _moduleCard(
+                context,
+                title: 'Metal Inventory',
+                icon: Icons.inventory_2_outlined,
+                color: AppTheme.amber,
+                onTap: () => context.go('/inventory'),
+                lines: [
+                  'Value: ${currency.format(app.metalInventoryValue)}',
+                  'Gold available: ${_formatGrams(app.goldAvailableGrams)}',
+                  'Silver available: ${_formatGrams(app.silverAvailableGrams)}',
+                ],
+              );
+
+              if (stacked) {
+                return Column(
+                  children: [
+                    revenueCard,
+                    const SizedBox(height: 12),
+                    membersCard,
+                    const SizedBox(height: 12),
+                    inventoryCard,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: revenueCard),
+                  const SizedBox(width: 12),
+                  Expanded(child: membersCard),
+                  const SizedBox(width: 12),
+                  Expanded(child: inventoryCard),
+                ],
+              );
+            },
+          ),
       ],
     );
   }

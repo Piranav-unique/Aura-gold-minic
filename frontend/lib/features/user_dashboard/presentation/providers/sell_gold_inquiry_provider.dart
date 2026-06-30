@@ -6,6 +6,7 @@ final submitSellGoldInquiryProvider = Provider((ref) {
   return ({
     required String name,
     required String mobileNumber,
+    required double quantityGrams,
     required String message,
   }) async {
     final apiClient = ref.read(apiClientProvider);
@@ -14,6 +15,7 @@ final submitSellGoldInquiryProvider = Provider((ref) {
       data: {
         'name': name,
         'mobile_number': mobileNumber,
+        'quantity_grams': quantityGrams,
         'message': message,
       },
     );

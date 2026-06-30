@@ -2335,6 +2335,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment Settlements'**
   String get navPaymentSettlements;
+
+  /// No description provided for @navUserWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'User Wallets'**
+  String get navUserWallets;
 }
 
 class _AppLocalizationsDelegate

@@ -100,6 +100,12 @@ class Settings(BaseSettings):
     # SLN Chennai silver T+1 (₹/kg) parity on international INR/gram
     METAL_SILVER_TN_BULLION_MARKUP_PERCENT: float = 28.6
 
+    # Sell payout (bullion rate minus spread; platform fee on gross)
+    METAL_GOLD_SELL_SPREAD_PERCENT: float = 2.0
+    METAL_SILVER_SELL_SPREAD_PERCENT: float = 2.0
+    SELL_PLATFORM_CHARGE_PERCENT: float = 0.5
+    SELL_TAX_PERCENT: float = 18.0
+
     # Signup SMS OTP (MSG91 v5 OTP template — AurumGoldSilvers_OTP_v2)
     MSG91_AUTH_KEY: str = ""
     MSG91_OTP_URL: str = "https://control.msg91.com/api/v5/otp"
@@ -131,6 +137,9 @@ class Settings(BaseSettings):
     RAZORPAY_PLATFORM_FEE_GST_PERCENT: float = 18.0
     # When true (default in development), simulate checkout if Razorpay keys are unset
     PAYMENT_DEV_MOCK: bool = True
+    # RazorpayX — merchant ledger account for sell payouts (from RazorpayX dashboard)
+    RAZORPAYX_ACCOUNT_NUMBER: str = ""
+    RAZORPAYX_PAYOUT_MODE: str = "IMPS"
 
     # CORS Origins
     BACKEND_CORS_ORIGINS: Union[List[str], str] = []

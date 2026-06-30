@@ -54,6 +54,26 @@ class GoldSellInquiryRepository(BaseRepository[GoldSellInquiry]):
         result = await self.db.execute(query)
         return int(result.scalar_one())
 
+    async def count_for_user(self, user_id) -> int:
+        query = (
+            select(func.count())
+            .select_from(GoldSellInquiry)
+            .where(GoldSellInquiry.user_id == user_id)
+        )
+        result = await self.db.execute(query)
+        return int(result.scalar_one())
+
+    async def get_by_razorpay_payout_id(
+        self, payout_id: str
+    ) -> Optional[GoldSellInquiry]:
+        query = (
+            select(GoldSellInquiry)
+            .options(selectinload(GoldSellInquiry.user))
+            .where(GoldSellInquiry.razorpay_payout_id == payout_id)
+        )
+        result = await self.db.execute(query)
+        return result.scalars().first()
+
     async def get_with_user(self, inquiry_id) -> Optional[GoldSellInquiry]:
         query = (
             select(GoldSellInquiry)

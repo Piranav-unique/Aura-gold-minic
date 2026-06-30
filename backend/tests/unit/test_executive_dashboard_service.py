@@ -10,8 +10,8 @@ from app.models.audit_log import AuditLog
 from app.models.permission import Permission
 from app.models.role import Role
 from app.models.user import User
+from app.schemas.dashboard import MetalPricesResponse, MetalQuote
 from app.schemas.inventory import InventoryMetricsResponse
-from app.schemas.transaction import TopCustomerMetric, TransactionMetricsResponse
 from app.services.executive_dashboard import (
     ExecutiveDashboardService,
     resolve_executive_role,
@@ -130,7 +130,15 @@ def executive_service():
     workflow_repo.list_filtered = AsyncMock(return_value=[pending_item])
 
     report_repo = MagicMock()
-    report_repo.revenue_trend = AsyncMock(
+    report_repo.revenue_trend = AsyncMock(return_value=[])
+    report_repo.revenue_growth_percent = AsyncMock(return_value=None)
+
+    app_metrics_repo = MagicMock()
+    app_metrics_repo.paid_revenue_sum = AsyncMock(return_value=Decimal("50000"))
+    app_metrics_repo.count_wallet_transactions = AsyncMock(return_value=42)
+    app_metrics_repo.count_app_members = AsyncMock(return_value=120)
+    app_metrics_repo.count_new_members_this_month = AsyncMock(return_value=8)
+    app_metrics_repo.payment_revenue_trend = AsyncMock(
         return_value=[
             {
                 "label": "2026-06-01",
@@ -139,7 +147,29 @@ def executive_service():
             }
         ]
     )
-    report_repo.revenue_growth_percent = AsyncMock(return_value=Decimal("5.5"))
+    app_metrics_repo.payment_revenue_growth_percent = AsyncMock(
+        return_value=Decimal("5.5")
+    )
+
+    digital_inventory_repo = MagicMock()
+    metal_row = MagicMock()
+    metal_row.metal_type = "gold"
+    metal_row.available_weight_grams = Decimal("1000")
+    metal_row.low_stock_threshold_grams = Decimal("100")
+    silver_row = MagicMock()
+    silver_row.metal_type = "silver"
+    silver_row.available_weight_grams = Decimal("5000")
+    silver_row.low_stock_threshold_grams = Decimal("500")
+    digital_inventory_repo.list_all = AsyncMock(return_value=[metal_row, silver_row])
+
+    metal_price_service = MagicMock()
+    metal_price_service.get_prices = AsyncMock(
+        return_value=MetalPricesResponse(
+            refreshed_at=_now(),
+            gold=MetalQuote(metal="gold", retail_price=Decimal("9000"), change_percent=Decimal("0")),
+            silver=MetalQuote(metal="silver", retail_price=Decimal("100"), change_percent=Decimal("0")),
+        )
+    )
 
     inventory_service = MagicMock()
     inventory_service.get_metrics = AsyncMock(
@@ -152,20 +182,6 @@ def executive_service():
     )
 
     transaction_service = MagicMock()
-    transaction_service.get_metrics = AsyncMock(
-        return_value=TransactionMetricsResponse(
-            daily_revenue=Decimal("1000"),
-            monthly_revenue=Decimal("10000"),
-            top_customers=[
-                TopCustomerMetric(
-                    customer_id=uuid.uuid4(),
-                    full_name="Jane",
-                    revenue=Decimal("5000"),
-                    transaction_count=2,
-                )
-            ],
-        )
-    )
 
     return ExecutiveDashboardService(
         audit_service=audit_service,
@@ -174,6 +190,9 @@ def executive_service():
         user_repo=user_repo,
         workflow_repo=workflow_repo,
         report_repo=report_repo,
+        app_metrics_repo=app_metrics_repo,
+        digital_inventory_repo=digital_inventory_repo,
+        metal_price_service=metal_price_service,
         inventory_service=inventory_service,
         transaction_service=transaction_service,
     )
@@ -196,6 +215,7 @@ async def test_get_dashboard_admin(executive_service):
         permissions=[
             "audit.view",
             "transaction.view",
+            "wallet.view",
             "customer.view",
             "inventory.view",
         ],
@@ -206,6 +226,7 @@ async def test_get_dashboard_admin(executive_service):
             for p in [
                 "audit.view",
                 "transaction.view",
+                "wallet.view",
                 "customer.view",
                 "inventory.view",
             ]
@@ -219,7 +240,9 @@ async def test_get_dashboard_admin(executive_service):
     assert dashboard.revenue_trend
     assert dashboard.customer_metrics is not None
     assert dashboard.inventory_metrics is not None
-    assert dashboard.transaction_metrics is not None
+    assert dashboard.app_metrics is not None
+    assert dashboard.app_metrics.member_count == 120
+    assert dashboard.app_metrics.total_transactions == 42
 
 
 @pytest.mark.asyncio
@@ -294,13 +317,13 @@ def test_activity_description_without_entity():
 
 
 @pytest.mark.asyncio
-async def test_get_dashboard_admin_without_transaction_service():
+async def test_get_dashboard_admin_without_app_metrics_permission():
     user = _user(role_names=["admin"])
     for role in user.roles:
         role.permissions = [
             Permission(
                 id=uuid.uuid4(),
-                name="transaction.view",
+                name="customer.view",
                 created_at=_now(),
                 updated_at=_now(),
             )
@@ -313,15 +336,23 @@ async def test_get_dashboard_admin_without_transaction_service():
         user_repo=MagicMock(),
         workflow_repo=MagicMock(),
         report_repo=MagicMock(),
+        app_metrics_repo=MagicMock(),
+        digital_inventory_repo=MagicMock(),
+        metal_price_service=MagicMock(),
         inventory_service=None,
         transaction_service=None,
     )
     service.notification_service.get_unread_count = AsyncMock(return_value=0)
-    service.report_repo.revenue_trend = AsyncMock(return_value=[])
-    service.report_repo.revenue_growth_percent = AsyncMock(return_value=None)
+    service.customer_repo.dashboard_metrics = AsyncMock(
+        return_value={
+            "total_customers": 0,
+            "active_customers": 0,
+            "new_this_month": 0,
+        }
+    )
 
     dashboard = await service.get_dashboard(user)
 
     assert dashboard.role == "admin"
-    assert dashboard.transaction_metrics is None
+    assert dashboard.app_metrics is None
     assert dashboard.revenue_trend == []

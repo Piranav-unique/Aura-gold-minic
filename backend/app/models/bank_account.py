@@ -26,6 +26,9 @@ class UserBankAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     verified_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
+    razorpay_fund_account_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
 
     __table_args__ = (
         Index("ix_user_bank_accounts_user_id", "user_id"),

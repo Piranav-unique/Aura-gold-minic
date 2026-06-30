@@ -35,6 +35,7 @@ from app.services.supplier import SupplierService
 from app.services.inventory import InventoryService
 from app.repositories.transaction import TransactionRepository
 from app.repositories.report import ReportRepository
+from app.repositories.app_metrics import AppMetricsRepository
 from app.repositories.workflow import WorkflowRepository
 from app.services.executive_dashboard import ExecutiveDashboardService
 from app.services.personal_dashboard import PersonalDashboardService
@@ -42,6 +43,7 @@ from app.services.metal_prices import MetalPriceService
 from app.services.gold_payment import GoldPaymentService
 from app.services.gold_scheme import GoldSchemeService
 from app.services.razorpay_client import RazorpayClient
+from app.services.razorpayx_client import RazorpayXClient
 from app.repositories.payment_order import PaymentOrderRepository
 from app.repositories.referral_reward import ReferralRewardRepository
 from app.services.referral import ReferralService
@@ -58,7 +60,19 @@ from app.services.ifsc import IfscService
 from app.services.signup_otp import SignupOtpService
 from app.services.sms import SmsService
 from app.repositories.gold_sell_inquiry import GoldSellInquiryRepository
+from app.repositories.organization_profile import OrganizationProfileRepository
+from app.repositories.bank_account import UserBankAccountRepository
 from app.services.gold_sell_inquiry import GoldSellInquiryService
+from app.services.organization_profile import OrganizationProfileService
+from app.services.sell_payout import SellPayoutService
+from app.services.sell_razorpayx_payout import SellRazorpayXPayoutService
+from app.repositories.admin_wallet import AdminWalletRepository
+from app.services.admin_wallet import AdminWalletService
+from app.repositories.digital_metal_inventory import (
+    DigitalMetalInventoryMovementRepository,
+    DigitalMetalInventoryRepository,
+)
+from app.services.digital_metal_inventory import DigitalMetalInventoryService
 
 # Setup oauth2 scheme for bearer tokens
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
@@ -323,6 +337,13 @@ def get_report_repository(
     return ReportRepository(db)
 
 
+def get_app_metrics_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> AppMetricsRepository:
+    """Dependency injecting the AppMetricsRepository."""
+    return AppMetricsRepository(db)
+
+
 def get_report_service(
     report_repo: ReportRepository = Depends(get_report_repository),
     audit_service: AuditService = Depends(get_audit_service),
@@ -369,29 +390,6 @@ def get_workflow_service(
         user_repo,
         audit_service,
         notification_service,
-    )
-
-
-def get_executive_dashboard_service(
-    audit_service: AuditService = Depends(get_audit_service),
-    notification_service: NotificationService = Depends(get_notification_service),
-    customer_repo: CustomerRepository = Depends(get_customer_repository),
-    user_repo: UserRepository = Depends(get_user_repository),
-    workflow_repo: WorkflowRepository = Depends(get_workflow_repository),
-    report_repo: ReportRepository = Depends(get_report_repository),
-    inventory_service: InventoryService = Depends(get_inventory_service),
-    transaction_service: TransactionService = Depends(get_transaction_service),
-) -> ExecutiveDashboardService:
-    """Dependency injecting the ExecutiveDashboardService."""
-    return ExecutiveDashboardService(
-        audit_service,
-        notification_service,
-        customer_repo,
-        user_repo,
-        workflow_repo,
-        report_repo,
-        inventory_service,
-        transaction_service,
     )
 
 
@@ -449,13 +447,80 @@ def get_razorpay_client() -> RazorpayClient:
     return RazorpayClient()
 
 
+def get_razorpayx_client() -> RazorpayXClient:
+    return RazorpayXClient()
+
+
+def get_digital_metal_inventory_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> DigitalMetalInventoryRepository:
+    return DigitalMetalInventoryRepository(db)
+
+
+def get_executive_dashboard_service(
+    audit_service: AuditService = Depends(get_audit_service),
+    notification_service: NotificationService = Depends(get_notification_service),
+    customer_repo: CustomerRepository = Depends(get_customer_repository),
+    user_repo: UserRepository = Depends(get_user_repository),
+    workflow_repo: WorkflowRepository = Depends(get_workflow_repository),
+    report_repo: ReportRepository = Depends(get_report_repository),
+    app_metrics_repo: AppMetricsRepository = Depends(get_app_metrics_repository),
+    digital_inventory_repo: DigitalMetalInventoryRepository = Depends(
+        get_digital_metal_inventory_repository
+    ),
+    metal_price_service: MetalPriceService = Depends(get_metal_price_service),
+    inventory_service: InventoryService = Depends(get_inventory_service),
+    transaction_service: TransactionService = Depends(get_transaction_service),
+) -> ExecutiveDashboardService:
+    """Dependency injecting the ExecutiveDashboardService."""
+    return ExecutiveDashboardService(
+        audit_service,
+        notification_service,
+        customer_repo,
+        user_repo,
+        workflow_repo,
+        report_repo,
+        app_metrics_repo,
+        digital_inventory_repo,
+        metal_price_service,
+        inventory_service,
+        transaction_service,
+    )
+
+
+def get_digital_metal_inventory_movement_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> DigitalMetalInventoryMovementRepository:
+    return DigitalMetalInventoryMovementRepository(db)
+
+
+def get_digital_metal_inventory_service(
+    inventory_repo: DigitalMetalInventoryRepository = Depends(
+        get_digital_metal_inventory_repository
+    ),
+    movement_repo: DigitalMetalInventoryMovementRepository = Depends(
+        get_digital_metal_inventory_movement_repository
+    ),
+    audit_service: AuditService = Depends(get_audit_service),
+    notification_service: NotificationService = Depends(get_notification_service),
+) -> DigitalMetalInventoryService:
+    return DigitalMetalInventoryService(
+        inventory_repo, movement_repo, audit_service, notification_service
+    )
+
+
 def get_gold_payment_service(
     user_repo: UserRepository = Depends(get_user_repository),
     payment_repo: PaymentOrderRepository = Depends(get_payment_order_repository),
     metal_prices: MetalPriceService = Depends(get_metal_price_service),
     razorpay: RazorpayClient = Depends(get_razorpay_client),
+    digital_inventory_service: DigitalMetalInventoryService = Depends(
+        get_digital_metal_inventory_service
+    ),
 ) -> GoldPaymentService:
-    return GoldPaymentService(user_repo, payment_repo, metal_prices, razorpay)
+    return GoldPaymentService(
+        user_repo, payment_repo, metal_prices, razorpay, digital_inventory_service
+    )
 
 
 def get_gold_scheme_service(
@@ -471,9 +536,66 @@ def get_gold_sell_inquiry_repository(
     return GoldSellInquiryRepository(db)
 
 
+def get_sell_payout_service(
+    metal_prices: MetalPriceService = Depends(get_metal_price_service),
+) -> SellPayoutService:
+    return SellPayoutService(metal_prices)
+
+
+def get_sell_razorpayx_payout_service(
+    razorpayx: RazorpayXClient = Depends(get_razorpayx_client),
+    bank_repo: UserBankAccountRepository = Depends(get_user_bank_account_repository),
+    user_repo: UserRepository = Depends(get_user_repository),
+    inquiry_repo: GoldSellInquiryRepository = Depends(get_gold_sell_inquiry_repository),
+) -> SellRazorpayXPayoutService:
+    return SellRazorpayXPayoutService(razorpayx, bank_repo, user_repo, inquiry_repo)
+
+
+def get_organization_profile_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> OrganizationProfileRepository:
+    return OrganizationProfileRepository(db)
+
+
+def get_organization_profile_service(
+    repo: OrganizationProfileRepository = Depends(get_organization_profile_repository),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> OrganizationProfileService:
+    return OrganizationProfileService(repo, audit_service)
+
+
 def get_gold_sell_inquiry_service(
     inquiry_repo: GoldSellInquiryRepository = Depends(get_gold_sell_inquiry_repository),
     user_repo: UserRepository = Depends(get_user_repository),
+    bank_repo: UserBankAccountRepository = Depends(get_user_bank_account_repository),
+    org_repo: OrganizationProfileRepository = Depends(get_organization_profile_repository),
     notification_service: NotificationService = Depends(get_notification_service),
+    payout_service: SellPayoutService = Depends(get_sell_payout_service),
+    razorpayx_payout_service: SellRazorpayXPayoutService = Depends(
+        get_sell_razorpayx_payout_service
+    ),
+    audit_service: AuditService = Depends(get_audit_service),
 ) -> GoldSellInquiryService:
-    return GoldSellInquiryService(inquiry_repo, user_repo, notification_service)
+    return GoldSellInquiryService(
+        inquiry_repo,
+        user_repo,
+        bank_repo,
+        org_repo,
+        notification_service,
+        payout_service,
+        razorpayx_payout_service,
+        audit_service,
+    )
+
+
+def get_admin_wallet_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> AdminWalletRepository:
+    return AdminWalletRepository(db)
+
+
+def get_admin_wallet_service(
+    wallet_repo: AdminWalletRepository = Depends(get_admin_wallet_repository),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> AdminWalletService:
+    return AdminWalletService(wallet_repo, audit_service)

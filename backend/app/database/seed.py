@@ -1,4 +1,6 @@
 import asyncio
+import uuid
+from decimal import Decimal
 
 from sqlalchemy import inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +11,7 @@ from app.models.user import User
 from app.models.role import Role
 from app.models.permission import Permission
 from app.models.workflow import WorkflowEscalationRule
+from app.models.digital_metal_inventory import DigitalMetalInventory
 from app.core.logging import logger, setup_logging
 
 
@@ -74,6 +77,14 @@ async def seed_data(session: AsyncSession) -> None:
             "description": "Approve, reject, and assign workflow requests",
         },
         {"name": "workflow.manage", "description": "Manage workflow escalation rules"},
+        {
+            "name": "wallet.view",
+            "description": "View user wallet balances, KYC masks, and transaction history",
+        },
+        {
+            "name": "organization.view",
+            "description": "View organization profile and support contact details",
+        },
     ]
 
     db_permissions = {}
@@ -167,6 +178,8 @@ async def seed_data(session: AsyncSession) -> None:
         "workflow.create",
         "workflow.approve",
         "workflow.manage",
+        "wallet.view",
+        "organization.view",
     ]:
         perm = db_permissions[perm_name]
         if perm not in admin_role.permissions:
@@ -185,6 +198,8 @@ async def seed_data(session: AsyncSession) -> None:
         "workflow.approve",
         "report.view",
         "dashboard.view",
+        "wallet.view",
+        "organization.view",
     ]:
         perm = db_permissions[perm_name]
         if perm not in manager_role.permissions:
@@ -273,6 +288,28 @@ async def seed_data(session: AsyncSession) -> None:
                 "Run `python -m alembic upgrade head` then re-run seed."
             ),
         )
+
+    # Digital metal stock pools (buy limits for end-users)
+    for metal, total, threshold in (
+        ("gold", Decimal("15000"), Decimal("1000")),
+        ("silver", Decimal("5000"), Decimal("500")),
+    ):
+        existing = await session.execute(
+            select(DigitalMetalInventory).where(
+                DigitalMetalInventory.metal_type == metal
+            )
+        )
+        if not existing.scalars().first():
+            session.add(
+                DigitalMetalInventory(
+                    id=uuid.uuid4(),
+                    metal_type=metal,
+                    total_weight_grams=total,
+                    used_weight_grams=Decimal("0"),
+                    low_stock_threshold_grams=threshold,
+                )
+            )
+            logger.info("digital_metal_inventory_created", metal_type=metal)
 
     await session.commit()
     logger.info(

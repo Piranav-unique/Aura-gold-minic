@@ -41,6 +41,18 @@ WORKFLOW_COMMENT = "workflow_comment"
 WORKFLOW_ESCALATE = "workflow_escalate"
 WORKFLOW_ESCALATION_RULE_CREATE = "workflow_escalation_rule_create"
 WORKFLOW_ESCALATION_RULE_UPDATE = "workflow_escalation_rule_update"
+WALLET_USER_VIEW = "wallet_user_view"
+WALLET_TRANSACTION_VIEW = "wallet_transaction_view"
+
+METAL_INVENTORY_UPDATE = "metal_inventory_update"
+METAL_INVENTORY_PURCHASE_DEBIT = "metal_inventory_purchase_debit"
+SELL_REQUEST_CREATED = "sell_request_created"
+SELL_REQUEST_VIEWED = "sell_request_viewed"
+SELL_APPROVED = "sell_approved"
+SELL_REJECTED = "sell_rejected"
+SELL_PAYMENT_PROCESSED = "sell_payment_processed"
+SELL_PAYOUT_FAILED = "sell_payout_failed"
+ADMIN_PROFILE_UPDATED = "admin_profile_updated"
 
 ALL_ACTIONS = [
     LOGIN_SUCCESS,
@@ -84,4 +96,15 @@ ALL_ACTIONS = [
     WORKFLOW_ESCALATE,
     WORKFLOW_ESCALATION_RULE_CREATE,
     WORKFLOW_ESCALATION_RULE_UPDATE,
+    WALLET_USER_VIEW,
+    WALLET_TRANSACTION_VIEW,
+    METAL_INVENTORY_UPDATE,
+    METAL_INVENTORY_PURCHASE_DEBIT,
+    SELL_REQUEST_CREATED,
+    SELL_REQUEST_VIEWED,
+    SELL_APPROVED,
+    SELL_REJECTED,
+    SELL_PAYMENT_PROCESSED,
+    SELL_PAYOUT_FAILED,
+    ADMIN_PROFILE_UPDATED,
 ]

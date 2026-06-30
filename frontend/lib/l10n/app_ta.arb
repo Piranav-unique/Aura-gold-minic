@@ -392,5 +392,6 @@
   "goldCurrentValue": "தற்போதைய மதிப்பு: {amount}",
   "goldGramsOwned": "{grams} g உங்கள் வைப்பு",
   "goldLiveAtMarketRate": "நேரடி 24K சந்தை விலையில்",
-  "navPaymentSettlements": "கட்டண தீர்வுகள்"
+  "navPaymentSettlements": "கட்டண தீர்வுகள்",
+  "navUserWallets": "பயனர் பணப்பைகள்"
 }

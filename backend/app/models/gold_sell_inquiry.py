@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -24,6 +25,9 @@ class GoldSellInquiry(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     mobile_number: Mapped[str] = mapped_column(String(15), nullable=False)
+    quantity_grams: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 4), nullable=True
+    )
     message: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False
@@ -37,6 +41,39 @@ class GoldSellInquiry(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     responded_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    sell_rate_per_gram: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 4), nullable=True
+    )
+    gross_amount_inr: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 2), nullable=True
+    )
+    platform_charge_inr: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 2), nullable=True
+    )
+    tax_amount_inr: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 2), nullable=True
+    )
+    net_payable_inr: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(18, 2), nullable=True
+    )
+    payment_method: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    payment_destination: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    reference_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    approved_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    approved_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    razorpay_payout_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    razorpay_fund_account_id: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True
+    )
+    payout_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    payout_failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     user: Mapped["User"] = relationship(
         "User",
@@ -46,6 +83,11 @@ class GoldSellInquiry(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     responded_by: Mapped[Optional["User"]] = relationship(
         "User",
         foreign_keys=[responded_by_user_id],
+        lazy="joined",
+    )
+    approved_by: Mapped[Optional["User"]] = relationship(
+        "User",
+        foreign_keys=[approved_by_user_id],
         lazy="joined",
     )
 

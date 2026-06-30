@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
+import 'package:ags_gold/core/widgets/premium_data_table.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/admin/presentation/providers/sell_inquiries_provider.dart';
 import 'package:ags_gold/features/user_dashboard/domain/sell_gold_inquiry.dart';
-import 'package:ags_gold/services/api_client.dart';
 
 class SellInquiriesScreen extends ConsumerWidget {
   const SellInquiriesScreen({super.key});
@@ -16,126 +18,31 @@ class SellInquiriesScreen extends ConsumerWidget {
     switch (status) {
       case 'pending':
         return Colors.orange;
-      case 'responded':
+      case 'needs_info':
+        return Colors.blue;
+      case 'approved':
         return AppTheme.emerald;
-      case 'closed':
-        return Colors.grey;
+      case 'rejected':
+        return Colors.red;
+      case 'payout_failed':
+        return Colors.redAccent;
       default:
         return Colors.grey;
     }
   }
 
-  Future<void> _showRespondDialog(
-    BuildContext context,
-    WidgetRef ref,
-    AdminSellGoldInquiry inquiry,
-  ) async {
-    final controller = TextEditingController(
-      text: inquiry.adminResponse ?? '',
-    );
-    final formKey = GlobalKey<FormState>();
-    var loading = false;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text('Respond to ${inquiry.name}'),
-              content: SizedBox(
-                width: 480,
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        inquiry.message,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: controller,
-                        decoration: const InputDecoration(
-                          labelText: 'Your response',
-                          alignLabelWithHint: true,
-                        ),
-                        minLines: 4,
-                        maxLines: 6,
-                        validator: (value) {
-                          if (value == null || value.trim().length < 5) {
-                            return 'Enter a response (min 5 characters)';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: loading ? null : () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: loading
-                      ? null
-                      : () async {
-                          if (!formKey.currentState!.validate()) return;
-                          setDialogState(() => loading = true);
-                          try {
-                            await ref.read(respondSellInquiryProvider)(
-                              inquiryId: inquiry.id,
-                              adminResponse: controller.text.trim(),
-                            );
-                            ref.invalidate(sellInquiriesListProvider);
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
-                          } on ApiException catch (e) {
-                            if (dialogContext.mounted) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(content: Text(e.message)),
-                              );
-                            }
-                          } finally {
-                            if (dialogContext.mounted) {
-                              setDialogState(() => loading = false);
-                            }
-                          }
-                        },
-                  child: loading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Send response'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-    controller.dispose();
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inquiriesAsync = ref.watch(sellInquiriesListProvider);
-    final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
+    final dateFormat = DateFormat('MMM d, yyyy');
+    final gramFormat = NumberFormat('#,##0.##');
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
 
     return ResponsiveNavigationWrapper(
       title: 'Gold Sell Inquiries',
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isDesktop ? 24 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -147,7 +54,7 @@ class SellInquiriesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Review customer sell requests and send responses from here.',
+              'Review customer sell requests and process approvals.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context)
                         .colorScheme
@@ -168,6 +75,82 @@ class SellInquiriesScreen extends ConsumerWidget {
                     );
                   }
 
+                  if (isDesktop || isTablet) {
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(sellInquiriesListProvider);
+                        await ref.read(sellInquiriesListProvider.future);
+                      },
+                      child: ListView(
+                        children: [
+                          PremiumDataTable<AdminSellGoldInquiry>(
+                            items: items,
+                            columns: [
+                              DataTableColumn(
+                                label: 'Date',
+                                valueGetter: (i) => i.createdAt,
+                                cellBuilder: (i) => InkWell(
+                                  onTap: () => context.go(
+                                    '/admin/sell-inquiries/${i.id}',
+                                  ),
+                                  child: Text(
+                                    dateFormat.format(i.createdAt.toLocal()),
+                                  ),
+                                ),
+                              ),
+                              DataTableColumn(
+                                label: 'Customer',
+                                valueGetter: (i) => i.name,
+                                cellBuilder: (i) => Text(i.name),
+                              ),
+                              DataTableColumn(
+                                label: 'Mobile',
+                                valueGetter: (i) => i.mobileNumber,
+                                cellBuilder: (i) => Text(i.mobileNumber),
+                              ),
+                              DataTableColumn(
+                                label: 'Quantity',
+                                valueGetter: (i) => i.quantityGrams ?? 0,
+                                cellBuilder: (i) => Text(
+                                  '${gramFormat.format(i.quantityGrams ?? 0)} g',
+                                ),
+                              ),
+                              DataTableColumn(
+                                label: 'Gold balance',
+                                valueGetter: (i) => i.goldBalanceGrams ?? 0,
+                                cellBuilder: (i) => Text(
+                                  '${gramFormat.format(i.goldBalanceGrams ?? 0)} g',
+                                ),
+                              ),
+                              DataTableColumn(
+                                label: 'Scheme',
+                                valueGetter: (i) => i.goldSchemeStatus ?? '',
+                                cellBuilder: (i) =>
+                                    Text(i.goldSchemeStatus ?? '—'),
+                              ),
+                              DataTableColumn(
+                                label: 'KYC',
+                                valueGetter: (i) => i.kycStatus ?? '',
+                                cellBuilder: (i) => Text(i.kycStatus ?? '—'),
+                              ),
+                              DataTableColumn(
+                                label: 'Status',
+                                valueGetter: (i) => i.status,
+                                cellBuilder: (i) => Text(
+                                  i.status.toUpperCase(),
+                                  style: TextStyle(
+                                    color: _statusColor(i.status),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   return RefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(sellInquiriesListProvider);
@@ -179,124 +162,100 @@ class SellInquiriesScreen extends ConsumerWidget {
                       itemBuilder: (context, index) {
                         final inquiry = items[index];
                         final statusColor = _statusColor(inquiry.status);
-
-                        return Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        inquiry.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        inquiry.status.toUpperCase(),
-                                        style: TextStyle(
-                                          color: statusColor,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  inquiry.mobileNumber,
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
-                                if (inquiry.userEmail != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    inquiry.userEmail!,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.55),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 10),
-                                Text(inquiry.message),
-                                const SizedBox(height: 8),
-                                Text(
-                                  dateFormat.format(inquiry.createdAt.toLocal()),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                if (inquiry.adminResponse != null) ...[
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.emerald.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      'Response: ${inquiry.adminResponse}',
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 12),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: FilledButton.icon(
-                                    onPressed: () => _showRespondDialog(
-                                      context,
-                                      ref,
-                                      inquiry,
-                                    ),
-                                    icon: const Icon(Icons.reply_outlined, size: 18),
-                                    label: Text(
-                                      inquiry.adminResponse == null
-                                          ? 'Respond'
-                                          : 'Update response',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        return _inquiryCard(
+                          context,
+                          inquiry,
+                          statusColor,
+                          dateFormat,
+                          gramFormat,
                         );
                       },
                     ),
                   );
                 },
                 loading: () => const PremiumSkeletonList(itemCount: 5),
-                error: (error, _) => Center(child: Text('Failed to load: $error')),
+                error: (error, _) =>
+                    Center(child: Text('Failed to load: $error')),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _inquiryCard(
+    BuildContext context,
+    AdminSellGoldInquiry inquiry,
+    Color statusColor,
+    DateFormat dateFormat,
+    NumberFormat gramFormat,
+  ) {
+    return Card(
+      child: InkWell(
+        onTap: () => context.go('/admin/sell-inquiries/${inquiry.id}'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      inquiry.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      inquiry.status.toUpperCase(),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(inquiry.mobileNumber),
+              const SizedBox(height: 8),
+              Text(
+                'Qty: ${gramFormat.format(inquiry.quantityGrams ?? 0)} g • '
+                'Balance: ${gramFormat.format(inquiry.goldBalanceGrams ?? 0)} g',
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Scheme: ${inquiry.goldSchemeStatus ?? '—'} • '
+                'KYC: ${inquiry.kycStatus ?? '—'}',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                dateFormat.format(inquiry.createdAt.toLocal()),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

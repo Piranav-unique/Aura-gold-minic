@@ -24,3 +24,8 @@ from app.models.signup_otp import SignupOtpChallenge  # noqa: F401
 from app.models.bank_account import BankLinkChallenge, UserBankAccount  # noqa: F401
 from app.models.referral_reward import ReferralReward  # noqa: F401
 from app.models.gold_sell_inquiry import GoldSellInquiry  # noqa: F401
+from app.models.digital_metal_inventory import (  # noqa: F401
+    DigitalMetalInventory,
+    DigitalMetalInventoryMovement,
+)
+from app.models.organization_profile import OrganizationProfile  # noqa: F401

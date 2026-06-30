@@ -59,7 +59,7 @@ def test_sync_completes_scheme_when_target_reached():
 
 def test_can_sell_when_user_has_gold_holdings():
     no_gold = _user(gold_scheme_status="active", gold_scheme_target_grams=Decimal("10"))
-    with_gold = _user(
+    with_gold_active = _user(
         gold_scheme_status="active",
         gold_scheme_target_grams=Decimal("10"),
         gold_savings_grams=Decimal("0.5"),
@@ -69,9 +69,14 @@ def test_can_sell_when_user_has_gold_holdings():
         gold_scheme_target_grams=Decimal("10"),
         gold_savings_grams=Decimal("10"),
     )
+    not_selected = _user(
+        gold_scheme_status="not_selected",
+        gold_savings_grams=Decimal("1"),
+    )
     assert GoldSchemeService.can_sell_gold(no_gold) is False
-    assert GoldSchemeService.can_sell_gold(with_gold) is True
+    assert GoldSchemeService.can_sell_gold(with_gold_active) is False
     assert GoldSchemeService.can_sell_gold(completed) is True
+    assert GoldSchemeService.can_sell_gold(not_selected) is False
 
 
 def test_can_sell_requires_gold_holdings():

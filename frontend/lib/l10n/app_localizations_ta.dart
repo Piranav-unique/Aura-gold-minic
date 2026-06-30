@@ -1270,4 +1270,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get navPaymentSettlements => 'கட்டண தீர்வுகள்';
+
+  @override
+  String get navUserWallets => 'பயனர் பணப்பைகள்';
 }

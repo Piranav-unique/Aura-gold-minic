@@ -32,6 +32,11 @@ from app.api.bank_accounts import router as bank_accounts_router
 from app.api.gold_scheme import router as gold_scheme_router
 from app.api.referrals import router as referrals_router
 from app.api.sell_inquiries import router as sell_inquiries_router
+from app.api.admin_wallet import router as admin_wallet_router
+from app.api.admin_digital_inventory import router as admin_digital_inventory_router
+from app.api.admin_organization_profile import router as admin_organization_profile_router
+from app.api.organization_profile import router as organization_profile_router
+from app.api.razorpay_webhooks import router as razorpay_webhooks_router
 from app.database.session import verify_db_connection, async_session_maker
 from app.database import base as db_base  # noqa: F401
 from app.repositories.token_blacklist import TokenBlacklistRepository
@@ -196,4 +201,29 @@ app.include_router(
     sell_inquiries_router,
     prefix=f"{settings.API_V1_STR}/sell-inquiries",
     tags=["sell-inquiries"],
+)
+app.include_router(
+    admin_wallet_router,
+    prefix=f"{settings.API_V1_STR}/admin/wallets",
+    tags=["admin-wallets"],
+)
+app.include_router(
+    admin_digital_inventory_router,
+    prefix=f"{settings.API_V1_STR}/admin/inventory",
+    tags=["admin-digital-inventory"],
+)
+app.include_router(
+    organization_profile_router,
+    prefix=f"{settings.API_V1_STR}/organization-profile",
+    tags=["organization-profile"],
+)
+app.include_router(
+    admin_organization_profile_router,
+    prefix=f"{settings.API_V1_STR}/admin/organization-profile",
+    tags=["admin-organization-profile"],
+)
+app.include_router(
+    razorpay_webhooks_router,
+    prefix=f"{settings.API_V1_STR}/webhooks",
+    tags=["webhooks"],
 )

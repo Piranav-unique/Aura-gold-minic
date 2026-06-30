@@ -22,6 +22,50 @@ class RevenueTrendPoint {
   }
 }
 
+class AppDashboardMetrics {
+  final double totalRevenue;
+  final double monthlyRevenue;
+  final double dailyRevenue;
+  final int totalTransactions;
+  final int monthlyTransactions;
+  final int memberCount;
+  final int membersNewThisMonth;
+  final double metalInventoryValue;
+  final double goldAvailableGrams;
+  final double silverAvailableGrams;
+  final int lowStockMetalCount;
+
+  const AppDashboardMetrics({
+    required this.totalRevenue,
+    required this.monthlyRevenue,
+    required this.dailyRevenue,
+    required this.totalTransactions,
+    required this.monthlyTransactions,
+    required this.memberCount,
+    required this.membersNewThisMonth,
+    required this.metalInventoryValue,
+    required this.goldAvailableGrams,
+    required this.silverAvailableGrams,
+    this.lowStockMetalCount = 0,
+  });
+
+  factory AppDashboardMetrics.fromJson(Map<String, dynamic> json) {
+    return AppDashboardMetrics(
+      totalRevenue: _parseDecimal(json['total_revenue']),
+      monthlyRevenue: _parseDecimal(json['monthly_revenue']),
+      dailyRevenue: _parseDecimal(json['daily_revenue']),
+      totalTransactions: json['total_transactions'] as int? ?? 0,
+      monthlyTransactions: json['monthly_transactions'] as int? ?? 0,
+      memberCount: json['member_count'] as int? ?? 0,
+      membersNewThisMonth: json['members_new_this_month'] as int? ?? 0,
+      metalInventoryValue: _parseDecimal(json['metal_inventory_value']),
+      goldAvailableGrams: _parseDecimal(json['gold_available_grams']),
+      silverAvailableGrams: _parseDecimal(json['silver_available_grams']),
+      lowStockMetalCount: json['low_stock_metal_count'] as int? ?? 0,
+    );
+  }
+}
+
 class CustomerDashboardMetrics {
   final int totalCustomers;
   final int activeCustomers;
@@ -170,6 +214,7 @@ class ExecutiveDashboard {
   final List<RevenueTrendPoint> revenueTrend;
   final double? revenueGrowthPercent;
   final CustomerDashboardMetrics? customerMetrics;
+  final AppDashboardMetrics? appMetrics;
   final InventoryMetrics? inventoryMetrics;
   final TransactionMetrics? transactionMetrics;
   final TeamDashboardMetrics? teamMetrics;
@@ -187,6 +232,7 @@ class ExecutiveDashboard {
     this.revenueTrend = const [],
     this.revenueGrowthPercent,
     this.customerMetrics,
+    this.appMetrics,
     this.inventoryMetrics,
     this.transactionMetrics,
     this.teamMetrics,
@@ -216,6 +262,11 @@ class ExecutiveDashboard {
       customerMetrics: json['customer_metrics'] != null
           ? CustomerDashboardMetrics.fromJson(
               json['customer_metrics'] as Map<String, dynamic>,
+            )
+          : null,
+      appMetrics: json['app_metrics'] != null
+          ? AppDashboardMetrics.fromJson(
+              json['app_metrics'] as Map<String, dynamic>,
             )
           : null,
       inventoryMetrics: json['inventory_metrics'] != null

@@ -1,16 +1,20 @@
 import asyncio
 import time
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
 from app.core.config import settings
 from app.core.permissions import user_has_permission
 from app.models.user import User
+from app.repositories.app_metrics import AppMetricsRepository
 from app.repositories.customer import CustomerRepository
+from app.repositories.digital_metal_inventory import DigitalMetalInventoryRepository
 from app.repositories.report import ReportRepository
 from app.repositories.user import UserRepository
 from app.repositories.workflow import WorkflowRepository
 from app.schemas.dashboard import (
+    AppDashboardMetrics,
     AssignedTaskSummary,
     CustomerDashboardMetrics,
     DailyActivityItem,
@@ -22,9 +26,11 @@ from app.schemas.dashboard import (
     TransactionDashboardMetrics,
     WorkflowApprovalSummary,
 )
+from app.schemas.digital_metal_inventory import compute_stock_status
 from app.schemas.inventory import InventoryItemResponse
 from app.services.audit import AuditService
 from app.services.inventory import InventoryService
+from app.services.metal_prices import MetalPriceService
 from app.services.notification import NotificationService
 from app.services.transaction import TransactionService
 
@@ -69,6 +75,9 @@ class ExecutiveDashboardService:
         user_repo: UserRepository,
         workflow_repo: WorkflowRepository,
         report_repo: ReportRepository,
+        app_metrics_repo: AppMetricsRepository,
+        digital_inventory_repo: DigitalMetalInventoryRepository,
+        metal_price_service: MetalPriceService,
         inventory_service: Optional[InventoryService] = None,
         transaction_service: Optional[TransactionService] = None,
     ):
@@ -78,6 +87,9 @@ class ExecutiveDashboardService:
         self.user_repo = user_repo
         self.workflow_repo = workflow_repo
         self.report_repo = report_repo
+        self.app_metrics_repo = app_metrics_repo
+        self.digital_inventory_repo = digital_inventory_repo
+        self.metal_price_service = metal_price_service
         self.inventory_service = inventory_service
         self.transaction_service = transaction_service
 
@@ -116,22 +128,80 @@ class ExecutiveDashboardService:
         transaction_metrics = None
         customer_metrics = None
         inventory_metrics = None
+        app_metrics = None
 
-        if user_has_permission(user, "transaction.view"):
-            if self.transaction_service:
-                trend_rows, growth, txn = await asyncio.gather(
-                    self.report_repo.revenue_trend(days=30),
-                    self.report_repo.revenue_growth_percent(),
-                    self.transaction_service.get_metrics(),
-                )
-                transaction_metrics = TransactionDashboardMetrics.model_validate(
-                    txn.model_dump()
-                )
-            else:
-                trend_rows, growth = await asyncio.gather(
-                    self.report_repo.revenue_trend(days=30),
-                    self.report_repo.revenue_growth_percent(),
-                )
+        can_view_wallet = user_has_permission(user, "wallet.view")
+        can_view_transactions = user_has_permission(user, "transaction.view")
+
+        if can_view_wallet or can_view_transactions:
+            now = datetime.now(timezone.utc)
+            day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+            month_start = day_start.replace(day=1)
+
+            (
+                total_revenue,
+                monthly_revenue,
+                daily_revenue,
+                total_transactions,
+                monthly_transactions,
+                member_count,
+                members_new,
+                trend_rows,
+                growth,
+            ) = await asyncio.gather(
+                self.app_metrics_repo.paid_revenue_sum(),
+                self.app_metrics_repo.paid_revenue_sum(start=month_start, end=day_end),
+                self.app_metrics_repo.paid_revenue_sum(start=day_start, end=day_end),
+                self.app_metrics_repo.count_wallet_transactions(),
+                self.app_metrics_repo.count_wallet_transactions(
+                    start=month_start, end=day_end
+                ),
+                self.app_metrics_repo.count_app_members(),
+                self.app_metrics_repo.count_new_members_this_month(),
+                self.app_metrics_repo.payment_revenue_trend(days=30),
+                self.app_metrics_repo.payment_revenue_growth_percent(),
+            )
+
+            metal_inventory_value = Decimal("0")
+            gold_available = Decimal("0")
+            silver_available = Decimal("0")
+            low_stock_metal_count = 0
+
+            if user_has_permission(user, "inventory.view"):
+                metals = await self.digital_inventory_repo.list_all()
+                prices = await self.metal_price_service.get_prices()
+                price_by_metal = {
+                    "gold": prices.gold.retail_price,
+                    "silver": prices.silver.retail_price,
+                }
+                for row in metals:
+                    available = row.available_weight_grams
+                    rate = price_by_metal.get(row.metal_type, Decimal("0"))
+                    metal_inventory_value += available * rate
+                    if row.metal_type == "gold":
+                        gold_available = available
+                    elif row.metal_type == "silver":
+                        silver_available = available
+                    status = compute_stock_status(
+                        available, row.low_stock_threshold_grams
+                    )
+                    if status in {"low_stock", "out_of_stock"}:
+                        low_stock_metal_count += 1
+
+            app_metrics = AppDashboardMetrics(
+                total_revenue=total_revenue,
+                monthly_revenue=monthly_revenue,
+                daily_revenue=daily_revenue,
+                total_transactions=total_transactions,
+                monthly_transactions=monthly_transactions,
+                member_count=member_count,
+                members_new_this_month=members_new,
+                metal_inventory_value=metal_inventory_value,
+                gold_available_grams=gold_available,
+                silver_available_grams=silver_available,
+                low_stock_metal_count=low_stock_metal_count,
+            )
             revenue_trend = [
                 RevenueTrendPoint(
                     label=row["label"],
@@ -164,6 +234,7 @@ class ExecutiveDashboardService:
             revenue_trend=revenue_trend,
             revenue_growth_percent=revenue_growth,
             customer_metrics=customer_metrics,
+            app_metrics=app_metrics,
             inventory_metrics=inventory_metrics,
             transaction_metrics=transaction_metrics,
             activity_trend=activity_trend,
