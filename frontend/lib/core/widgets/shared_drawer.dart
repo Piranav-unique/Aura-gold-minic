@@ -21,30 +21,8 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     required this.title,
   });
 
-  void _handleLogout(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.logOutConfirmTitle),
-        content: Text(l10n.logOutConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(authNotifierProvider.notifier).logout();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: Text(l10n.logOut),
-          ),
-        ],
-      ),
-    );
-  }
+
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,8 +42,21 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     );
     final selectedIndex = selectedNavIndexForPath(currentPath, destinations);
 
+    // Back button always returns to the home page (user or admin). Only when
+    // already on the home page is a pop allowed (which exits the app).
+    final homePath =
+        audience == AppAudience.endUser ? '/user-dashboard' : '/dashboard';
+    final isHome = currentPath == homePath;
+    void handleBackToHome(bool didPop, Object? result) {
+      if (didPop) return;
+      context.go(homePath);
+    }
+
     if (isDesktop) {
-      return Scaffold(
+      return PopScope(
+        canPop: isHome,
+        onPopInvokedWithResult: handleBackToHome,
+        child: Scaffold(
         endDrawer: const NotificationDrawer(),
         body: Row(
           children: [
@@ -116,7 +107,7 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                   ),
                   elevation: 0,
                   actions: [
-                    if (audience == AppAudience.endUser)
+                    if (audience == AppAudience.endUser || currentPath.startsWith('/inventory'))
                       const LivePriceAppBarChip(),
                     const NotificationBellButton(),
                   ],
@@ -126,188 +117,151 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
             ),
           ],
         ),
+        ),
       );
     }
 
     final isEndUserMobile = audience == AppAudience.endUser;
+    final isStaffMobile = !isEndUserMobile;
+    final mobileLeading = isHome
+        ? null
+        : IconButton(
+            icon: const BackButtonIcon(),
+            onPressed: () => context.go(homePath),
+          );
+
+    const endUserTabPrefixes = ['/user-dashboard', '/portfolio', '/profile'];
     final endUserDestinations = isEndUserMobile
-        ? destinations
-            .where(
-              (d) =>
-                  d.routePrefix == '/user-dashboard' ||
-                  d.routePrefix == '/profile',
-            )
+        ? endUserTabPrefixes
+            .map((prefix) =>
+                destinations.where((d) => d.routePrefix == prefix).firstOrNull)
+            .whereType<AppNavDestination>()
             .toList()
         : <AppNavDestination>[];
-    final endUserNavIndex = isEndUserMobile
-        ? selectedNavIndexForPath(currentPath, endUserDestinations)
-        : 0;
 
-    final consumerTheme = isEndUserMobile
-        ? AurumConsumerTheme.resolve(themeMode, platformBrightness)
-        : theme;
+    const staffMobileTabPrefixes = [
+      '/dashboard',
+      '/inventory',
+      '/profile',
+    ];
+    // Routes that are launched via context.push() from Profile page —
+    // keep the bottom nav highlighted on Profile for all of them.
+    // NOTE: /inventory is a real tab — do NOT include it here.
+    const profileSubRoutes = {
+      '/admin/users',
+      '/admin/roles',
+      '/admin/permissions',
+      '/admin/user-wallets',
+      '/admin/payment-settlements',
+      '/admin/sell-inquiries',
+      '/audit-logs',
+      '/settings',
+      '/bank-accounts',
+      '/kyc',
+    };
+    // Sort destinations to enforce the display order: Overview · Inventory · Profile
+    final staffMobileDestinations = isStaffMobile
+        ? staffMobileTabPrefixes
+            .map((prefix) => destinations.where((d) => d.routePrefix == prefix).firstOrNull)
+            .whereType<AppNavDestination>()
+            .toList()
+        : <AppNavDestination>[];
 
-    return Theme(
+    final bottomNavDestinations =
+        isEndUserMobile ? endUserDestinations : staffMobileDestinations;
+
+    // Determine active tab index. If current path is a sub-route pushed from
+    // Profile (e.g. /audit-logs, /admin/users), keep Profile tab highlighted.
+    int bottomNavIndex;
+    if (profileSubRoutes.any((r) => currentPath.startsWith(r))) {
+      bottomNavIndex = bottomNavDestinations.indexWhere(
+        (d) => d.routePrefix == '/profile',
+      );
+      if (bottomNavIndex < 0) bottomNavIndex = 0;
+    } else {
+      bottomNavIndex = bottomNavDestinations.isNotEmpty
+          ? selectedNavIndexForPath(currentPath, bottomNavDestinations)
+          : 0;
+      if (bottomNavIndex < 0) bottomNavIndex = 0;
+    }
+
+    final consumerTheme = AurumConsumerTheme.resolve(
+      themeMode,
+      platformBrightness,
+    );
+
+    return PopScope(
+      canPop: isHome,
+      onPopInvokedWithResult: handleBackToHome,
+      child: Theme(
       data: consumerTheme,
       child: Scaffold(
-      backgroundColor: isEndUserMobile
-          ? consumerTheme.scaffoldBackgroundColor
-          : null,
+      backgroundColor: consumerTheme.scaffoldBackgroundColor,
       endDrawer: const NotificationDrawer(),
       appBar: AppBar(
-        automaticallyImplyLeading: !isEndUserMobile,
+        automaticallyImplyLeading: false,
+        leading: mobileLeading,
         title: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.w800,
-            letterSpacing: isEndUserMobile ? 0.5 : 0,
+            letterSpacing: 0.5,
           ),
         ),
         actions: [
-          if (audience == AppAudience.endUser) const LivePriceAppBarChip(),
+          if (audience == AppAudience.endUser || currentPath.startsWith('/inventory'))
+            const LivePriceAppBarChip(),
           const NotificationBellButton(),
         ],
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
-      drawer: isEndUserMobile
-          ? null
-          : Drawer(
-        child: Column(
-          children: [
-            Consumer(
-              builder: (context, ref, _) {
-                final profileAsync = ref.watch(profileProvider);
-                return profileAsync.when(
-                  data: (profile) => UserAccountsDrawerHeader(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                    ),
-                    currentAccountPicture: CircleAvatar(
-                      backgroundColor: theme.colorScheme.primary,
-                      child: Text(
-                        profile.initials,
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                    accountName: Text(
-                      profile.displayName,
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    accountEmail: Text(
-                      profile.email,
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimaryContainer.withValues(
-                          alpha: 0.8,
-                        ),
-                      ),
-                    ),
-                  ),
-                  loading: () => UserAccountsDrawerHeader(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                    ),
-                    accountName: const Text('Loading...'),
-                    accountEmail: const Text(''),
-                  ),
-                  error: (_, _) => UserAccountsDrawerHeader(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                    ),
-                    accountName: const Text('AGS Gold'),
-                    accountEmail: const Text(''),
-                  ),
-                );
-              },
-            ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  ...destinations.asMap().entries.map(
-                    (entry) => ListTile(
-                      leading: Icon(entry.value.selectedIcon),
-                      title: Text(entry.value.label),
-                      selected: selectedIndex == entry.key,
-                      onTap: () {
-                        Navigator.pop(context);
-                        navigateToIndex(context, entry.key, destinations);
-                      },
-                    ),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.redAccent),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(color: Colors.redAccent),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _handleLogout(context, ref);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-      bottomNavigationBar: isEndUserMobile
-          ? _EndUserBottomNav(
-              destinations: endUserDestinations,
-              currentIndex: endUserNavIndex,
+      drawer: null,
+      bottomNavigationBar: bottomNavDestinations.length >= 2
+          ? _MobileBottomNav(
+              destinations: bottomNavDestinations,
+              currentIndex: bottomNavIndex < 0 ? 0 : bottomNavIndex,
             )
           : null,
       body: child,
+      ),
       ),
     );
   }
 }
 
-class _EndUserBottomNav extends StatelessWidget {
+class _MobileBottomNav extends StatelessWidget {
   final List<AppNavDestination> destinations;
   final int currentIndex;
 
-  const _EndUserBottomNav({
+  const _MobileBottomNav({
     required this.destinations,
     required this.currentIndex,
   });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return Container(
       decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         border: Border(top: BorderSide(color: AurumConsumerTheme.borderOf(context))),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(
-                label: l10n.navHome,
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home_rounded,
-                selected: currentIndex == 0,
-                onTap: () => navigateToIndex(context, 0, destinations),
-              ),
-              _NavItem(
-                label: l10n.navProfile,
-                icon: Icons.person_outline,
-                selectedIcon: Icons.person_rounded,
-                selected: currentIndex == 1,
-                onTap: () => navigateToIndex(context, 1, destinations),
-              ),
+              for (var i = 0; i < destinations.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    label: destinations[i].label,
+                    icon: destinations[i].icon,
+                    selectedIcon: destinations[i].selectedIcon,
+                    selected: currentIndex == i,
+                    onTap: () => navigateToIndex(context, i, destinations),
+                  ),
+                ),
             ],
           ),
         ),
@@ -333,37 +287,41 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeBlue = Color(0xFF60A5FA);
+    final selectedColor = AppTheme.goldDeep;
+    final mutedColor = AurumConsumerTheme.muted(context);
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: selected
                   ? BoxDecoration(
-                      color: activeBlue.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: AppTheme.goldGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppTheme.goldGlowShadow,
                     )
                   : null,
               child: Icon(
                 selected ? selectedIcon : icon,
-                color: selected ? activeBlue : AurumConsumerTheme.muted(context),
-                size: 22,
+                color: selected ? AppTheme.ink : mutedColor,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: selected ? activeBlue : AurumConsumerTheme.muted(context),
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? selectedColor : mutedColor,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
           ],
@@ -372,3 +330,4 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+

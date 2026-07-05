@@ -58,13 +58,6 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'User Wallets',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
               'Search end-users by name, mobile, email, or masked KYC (last 4 digits).',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context)
@@ -175,7 +168,7 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
                     cellBuilder: (u) => IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed: () =>
-                          context.go('/admin/user-wallets/${u.id}'),
+                          context.push('/admin/user-wallets/${u.id}'),
                     ),
                   ),
                 ],
@@ -193,7 +186,7 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => context.go('/admin/user-wallets/${user.id}'),
+        onTap: () => context.push('/admin/user-wallets/${user.id}'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),

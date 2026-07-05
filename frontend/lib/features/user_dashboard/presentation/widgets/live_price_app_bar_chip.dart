@@ -41,7 +41,7 @@ class LivePriceAppBarChip extends ConsumerWidget {
           price: '…',
           onTap: null,
         ),
-        error: (_, __) => _PriceChip(
+        error: (_, _) => _PriceChip(
           label: '24K',
           price: 'Live',
           onTap: () {

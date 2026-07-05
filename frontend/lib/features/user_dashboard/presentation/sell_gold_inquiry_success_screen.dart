@@ -22,13 +22,13 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle_outline,
                 color: AurumConsumerTheme.chipGold,
                 size: 56,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Your sell request has been successfully sent to our team.',
                 style: TextStyle(
                   fontSize: 22,
@@ -37,7 +37,7 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Our administrator will review your request and contact you shortly.',
                 style: TextStyle(
                   fontSize: 15,
@@ -54,14 +54,14 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
                       child: CircularProgressIndicator(),
                     ),
                   ),
-                  error: (_, _) => const Text(
+                  error: (_, _) => Text(
                     'Contact details are temporarily unavailable.',
                     style: TextStyle(color: AurumConsumerTheme.textMuted),
                   ),
                   data: (contact) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Admin Contact Details',
                         style: TextStyle(
                           fontSize: 16,
@@ -116,7 +116,7 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 height: 1.4,
                 color: AurumConsumerTheme.textPrimary,

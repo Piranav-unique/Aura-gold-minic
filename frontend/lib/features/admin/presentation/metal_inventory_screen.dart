@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
+import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_surface_card.dart';
 import 'package:ags_gold/features/admin/domain/metal_inventory_models.dart';
 import 'package:ags_gold/features/admin/presentation/providers/admin_metal_inventory_provider.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_prices_provider.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
@@ -153,14 +156,18 @@ class MetalInventoryScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Inventory',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                  'How much GOLD and SILVER all users can buy in total. '
+                  'Each purchase reduces what is still available.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.65),
                       ),
                 ),
               ),
               TextButton.icon(
-                onPressed: () => context.go('/inventory/movements'),
+                onPressed: () => context.push('/inventory/movements'),
                 icon: const Icon(Icons.history, size: 18),
                 label: const Text('Stock history'),
               ),
@@ -180,17 +187,6 @@ class MetalInventoryScreen extends ConsumerWidget {
                 error: (_, _) => const SizedBox.shrink(),
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'How much GOLD and SILVER all users can buy in total. '
-            'Each purchase reduces what is still available.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.65),
-                ),
           ),
           const SizedBox(height: 16),
           alertsAsync.when(
@@ -240,121 +236,27 @@ class MetalInventoryScreen extends ConsumerWidget {
 
     final totalKg = (item?.totalWeightGrams ?? 0) / 1000;
     final alertKg = (item?.lowStockThresholdGrams ?? 0) / 1000;
-    final totalController = TextEditingController(
-      text: totalKg > 0 ? _formatKgInput(totalKg) : '',
-    );
-    final alertController = TextEditingController(
-      text: alertKg > 0 ? _formatKgInput(alertKg) : '',
-    );
 
-    final saved = await showDialog<bool>(
+    final result = await showDialog<({double totalKg, double alertKg})>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              metalType == _goldType
-                  ? Icons.monetization_on
-                  : Icons.circle_outlined,
-              color: metalType == _goldType
-                  ? Colors.amber.shade700
-                  : Colors.blueGrey,
-            ),
-            const SizedBox(width: 8),
-            Text('Set $metalLabel limit'),
-          ],
-        ),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: totalController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Total buy limit (KG)',
-                  hintText: 'e.g. 15',
-                  helperText: 'Maximum KG all users can buy together.',
-                  suffixText: 'KG',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,4}')),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: alertController,
-                decoration: InputDecoration(
-                  labelText: 'Alert @ (KG)',
-                  hintText: 'e.g. 1',
-                  helperText:
-                      'Notify you when available stock drops to this KG or below.',
-                  suffixText: 'KG',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: Icon(
-                    Icons.notifications_outlined,
-                    color: Theme.of(ctx).colorScheme.primary,
-                  ),
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,4}')),
-                ],
-              ),
-              if (item != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(ctx)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Now: ${formatKg(item.usedWeightGrams / 1000)} bought • '
-                    '${formatKg(item.availableWeightGrams / 1000)} still available',
-                    style: Theme.of(ctx).textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (ctx) => _SetMetalLimitDialog(
+        metalType: metalType,
+        metalLabel: metalLabel,
+        item: item,
+        initialTotalKg: totalKg,
+        initialAlertKg: alertKg,
+        formatKgInput: _formatKgInput,
+        formatKg: formatKg,
       ),
     );
 
-    if (saved != true || !context.mounted) {
-      totalController.dispose();
-      alertController.dispose();
-      return;
-    }
+    if (result == null || !context.mounted) return;
 
     try {
-      final totalKgValue = double.parse(totalController.text.trim());
-      final alertKgValue = double.parse(alertController.text.trim());
       await ref.read(updateDigitalMetalInventoryProvider)(
         metalType: metalType,
-        totalWeightGrams: totalKgValue * 1000,
-        lowStockThresholdGrams: alertKgValue * 1000,
+        totalWeightGrams: result.totalKg * 1000,
+        lowStockThresholdGrams: result.alertKg * 1000,
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -367,15 +269,6 @@ class MetalInventoryScreen extends ConsumerWidget {
           SnackBar(content: Text(e.message)),
         );
       }
-    } on FormatException {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enter valid KG values.')),
-        );
-      }
-    } finally {
-      totalController.dispose();
-      alertController.dispose();
     }
   }
 
@@ -385,6 +278,162 @@ class MetalInventoryScreen extends ConsumerWidget {
         .toStringAsFixed(4)
         .replaceAll(RegExp(r'0+$'), '')
         .replaceAll(RegExp(r'\.$'), '');
+  }
+}
+
+class _SetMetalLimitDialog extends StatefulWidget {
+  final String metalType;
+  final String metalLabel;
+  final DigitalMetalInventory? item;
+  final double initialTotalKg;
+  final double initialAlertKg;
+  final String Function(double) formatKgInput;
+  final String Function(double) formatKg;
+
+  const _SetMetalLimitDialog({
+    required this.metalType,
+    required this.metalLabel,
+    required this.item,
+    required this.initialTotalKg,
+    required this.initialAlertKg,
+    required this.formatKgInput,
+    required this.formatKg,
+  });
+
+  @override
+  State<_SetMetalLimitDialog> createState() => _SetMetalLimitDialogState();
+}
+
+class _SetMetalLimitDialogState extends State<_SetMetalLimitDialog> {
+  late final TextEditingController _totalController;
+  late final TextEditingController _alertController;
+
+  @override
+  void initState() {
+    super.initState();
+    _totalController = TextEditingController(
+      text: widget.initialTotalKg > 0
+          ? widget.formatKgInput(widget.initialTotalKg)
+          : '',
+    );
+    _alertController = TextEditingController(
+      text: widget.initialAlertKg > 0
+          ? widget.formatKgInput(widget.initialAlertKg)
+          : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _totalController.dispose();
+    _alertController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    try {
+      final totalKg = double.parse(_totalController.text.trim());
+      final alertKg = double.parse(_alertController.text.trim());
+      Navigator.pop(context, (totalKg: totalKg, alertKg: alertKg));
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid KG values.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isGold = widget.metalType == 'gold';
+    final item = widget.item;
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(
+            isGold ? Icons.monetization_on : Icons.circle_outlined,
+            color: isGold ? Colors.amber.shade700 : Colors.blueGrey,
+          ),
+          const SizedBox(width: 8),
+          Text('Set ${widget.metalLabel} limit'),
+        ],
+      ),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _totalController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Total buy limit (KG)',
+                hintText: 'e.g. 15',
+                helperText: 'Maximum KG all users can buy together.',
+                suffixText: 'KG',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,4}')),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _alertController,
+              decoration: InputDecoration(
+                labelText: 'Alert @ (KG)',
+                hintText: 'e.g. 1',
+                helperText:
+                    'Notify you when available stock drops to this KG or below.',
+                suffixText: 'KG',
+                border: const OutlineInputBorder(),
+                prefixIcon: Icon(
+                  Icons.notifications_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,4}')),
+              ],
+            ),
+            if (item != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Now: ${widget.formatKg(item.usedWeightGrams / 1000)} bought • '
+                  '${widget.formatKg(item.availableWeightGrams / 1000)} still available',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
+    );
   }
 }
 
@@ -407,16 +456,24 @@ class _MetalLimitCard extends ConsumerWidget {
     final isGold = metalType == 'gold';
     final label = isGold ? 'GOLD' : 'SILVER';
     final accent = isGold ? Colors.amber.shade700 : Colors.blueGrey.shade300;
+    final currency = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 2,
+    );
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: accent.withValues(alpha: 0.5), width: 1.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+    final pricesAsync = ref.watch(metalPricesProvider);
+    final livePrice = pricesAsync.when(
+      data: (data) {
+        final price = isGold ? data.gold.displayPrice : data.silver.displayPrice;
+        return '${currency.format(price)}/gm';
+      },
+      loading: () => '…',
+      error: (_, _) => 'Unavailable',
+    );
+
+    return AurumSurfaceCard(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -430,17 +487,46 @@ class _MetalLimitCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: pricesAsync.hasValue
+                                  ? Colors.green
+                                  : Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Live: $livePrice',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                if (item != null)
-                  _StatusBadge(status: item!.stockStatus)
-                else
-                  const Chip(label: Text('Not set')),
+                if (item == null)
+                  const Chip(label: Text('Not set'))
+                else if (item!.stockStatus != MetalStockStatus.available)
+                  _StatusBadge(status: item!.stockStatus),
               ],
             ),
             const SizedBox(height: 20),
@@ -520,7 +606,6 @@ class _MetalLimitCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -559,24 +644,21 @@ class _AlertBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUrgent = alert.stockStatus == MetalStockStatus.outOfStock;
-    final color = isUrgent
-        ? Theme.of(context).colorScheme.errorContainer
-        : Theme.of(context).colorScheme.tertiaryContainer;
+    final accent = isUrgent ? AppTheme.rose : const Color(0xFFB45309);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color,
+        color: accent.withValues(alpha: isUrgent ? 0.12 : 0.14),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
           Icon(
             isUrgent ? Icons.error_outline : Icons.warning_amber_outlined,
-            color: isUrgent
-                ? Theme.of(context).colorScheme.error
-                : Theme.of(context).colorScheme.tertiary,
+            color: accent,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -609,16 +691,16 @@ class _StatusBadge extends StatelessWidget {
     String label;
     switch (status) {
       case MetalStockStatus.outOfStock:
-        bg = Theme.of(context).colorScheme.errorContainer;
-        fg = Theme.of(context).colorScheme.error;
+        bg = AppTheme.rose.withValues(alpha: 0.14);
+        fg = AppTheme.rose;
         label = 'Out of stock';
       case MetalStockStatus.lowStock:
-        bg = Theme.of(context).colorScheme.tertiaryContainer;
-        fg = Theme.of(context).colorScheme.tertiary;
+        bg = AppTheme.amber.withValues(alpha: 0.16);
+        fg = const Color(0xFFB45309);
         label = 'Low stock';
       case MetalStockStatus.available:
-        bg = Theme.of(context).colorScheme.primaryContainer;
-        fg = Theme.of(context).colorScheme.primary;
+        bg = AppTheme.emerald.withValues(alpha: 0.14);
+        fg = const Color(0xFF0F7A44);
         label = 'In stock';
     }
     return Container(

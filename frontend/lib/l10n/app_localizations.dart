@@ -602,6 +602,18 @@ abstract class AppLocalizations {
   /// **'Could not switch scheme. Please try again.'**
   String get goldSchemeUpgradeFailed;
 
+  /// No description provided for @goldSchemeChangePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Change plan'**
+  String get goldSchemeChangePlan;
+
+  /// No description provided for @goldSchemeChangePlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which plan are you shifting to?'**
+  String get goldSchemeChangePlanTitle;
+
   /// No description provided for @mySavings.
   ///
   /// In en, this message translates to:
@@ -1525,6 +1537,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit profile'**
   String get editProfile;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully.'**
+  String get profileUpdated;
+
+  /// No description provided for @profileUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update profile. Please try again.'**
+  String get profileUpdateFailed;
+
+  /// No description provided for @currentPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your current password to change email.'**
+  String get currentPasswordRequired;
+
+  /// No description provided for @currentPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get currentPasswordLabel;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPasswordLabel;
+
+  /// No description provided for @newPasswordMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters.'**
+  String get newPasswordMinLength;
+
+  /// No description provided for @passwordChangedRelogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed. Please log in again.'**
+  String get passwordChangedRelogin;
+
+  /// No description provided for @passwordChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not change password. Please try again.'**
+  String get passwordChangeFailed;
+
+  /// No description provided for @firstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'First name is required.'**
+  String get firstNameRequired;
+
+  /// No description provided for @avatarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo updated.'**
+  String get avatarUpdated;
+
+  /// No description provided for @avatarUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload profile photo. Please try again.'**
+  String get avatarUploadFailed;
 
   /// No description provided for @accountStatus.
   ///

@@ -417,7 +417,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                           theme,
                           showAadhaarBanner: displayStage >= 2,
                         ),
-                  error: (_, __) => displayStage == 1
+                  error: (_, _) => displayStage == 1
                       ? _buildAadhaarStage(context, theme)
                       : _buildPanStage(
                           context,
@@ -476,7 +476,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                             const SizedBox(height: 20),
                           Text(
                             l10n.kycStage2Subtitle,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AurumConsumerTheme.textPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -485,7 +485,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                           const SizedBox(height: 6),
                           Text(
                             l10n.panHelper,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AurumConsumerTheme.textMuted,
                               fontSize: 13,
                               height: 1.4,
@@ -539,7 +539,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         if (!_otpSent) ...[
           Text(
             l10n.kycStep1VerifyAadhaar,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -548,7 +548,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
           const SizedBox(height: 8),
           Text(
             l10n.kycAadhaarOtpInstruction,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textMuted,
               fontSize: 14,
               height: 1.45,
@@ -559,7 +559,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
             const SizedBox(height: 10),
             Text(
               l10n.kycRegisteredMobileHint(registeredMobileMasked),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.chipGold,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,

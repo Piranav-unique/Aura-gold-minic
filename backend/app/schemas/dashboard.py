@@ -82,6 +82,8 @@ class AppDashboardMetrics(BaseModel):
     gold_available_grams: Decimal
     silver_available_grams: Decimal
     low_stock_metal_count: int = 0
+    pending_sell_requests: int = 0
+    sell_requests_this_month: int = 0
 
 
 class TeamDashboardMetrics(BaseModel):

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Shows an exit confirmation when the user presses back on a root route.
@@ -37,10 +38,20 @@ class AppExitGuard extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+
+        final currentPath = GoRouterState.of(context).matchedLocation;
+
         if (context.canPop()) {
           context.pop();
           return;
         }
+
+        final parent = parentRouteFor(currentPath);
+        if (parent != null) {
+          context.go(parent);
+          return;
+        }
+
         if (await _confirmExit(context) && context.mounted) {
           SystemNavigator.pop();
         }

@@ -189,9 +189,9 @@ final recentWalletTransactionsProvider =
     queryParameters: {
       'page': page,
       'limit': 20,
-      if (type != null) 'type': type,
-      if (metal != null) 'metal': metal,
-      if (status != null) 'status': status,
+      'type': ?type,
+      'metal': ?metal,
+      'status': ?status,
       if (search.trim().isNotEmpty) 'search': search.trim(),
       if (from != null) 'from_date': _formatApiDate(from),
       if (toDate != null) 'to_date': _formatApiDate(toDate),

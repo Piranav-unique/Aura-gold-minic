@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
-import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class _QuickAction {

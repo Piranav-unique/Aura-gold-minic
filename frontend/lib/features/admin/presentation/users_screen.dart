@@ -399,17 +399,23 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Name')),
-            DataColumn(label: Text('Email')),
-            DataColumn(label: Text('Roles')),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Actions')),
-          ],
-          rows: users.map((u) {
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('Email')),
+                    DataColumn(label: Text('Roles')),
+                    DataColumn(label: Text('Status')),
+                    DataColumn(label: Text('Actions')),
+                  ],
+                  rows: users.map((u) {
             final userMap = u as Map<String, dynamic>;
             final firstName = userMap['first_name'] ?? '';
             final lastName = userMap['last_name'] ?? '';
@@ -493,8 +499,12 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 ),
               ],
             );
-          }).toList(),
-        ),
+                  }).toList(),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

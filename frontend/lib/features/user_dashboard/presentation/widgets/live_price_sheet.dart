@@ -11,7 +11,7 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_pr
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/metal_history_range_selector.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
-const _aurumPurple = Color(0xFF6236FF);
+const _aurumPurple = AppTheme.goldDeep;
 
 void showLivePriceSheet(
   BuildContext context, {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
@@ -17,32 +17,15 @@ class MetalInventoryMovementsScreen extends ConsumerWidget {
     final movementsAsync = ref.watch(digitalMetalMovementsProvider);
     final kgFormat = NumberFormat('#,##0.##');
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
+    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return ResponsiveNavigationWrapper(
       title: 'Stock history',
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isDesktop ? 24 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => context.go('/inventory'),
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Back to inventory',
-                ),
-                Expanded(
-                  child: Text(
-                    'Stock history',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
             Text(
               'Limit changes by admin and purchases by users.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(

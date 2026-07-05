@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_components.dart';
 
 class ProfileSectionHeader extends StatelessWidget {
   final String title;
@@ -103,12 +104,52 @@ class ProfileSettingsTile extends StatelessWidget {
   }
 }
 
+/// Small tappable "Verify" pill shown next to the name when KYC is pending.
+class _VerifyChip extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _VerifyChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.ctaBlack,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.gpp_maybe_outlined,
+                  size: 13, color: AppTheme.primaryGold),
+              SizedBox(width: 4),
+              Text(
+                'Verify',
+                style: TextStyle(
+                  color: AppTheme.primaryGold,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ProfileHeaderCard extends StatelessWidget {
   final String displayName;
   final String contactLine;
   final String memberSinceLine;
   final String initials;
   final bool showVerifiedBadge;
+  final bool kycVerified;
+  final VoidCallback? onVerifyTap;
   final VoidCallback? onAvatarTap;
 
   const ProfileHeaderCard({
@@ -118,82 +159,112 @@ class ProfileHeaderCard extends StatelessWidget {
     required this.memberSinceLine,
     required this.initials,
     this.showVerifiedBadge = false,
+    this.kycVerified = false,
+    this.onVerifyTap,
     this.onAvatarTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: onAvatarTap,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 42,
-                backgroundColor: AppTheme.auraPurple,
-                child: Text(
-                  initials,
+    const Color onGold = Color(0xFF20180A);
+    return GoldGradientCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: onAvatarTap,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 34,
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: AppTheme.goldDeep,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (showVerifiedBadge)
+                  Positioned(
+                    right: -2,
+                    bottom: 0,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: AppTheme.emerald,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: onGold,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    if (kycVerified)
+                      const Icon(
+                        Icons.verified,
+                        size: 20,
+                        color: Color(0xFF1B6E3C),
+                      )
+                    else if (onVerifyTap != null)
+                      _VerifyChip(onTap: onVerifyTap!),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  contactLine,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 34,
+                    color: onGold,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              if (showVerifiedBadge)
-                Positioned(
-                  right: -2,
-                  bottom: 0,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppTheme.emerald,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.cardColor ?? theme.colorScheme.surface,
-                        width: 2,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                const SizedBox(height: 6),
+                Text(
+                  memberSinceLine,
+                  style: const TextStyle(
+                    color: AppTheme.onGoldMuted,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          displayName,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          contactLine,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          memberSinceLine,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: AppTheme.auraPurple,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

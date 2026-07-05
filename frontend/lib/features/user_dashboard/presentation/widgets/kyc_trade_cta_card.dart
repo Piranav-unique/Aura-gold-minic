@@ -43,7 +43,7 @@ class KycTradeCtaCard extends StatelessWidget {
                   children: [
                     Text(
                       l10n.completeKycToTrade,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AurumConsumerTheme.textPrimary,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -52,7 +52,7 @@ class KycTradeCtaCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       l10n.verifyPanBeforeTrading,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AurumConsumerTheme.textMuted,
                         fontSize: 13,
                         height: 1.4,

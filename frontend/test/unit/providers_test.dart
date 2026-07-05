@@ -21,11 +21,11 @@ void main() {
   });
 
   group('ThemeModeNotifier', () {
-    test('initial state is ThemeMode.system', () {
+    test('initial state is ThemeMode.light', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(themeModeProvider), ThemeMode.system);
+      expect(container.read(themeModeProvider), ThemeMode.light);
     });
 
     test('setThemeMode changes theme mode', () async {

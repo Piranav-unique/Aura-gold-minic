@@ -158,24 +158,17 @@ class NotificationBellButton extends ConsumerWidget {
       }
     }
 
-    return unreadAsync.when(
-      data: (count) => Badge(
-        isLabelVisible: count > 0,
+    final count = unreadAsync.value;
+    final hasValue = unreadAsync.hasValue;
+
+    return IconButton(
+      icon: Badge(
+        isLabelVisible: hasValue && count != null && count > 0,
         label: Text('$count'),
-        child: IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: openDrawer,
-          tooltip: 'Notifications',
-        ),
+        child: const Icon(Icons.notifications_outlined),
       ),
-      loading: () => IconButton(
-        icon: const Icon(Icons.notifications_outlined),
-        onPressed: openDrawer,
-      ),
-      error: (_, _) => IconButton(
-        icon: const Icon(Icons.notifications_outlined),
-        onPressed: openDrawer,
-      ),
+      onPressed: openDrawer,
+      tooltip: 'Notifications',
     );
   }
 }

@@ -34,6 +34,8 @@ class AppDashboardMetrics {
   final double goldAvailableGrams;
   final double silverAvailableGrams;
   final int lowStockMetalCount;
+  final int pendingSellRequests;
+  final int sellRequestsThisMonth;
 
   const AppDashboardMetrics({
     required this.totalRevenue,
@@ -47,6 +49,8 @@ class AppDashboardMetrics {
     required this.goldAvailableGrams,
     required this.silverAvailableGrams,
     this.lowStockMetalCount = 0,
+    this.pendingSellRequests = 0,
+    this.sellRequestsThisMonth = 0,
   });
 
   factory AppDashboardMetrics.fromJson(Map<String, dynamic> json) {
@@ -62,6 +66,8 @@ class AppDashboardMetrics {
       goldAvailableGrams: _parseDecimal(json['gold_available_grams']),
       silverAvailableGrams: _parseDecimal(json['silver_available_grams']),
       lowStockMetalCount: json['low_stock_metal_count'] as int? ?? 0,
+      pendingSellRequests: json['pending_sell_requests'] as int? ?? 0,
+      sellRequestsThisMonth: json['sell_requests_this_month'] as int? ?? 0,
     );
   }
 }

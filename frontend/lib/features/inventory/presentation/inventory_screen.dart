@@ -80,92 +80,202 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final currency = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
     final canCreate = _canCreate(ref);
     final canUpdate = _canUpdate(ref);
+    final theme = Theme.of(context);
 
     return ResponsiveNavigationWrapper(
       title: 'Inventory',
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            metricsAsync.when(
-              data: (metrics) => _buildMetricsRow(metrics, currency),
-              loading: () => const SizedBox(
-                height: 80,
-                child: PremiumSkeletonList(itemCount: 1),
-              ),
-              error: (_, _) => const SizedBox.shrink(),
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              isDesktop ? 28 : 16,
+              isDesktop ? 24 : 16,
+              isDesktop ? 28 : 16,
+              0,
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Search inventory...',
-                      prefixIcon: Icon(Icons.search),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Page header ──────────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Physical Inventory',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Track physical gold & silver stock — items, quantities and values.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      if (canCreate)
+                        FilledButton.icon(
+                          onPressed: () => context.go('/inventory/new'),
+                          icon: const Icon(Icons.add),
+                          label: const Text('New Item'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // ── KPI metric cards ──────────────────────────
+                  metricsAsync.when(
+                    data: (metrics) =>
+                        _buildMetricsRow(metrics, currency, isDesktop),
+                    loading: () => SizedBox(
+                      height: 80,
+                      child: Row(
+                        children: List.generate(
+                          3,
+                          (i) => Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: i == 0 ? 0 : 8,
+                              ),
+                              child: const Card(
+                                child: SizedBox(height: 80),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    onChanged: _onSearchChanged,
+                    error: (_, _) => const SizedBox.shrink(),
                   ),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () => context.go('/inventory/movements'),
-                  icon: const Icon(Icons.history),
-                  label: const Text('Movements'),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () => context.go('/suppliers'),
-                  icon: const Icon(Icons.local_shipping_outlined),
-                  label: const Text('Suppliers'),
-                ),
-                if (canCreate) ...[
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    onPressed: () => context.go('/inventory/new'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('New Item'),
+                  const SizedBox(height: 20),
+                  // ── Search + quick nav bar ────────────────────
+                  isDesktop
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Search inventory…',
+                                  prefixIcon: Icon(Icons.search),
+                                ),
+                                onChanged: _onSearchChanged,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  context.go('/inventory/movements'),
+                              icon: const Icon(Icons.history, size: 18),
+                              label: const Text('Movements'),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              onPressed: () => context.go('/suppliers'),
+                              icon: const Icon(
+                                Icons.local_shipping_outlined,
+                                size: 18,
+                              ),
+                              label: const Text('Suppliers'),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Search inventory…',
+                                prefixIcon: Icon(Icons.search),
+                              ),
+                              onChanged: _onSearchChanged,
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () =>
+                                        context.go('/inventory/movements'),
+                                    icon: const Icon(Icons.history, size: 18),
+                                    label: const Text('Movements'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () =>
+                                        context.go('/suppliers'),
+                                    icon: const Icon(
+                                      Icons.local_shipping_outlined,
+                                      size: 18,
+                                    ),
+                                    label: const Text('Suppliers'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                  const SizedBox(height: 12),
+                  // ── Filters ───────────────────────────────────
+                  FilterChipBar(
+                    options: inventoryCategoryOptions,
+                    selected: ref.watch(inventoryCategoryFilterProvider),
+                    onSelected: (v) {
+                      ref
+                          .read(inventoryCategoryFilterProvider.notifier)
+                          .update(v);
+                      ref.read(inventorySkipProvider.notifier).update(0);
+                    },
                   ),
+                  const SizedBox(height: 6),
+                  FilterChipBar(
+                    options: inventoryStatusOptions,
+                    selected: ref.watch(inventoryStatusFilterProvider),
+                    onSelected: (v) {
+                      ref
+                          .read(inventoryStatusFilterProvider.notifier)
+                          .update(v);
+                      ref.read(inventorySkipProvider.notifier).update(0);
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  FilterChip(
+                    label: const Text('Low stock only'),
+                    selected: ref.watch(inventoryLowStockFilterProvider),
+                    onSelected: (selected) {
+                      ref
+                          .read(inventoryLowStockFilterProvider.notifier)
+                          .update(selected);
+                      ref.read(inventorySkipProvider.notifier).update(0);
+                    },
+                  ),
+                  const SizedBox(height: 16),
                 ],
-              ],
+              ),
             ),
-            const SizedBox(height: 16),
-            FilterChipBar(
-              options: inventoryCategoryOptions,
-              selected: ref.watch(inventoryCategoryFilterProvider),
-              onSelected: (v) {
-                ref.read(inventoryCategoryFilterProvider.notifier).update(v);
-                ref.read(inventorySkipProvider.notifier).update(0);
-              },
+          ),
+          // ── Items list / table ──────────────────────────────
+          SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 28 : 16,
             ),
-            const SizedBox(height: 8),
-            FilterChipBar(
-              options: inventoryStatusOptions,
-              selected: ref.watch(inventoryStatusFilterProvider),
-              onSelected: (v) {
-                ref.read(inventoryStatusFilterProvider.notifier).update(v);
-                ref.read(inventorySkipProvider.notifier).update(0);
-              },
-            ),
-            const SizedBox(height: 8),
-            FilterChip(
-              label: const Text('Low stock only'),
-              selected: ref.watch(inventoryLowStockFilterProvider),
-              onSelected: (selected) {
-                ref
-                    .read(inventoryLowStockFilterProvider.notifier)
-                    .update(selected);
-                ref.read(inventorySkipProvider.notifier).update(0);
-              },
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: inventoryAsync.when(
-                data: (page) {
-                  if (page.items.isEmpty) {
-                    return EmptyStateWidget(
+            sliver: inventoryAsync.when(
+              data: (page) {
+                if (page.items.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: EmptyStateWidget(
                       icon: Icons.inventory_2_outlined,
                       title: 'No inventory items',
                       subtitle: 'Add gold inventory items to track stock.',
@@ -173,13 +283,14 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                       onAction: canCreate
                           ? () => context.go('/inventory/new')
                           : null,
-                    );
-                  }
+                    ),
+                  );
+                }
 
-                  if (!isDesktop) {
-                    return ListView.builder(
-                      itemCount: page.items.length + 1,
-                      itemBuilder: (context, index) {
+                if (!isDesktop) {
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
                         if (index == page.items.length) {
                           return _buildPagination(page);
                         }
@@ -189,16 +300,21 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           canUpdate,
                         );
                       },
-                    );
-                  }
+                      childCount: page.items.length + 1,
+                    ),
+                  );
+                }
 
-                  return Column(
+                return SliverToBoxAdapter(
+                  child: Column(
                     children: [
-                      Expanded(
+                      SizedBox(
+                        height: MediaQuery.sizeOf(context).height - 380,
                         child: PremiumDataTable<InventoryItem>(
                           items: page.items,
                           sortColumnIndex: _sortColumnIndex(),
-                          sortAscending: ref.watch(inventorySortAscProvider),
+                          sortAscending:
+                              ref.watch(inventorySortAscProvider),
                           onSort: _onSort,
                           columns: [
                             DataTableColumn(
@@ -209,7 +325,8 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             DataTableColumn(
                               label: 'Category',
                               valueGetter: (i) => i.itemCategory,
-                              cellBuilder: (i) => Text(i.displayCategory),
+                              cellBuilder: (i) =>
+                                  Text(i.displayCategory),
                             ),
                             DataTableColumn(
                               label: 'Stock',
@@ -219,8 +336,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             DataTableColumn(
                               label: 'Value',
                               valueGetter: (i) => i.currentValue,
-                              cellBuilder: (i) =>
-                                  Text(currency.format(i.currentValue)),
+                              cellBuilder: (i) => Text(
+                                currency.format(i.currentValue),
+                              ),
                             ),
                             DataTableColumn(
                               label: 'Status',
@@ -229,45 +347,68 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             ),
                             DataTableColumn(
                               label: 'Actions',
-                              cellBuilder: (i) => _actionButtons(i, canUpdate),
+                              cellBuilder: (i) =>
+                                  _actionButtons(i, canUpdate),
                             ),
                           ],
                         ),
                       ),
                       _buildPagination(page),
+                      const SizedBox(height: 24),
                     ],
-                  );
-                },
-                loading: () => const PremiumSkeletonList(itemCount: 8),
-                error: (e, _) => EmptyStateWidget(
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: PremiumSkeletonList(itemCount: 8),
+                ),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: EmptyStateWidget(
                   icon: Icons.error_outline,
                   title: 'Unable to load inventory',
                   subtitle: e.toString(),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMetricsRow(InventoryMetrics metrics, NumberFormat currency) {
+  Widget _buildMetricsRow(
+    InventoryMetrics metrics,
+    NumberFormat currency,
+    bool isDesktop,
+  ) {
     return Row(
       children: [
-        _metricCard('Total Stock', '${metrics.totalStock}', Icons.inventory),
-        const SizedBox(width: 12),
-        _metricCard(
-          'Inventory Value',
-          currency.format(metrics.inventoryValue),
-          Icons.account_balance_wallet_outlined,
+        Expanded(
+          child: _metricCard(
+            'Total Stock',
+            '${metrics.totalStock}',
+            Icons.inventory_2_outlined,
+          ),
         ),
         const SizedBox(width: 12),
-        _metricCard(
-          'Low Stock',
-          '${metrics.lowStockCount}',
-          Icons.warning_amber_outlined,
-          highlight: metrics.lowStockCount > 0,
+        Expanded(
+          child: _metricCard(
+            'Inventory Value',
+            currency.format(metrics.inventoryValue),
+            Icons.account_balance_wallet_outlined,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _metricCard(
+            'Low Stock',
+            '${metrics.lowStockCount}',
+            Icons.warning_amber_outlined,
+            highlight: metrics.lowStockCount > 0,
+          ),
         ),
       ],
     );
@@ -278,31 +419,35 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     String value,
     IconData icon, {
     bool highlight = false,
+    Color? color,
   }) {
-    return Expanded(
-      child: Card(
-        color: highlight ? Colors.orange.withValues(alpha: 0.08) : null,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(icon, color: AppTheme.primaryGold),
-              const SizedBox(width: 12),
-              Column(
+    return Card(
+      color: highlight ? Colors.orange.withValues(alpha: 0.08) : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: color ?? AppTheme.primaryGold),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(label, style: const TextStyle(fontSize: 12)),
                   Text(
                     value,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

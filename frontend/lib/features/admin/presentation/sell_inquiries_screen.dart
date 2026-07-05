@@ -47,13 +47,6 @@ class SellInquiriesScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Gold Sell Inquiries',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
               'Review customer sell requests and process approvals.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context)
@@ -90,7 +83,7 @@ class SellInquiriesScreen extends ConsumerWidget {
                                 label: 'Date',
                                 valueGetter: (i) => i.createdAt,
                                 cellBuilder: (i) => InkWell(
-                                  onTap: () => context.go(
+                                  onTap: () => context.push(
                                     '/admin/sell-inquiries/${i.id}',
                                   ),
                                   child: Text(
@@ -193,7 +186,7 @@ class SellInquiriesScreen extends ConsumerWidget {
   ) {
     return Card(
       child: InkWell(
-        onTap: () => context.go('/admin/sell-inquiries/${inquiry.id}'),
+        onTap: () => context.push('/admin/sell-inquiries/${inquiry.id}'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),

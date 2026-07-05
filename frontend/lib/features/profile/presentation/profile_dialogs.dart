@@ -1,163 +1,551 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
+import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 Future<void> showEditProfileDialog(
   BuildContext context,
   WidgetRef ref,
   UserProfile profile,
-) async {
-  final firstNameController = TextEditingController(text: profile.firstName);
-  final lastNameController = TextEditingController(text: profile.lastName);
-  final emailController = TextEditingController(text: profile.email);
-  final passwordController = TextEditingController();
-
-  await showDialog(
+) {
+  final messenger = ScaffoldMessenger.of(context);
+  final successMessage = context.l10n.profileUpdated;
+  return showModalBottomSheet<void>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Edit Profile'),
-      content: SingleChildScrollView(
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    builder: (sheetContext) => Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+      ),
+      child: _EditProfileSheet(
+        profile: profile,
+        onSaved: () {
+          ref.invalidate(profileProvider);
+          messenger.showSnackBar(
+            SnackBar(content: Text(successMessage)),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+class _EditProfileSheet extends ConsumerStatefulWidget {
+  final UserProfile profile;
+  final VoidCallback onSaved;
+
+  const _EditProfileSheet({
+    required this.profile,
+    required this.onSaved,
+  });
+
+  @override
+  ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+  bool _saving = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController = TextEditingController(
+      text: widget.profile.firstName ?? '',
+    );
+    _lastNameController = TextEditingController(
+      text: widget.profile.lastName ?? '',
+    );
+    _emailController = TextEditingController(text: widget.profile.email);
+    _passwordController = TextEditingController();
+    _emailController.addListener(_clearError);
+    _firstNameController.addListener(_clearError);
+    _lastNameController.addListener(_clearError);
+    _passwordController.addListener(_clearError);
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _clearError() {
+    if (_errorMessage != null) {
+      setState(() => _errorMessage = null);
+    }
+  }
+
+  bool get _emailChanged =>
+      _emailController.text.trim().toLowerCase() !=
+      widget.profile.email.toLowerCase();
+
+  Future<void> _save() async {
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_emailChanged && _passwordController.text.isEmpty) {
+      setState(() {
+        _errorMessage = context.l10n.currentPasswordRequired;
+      });
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final payload = <String, dynamic>{
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'email': _emailController.text.trim(),
+      };
+      if (_emailChanged) {
+        payload['current_password'] = _passwordController.text;
+      }
+
+      await apiClient.put('/profile/', data: payload);
+
+      if (!mounted) return;
+      Navigator.pop(context);
+      widget.onSaved();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _errorMessage = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _errorMessage = context.l10n.profileUpdateFailed;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      child: Form(
+        key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: firstNameController,
-              decoration: const InputDecoration(labelText: 'First name'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: lastNameController,
-              decoration: const InputDecoration(labelText: 'Last name'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current password (required to change email)',
+            Text(
+              l10n.editProfile,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.manageYourProfile,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppTheme.profileMuted,
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (_errorMessage != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.rose.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.rose.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppTheme.rose,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: AppTheme.rose,
+                          fontSize: 13,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            TextFormField(
+              controller: _firstNameController,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: l10n.firstName,
+                filled: true,
+                fillColor: AppTheme.creamElevated,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return l10n.firstNameRequired;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _lastNameController,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: l10n.lastName,
+                filled: true,
+                fillColor: AppTheme.creamElevated,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: _emailChanged
+                  ? TextInputAction.next
+                  : TextInputAction.done,
+              autocorrect: false,
+              decoration: InputDecoration(
+                labelText: l10n.emailAddress,
+                filled: true,
+                fillColor: AppTheme.creamElevated,
+              ),
+              validator: (value) {
+                final email = value?.trim() ?? '';
+                if (email.isEmpty) return l10n.emailRequired;
+                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+                  return l10n.emailInvalid;
+                }
+                return null;
+              },
+              onChanged: (_) => setState(() {}),
+            ),
+            if (_emailChanged) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  helperText: l10n.currentPasswordRequired,
+                  helperMaxLines: 2,
+                  filled: true,
+                  fillColor: AppTheme.creamElevated,
+                ),
+                onFieldSubmitted: (_) => _save(),
+              ),
+            ],
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(l10n.cancel),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _saving
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(l10n.save),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () async {
-            try {
-              final apiClient = ref.read(apiClientProvider);
-              final payload = <String, dynamic>{
-                'first_name': firstNameController.text.trim(),
-                'last_name': lastNameController.text.trim(),
-                'email': emailController.text.trim(),
-              };
-              if (emailController.text.trim() != profile.email) {
-                payload['current_password'] = passwordController.text;
-              }
-              await apiClient.put('/profile/', data: payload);
-              ref.invalidate(profileProvider);
-              if (ctx.mounted) Navigator.pop(ctx);
-            } catch (e) {
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(
-                  ctx,
-                ).showSnackBar(SnackBar(content: Text('Update failed: $e')));
-              }
-            }
-          },
-          child: const Text('Save'),
-        ),
-      ],
-    ),
-  );
-
-  firstNameController.dispose();
-  lastNameController.dispose();
-  emailController.dispose();
-  passwordController.dispose();
+    );
+  }
 }
 
 Future<void> showChangePasswordDialog(
   BuildContext context,
   WidgetRef ref,
-) async {
-  final currentController = TextEditingController();
-  final newController = TextEditingController();
-
-  await showDialog(
+) {
+  final messenger = ScaffoldMessenger.of(context);
+  final reloginMessage = context.l10n.passwordChangedRelogin;
+  return showModalBottomSheet<void>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Change Password'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: currentController,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Current password'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: newController,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'New password'),
-          ),
-        ],
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    builder: (sheetContext) => Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () async {
-            try {
-              final apiClient = ref.read(apiClientProvider);
-              await apiClient.post(
-                '/profile/change-password',
-                data: {
-                  'current_password': currentController.text,
-                  'new_password': newController.text,
-                },
-              );
-              if (ctx.mounted) Navigator.pop(ctx);
-              await ref.read(authNotifierProvider.notifier).clearSession();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Password changed. Please log in again on all devices.',
-                    ),
-                  ),
-                );
-              }
-            } catch (e) {
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(content: Text('Password change failed: $e')),
-                );
-              }
-            }
-          },
-          child: const Text('Update'),
-        ),
-      ],
+      child: _ChangePasswordSheet(
+        onChanged: () async {
+          await ref.read(authNotifierProvider.notifier).clearSession();
+          messenger.showSnackBar(
+            SnackBar(content: Text(reloginMessage)),
+          );
+        },
+      ),
     ),
   );
+}
 
-  currentController.dispose();
-  newController.dispose();
+class _ChangePasswordSheet extends ConsumerStatefulWidget {
+  final Future<void> Function() onChanged;
+
+  const _ChangePasswordSheet({required this.onChanged});
+
+  @override
+  ConsumerState<_ChangePasswordSheet> createState() =>
+      _ChangePasswordSheetState();
+}
+
+class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _saving = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.post(
+        '/profile/change-password',
+        data: {
+          'current_password': _currentController.text,
+          'new_password': _newController.text,
+        },
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+      await widget.onChanged();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _errorMessage = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _errorMessage = context.l10n.passwordChangeFailed;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.changePassword,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (_errorMessage != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.rose.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.rose.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(
+                    color: AppTheme.rose,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            TextFormField(
+              controller: _currentController,
+              obscureText: true,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.currentPasswordLabel,
+                filled: true,
+                fillColor: AppTheme.creamElevated,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return l10n.passwordRequired;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _newController,
+              obscureText: true,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.newPasswordLabel,
+                filled: true,
+                fillColor: AppTheme.creamElevated,
+              ),
+              validator: (value) {
+                if (value == null || value.length < 8) {
+                  return l10n.newPasswordMinLength;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _confirmController,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: l10n.confirmPassword,
+                filled: true,
+                fillColor: AppTheme.creamElevated,
+              ),
+              validator: (value) {
+                if (value != _newController.text) {
+                  return l10n.passwordsDoNotMatch;
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(l10n.cancel),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _saving
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(l10n.save),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> pickAndUploadAvatar(BuildContext context, WidgetRef ref) async {
@@ -183,15 +571,21 @@ Future<void> pickAndUploadAvatar(BuildContext context, WidgetRef ref) async {
     ref.invalidate(profileProvider);
     ref.invalidate(avatarBytesProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Avatar updated')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.avatarUpdated)),
+      );
     }
-  } catch (e) {
+  } on ApiException catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Avatar upload failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.avatarUploadFailed)),
+      );
     }
   }
 }

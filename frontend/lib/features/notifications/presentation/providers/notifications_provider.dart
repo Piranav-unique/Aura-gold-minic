@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/features/notifications/domain/notification.dart';
@@ -32,6 +33,14 @@ final notificationsListProvider =
 
 final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
   final apiClient = ref.watch(apiClientProvider);
+
+  final timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(() {
+    timer.cancel();
+  });
+
   final response = await apiClient.get('/notifications/unread-count');
   final data = response.data as Map<String, dynamic>;
   return data['unread_count'] as int? ?? 0;

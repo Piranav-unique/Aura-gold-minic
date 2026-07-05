@@ -34,4 +34,38 @@ void main() {
       expect(goldSchemeUpgradeOptions(scheme), isEmpty);
     });
   });
+
+  group('goldSchemeHigherTiers', () {
+    test('offers higher tiers while a plan is still active', () {
+      const scheme = GoldScheme(
+        status: GoldSchemeStatus.active,
+        targetGrams: 1,
+        savedGrams: 0.4,
+      );
+
+      expect(goldSchemeHigherTiers(scheme), [5, 10]);
+    });
+
+    test('offers 10g upgrade for an active 5g plan', () {
+      const scheme = GoldScheme(
+        status: GoldSchemeStatus.active,
+        targetGrams: 5,
+        savedGrams: 2,
+      );
+
+      expect(goldSchemeHigherTiers(scheme), [10]);
+    });
+
+    test('returns empty for a top-tier or unselected plan', () {
+      const active10 = GoldScheme(
+        status: GoldSchemeStatus.active,
+        targetGrams: 10,
+        savedGrams: 3,
+      );
+      const none = GoldScheme(status: GoldSchemeStatus.notSelected);
+
+      expect(goldSchemeHigherTiers(active10), isEmpty);
+      expect(goldSchemeHigherTiers(none), isEmpty);
+    });
+  });
 }

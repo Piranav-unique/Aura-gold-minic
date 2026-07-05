@@ -278,7 +278,9 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
                     ],
                   );
                 },
-                loading: () => const PremiumSkeletonList(itemCount: 8),
+                loading: () => ListView(
+                  children: const [PremiumSkeletonList(itemCount: 8)],
+                ),
                 error: (e, _) => EmptyStateWidget(
                   icon: Icons.lock_outline,
                   title: 'Unable to load audit logs',

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
@@ -57,29 +57,21 @@ class _UserWalletTransactionsScreenState
           title: 'Failed to load user',
           subtitle: '$e',
           actionLabel: 'Back',
-          onAction: () => context.go('/admin/user-wallets'),
+          onAction: () => handleAppBack(
+            context,
+            '/admin/user-wallets/${widget.userId}/transactions',
+          ),
         ),
         data: (detail) => Padding(
           padding: EdgeInsets.all(isDesktop ? 24 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () =>
-                        context.go('/admin/user-wallets/${widget.userId}'),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  Expanded(
-                    child: Text(
-                      detail.fullName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+              Text(
+                detail.fullName,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
-                  ),
-                ],
               ),
               Text(
                 'All buy, sell, referral, and savings activity for this user.',

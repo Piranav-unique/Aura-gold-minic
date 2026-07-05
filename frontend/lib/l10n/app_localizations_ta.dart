@@ -302,6 +302,12 @@ class AppLocalizationsTa extends AppLocalizations {
       'திட்டத்தை மாற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
 
   @override
+  String get goldSchemeChangePlan => 'திட்டத்தை மாற்று';
+
+  @override
+  String get goldSchemeChangePlanTitle => 'எந்தத் திட்டத்திற்கு மாறுகிறீர்கள்?';
+
+  @override
   String get mySavings => 'என் சேமிப்பு';
 
   @override
@@ -813,6 +819,45 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get editProfile => 'சுயவிவரத்தைத் திருத்து';
+
+  @override
+  String get profileUpdated => 'சுயவிவரம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது.';
+
+  @override
+  String get profileUpdateFailed =>
+      'சுயவிவரத்தை புதுப்பிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
+
+  @override
+  String get currentPasswordRequired =>
+      'மின்னஞ்சலை மாற்ற உங்கள் தற்போதைய கடவுச்சொல்லை உள்ளிடவும்.';
+
+  @override
+  String get currentPasswordLabel => 'தற்போதைய கடவுச்சொல்';
+
+  @override
+  String get newPasswordLabel => 'புதிய கடவுச்சொல்';
+
+  @override
+  String get newPasswordMinLength =>
+      'கடவுச்சொல் குறைந்தது 8 எழுத்துகள் இருக்க வேண்டும்.';
+
+  @override
+  String get passwordChangedRelogin =>
+      'கடவுச்சொல் மாற்றப்பட்டது. மீண்டும் உள்நுழையவும்.';
+
+  @override
+  String get passwordChangeFailed =>
+      'கடவுச்சொல்லை மாற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
+
+  @override
+  String get firstNameRequired => 'முதல் பெயர் அவசியம்.';
+
+  @override
+  String get avatarUpdated => 'சுயவிவர புகைப்படம் புதுப்பிக்கப்பட்டது.';
+
+  @override
+  String get avatarUploadFailed =>
+      'சுயவிவர புகைப்படத்தை பதிவேற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
 
   @override
   String get accountStatus => 'கணக்கு நிலை';

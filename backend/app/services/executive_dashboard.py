@@ -147,6 +147,8 @@ class ExecutiveDashboardService:
                 monthly_transactions,
                 member_count,
                 members_new,
+                pending_sell_requests,
+                sell_requests_this_month,
                 trend_rows,
                 growth,
             ) = await asyncio.gather(
@@ -159,6 +161,10 @@ class ExecutiveDashboardService:
                 ),
                 self.app_metrics_repo.count_app_members(),
                 self.app_metrics_repo.count_new_members_this_month(),
+                self.app_metrics_repo.count_pending_sell_inquiries(),
+                self.app_metrics_repo.count_sell_inquiries(
+                    start=month_start, end=day_end
+                ),
                 self.app_metrics_repo.payment_revenue_trend(days=30),
                 self.app_metrics_repo.payment_revenue_growth_percent(),
             )
@@ -201,6 +207,8 @@ class ExecutiveDashboardService:
                 gold_available_grams=gold_available,
                 silver_available_grams=silver_available,
                 low_stock_metal_count=low_stock_metal_count,
+                pending_sell_requests=pending_sell_requests,
+                sell_requests_this_month=sell_requests_this_month,
             )
             revenue_trend = [
                 RevenueTrendPoint(

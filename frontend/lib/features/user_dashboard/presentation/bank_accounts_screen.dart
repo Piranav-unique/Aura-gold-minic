@@ -36,7 +36,7 @@ class BankAccountsScreen extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         l10n.bankAccountsInfo,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AurumConsumerTheme.textPrimary,
                           fontSize: 13,
                           height: 1.4,
@@ -80,7 +80,7 @@ class BankAccountsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 l10n.bankAccountsOtpNote,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.textMuted,
                   fontSize: 12,
                   height: 1.4,
@@ -114,7 +114,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             l10n.noBankAccountLinked,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -124,7 +124,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             l10n.noBankAccountSubtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textMuted,
               fontSize: 13,
               height: 1.4,
@@ -160,7 +160,7 @@ class _BankCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     account.bankName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AurumConsumerTheme.textPrimary,
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
@@ -206,7 +206,7 @@ class _BankCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         context.l10n.bankLinkVerified,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: AurumConsumerTheme.liveGreen,
@@ -220,12 +220,12 @@ class _BankCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               account.accountHolderName,
-              style: const TextStyle(color: AurumConsumerTheme.textMuted),
+              style: TextStyle(color: AurumConsumerTheme.textMuted),
             ),
             const SizedBox(height: 4),
             Text(
               '${account.accountNumberMasked} · ${account.ifsc}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
@@ -233,7 +233,7 @@ class _BankCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               account.branchName,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.textMuted,
                 fontSize: 12,
               ),

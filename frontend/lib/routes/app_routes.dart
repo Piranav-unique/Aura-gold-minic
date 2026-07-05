@@ -19,6 +19,7 @@ import 'package:ags_gold/features/user_dashboard/presentation/kyc_verification_s
 import 'package:ags_gold/features/user_dashboard/presentation/sell_gold_inquiry_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/sell_gold_inquiry_success_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/my_savings_screen.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/portfolio_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/user_transactions_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/bank_accounts_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/add_bank_account_screen.dart';
@@ -142,6 +143,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (audience == AppAudience.staffAdmin) {
           const endUserRoutes = [
             '/user-dashboard',
+            '/portfolio',
             '/buy-gold',
             '/sell-gold',
             '/my-savings',
@@ -267,6 +269,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sell-gold',
         redirect: (context, state) => '/sell-gold-inquiry',
+      ),
+      GoRoute(
+        path: '/portfolio',
+        builder: (context, state) => const PortfolioScreen(),
       ),
       GoRoute(
         path: '/my-savings',

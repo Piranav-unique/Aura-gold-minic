@@ -22,6 +22,12 @@ class DashboardHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    // Light experience uses the warm gold gradient hero (dark-on-gold text);
+    // dark mode keeps the deep slate gradient.
+    const onGold = Color(0xFF20180A);
+    final textPrimaryColor = isDark ? const Color(0xFFF8FAFC) : onGold;
+    final textMutedColor =
+        isDark ? const Color(0xFF94A3B8) : AppTheme.onGoldMuted;
     final timeLabel = refreshedAt != null
         ? 'Updated ${DateFormat('HH:mm').format(refreshedAt!.toLocal())}'
         : 'Live';
@@ -29,16 +35,18 @@ class DashboardHero extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
-              : [AppTheme.deepNavy, const Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF141C27), Color(0xFF1A2432)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : AppTheme.goldGradient,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryGold.withValues(alpha: 0.25)),
-        boxShadow: AppTheme.premiumShadow,
+        border: isDark
+            ? Border.all(color: const Color(0xFF273244))
+            : null,
+        boxShadow: isDark ? AppTheme.premiumShadow : AppTheme.goldGlowShadow,
       ),
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -52,16 +60,20 @@ class DashboardHero extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGold.withValues(alpha: 0.15),
+                  color: isDark
+                      ? AppTheme.primaryGold.withValues(alpha: 0.15)
+                      : Colors.white.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppTheme.primaryGold.withValues(alpha: 0.5),
-                  ),
+                  border: isDark
+                      ? Border.all(
+                          color: AppTheme.primaryGold.withValues(alpha: 0.5),
+                        )
+                      : null,
                 ),
                 child: Text(
                   roleLabel.toUpperCase(),
-                  style: const TextStyle(
-                    color: AppTheme.primaryGold,
+                  style: TextStyle(
+                    color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
@@ -76,13 +88,15 @@ class DashboardHero extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.rose.withValues(alpha: 0.15),
+                    color: isDark
+                        ? AppTheme.rose.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$unreadNotifications unread',
-                    style: const TextStyle(
-                      color: AppTheme.rose,
+                    style: TextStyle(
+                      color: isDark ? AppTheme.rose : const Color(0xFF7A2018),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -94,8 +108,8 @@ class DashboardHero extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.emerald,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppTheme.emerald : const Color(0xFF1E5B34),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -103,7 +117,7 @@ class DashboardHero extends StatelessWidget {
                   Text(
                     timeLabel,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: textMutedColor,
                       fontSize: 11,
                     ),
                   ),
@@ -115,7 +129,7 @@ class DashboardHero extends StatelessWidget {
           Text(
             greeting,
             style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
+              color: textPrimaryColor,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
             ),
@@ -124,7 +138,7 @@ class DashboardHero extends StatelessWidget {
           Text(
             subtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF94A3B8),
+              color: textMutedColor,
               height: 1.45,
             ),
           ),

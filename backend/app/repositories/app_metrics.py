@@ -137,6 +137,32 @@ class AppMetricsRepository:
         result = await self.db.execute(query)
         return int(result.scalar_one() or 0)
 
+    async def count_sell_inquiries(
+        self,
+        *,
+        status: Optional[str] = None,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
+    ) -> int:
+        query = select(func.count()).select_from(GoldSellInquiry)
+        if status is not None:
+            query = query.where(GoldSellInquiry.status == status)
+        if start is not None:
+            query = query.where(GoldSellInquiry.created_at >= start)
+        if end is not None:
+            query = query.where(GoldSellInquiry.created_at <= end)
+        result = await self.db.execute(query)
+        return int(result.scalar_one() or 0)
+
+    async def count_pending_sell_inquiries(self) -> int:
+        query = (
+            select(func.count())
+            .select_from(GoldSellInquiry)
+            .where(GoldSellInquiry.status.in_(("pending", "needs_info")))
+        )
+        result = await self.db.execute(query)
+        return int(result.scalar_one() or 0)
+
     async def payment_revenue_trend(self, days: int = 30) -> list[dict]:
         from datetime import timedelta
 

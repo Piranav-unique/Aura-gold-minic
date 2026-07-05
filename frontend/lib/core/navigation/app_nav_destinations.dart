@@ -42,6 +42,12 @@ List<AppNavDestination> buildNavDestinations(
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
     ),
+    const AppNavDestination(
+      routePrefix: '/portfolio',
+      label: 'Portfolio',
+      icon: Icons.account_balance_wallet_outlined,
+      selectedIcon: Icons.account_balance_wallet,
+    ),
     AppNavDestination(
       routePrefix: '/dashboard',
       label: l10n.navOverview,
@@ -159,6 +165,7 @@ List<AppNavDestination> buildNavDestinations(
     if (audience == AppAudience.staffAdmin) {
       const hiddenForStaffAdmin = {
         '/user-dashboard',
+        '/portfolio',
         '/customers',
         '/audit-logs',
         '/workflows',

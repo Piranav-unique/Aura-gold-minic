@@ -184,7 +184,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
                   Expanded(
                     child: Text(
                       l10n.bankAccountsInfo,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AurumConsumerTheme.textPrimary,
                         fontSize: 13,
                         height: 1.4,
@@ -197,7 +197,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
             const SizedBox(height: 20),
             Text(
               l10n.addBankAccount,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -206,7 +206,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
             const SizedBox(height: 6),
             Text(
               l10n.addBankAccountSheetSubtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.textMuted,
                 fontSize: 13,
                 height: 1.35,
@@ -246,7 +246,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
             const SizedBox(height: 18),
             Text(
               l10n.findIfscCode,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.textPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
@@ -374,7 +374,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.verified_outlined,
                       color: AurumConsumerTheme.chipGold,
                       size: 20,
@@ -383,7 +383,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
                     Expanded(
                       child: Text(
                         '${l10n.ifscCode}: $_ifsc',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AurumConsumerTheme.chipGold,
                           fontWeight: FontWeight.w700,
                         ),
@@ -419,7 +419,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.sms_outlined,
                       color: AurumConsumerTheme.liveGreen,
                     ),
@@ -427,7 +427,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
                     Expanded(
                       child: Text(
                         _infoMessage ?? l10n.bankLinkOtpSent,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AurumConsumerTheme.textPrimary,
                           fontSize: 13,
                           height: 1.4,
@@ -440,7 +440,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
               const SizedBox(height: 16),
               Text(
                 l10n.enterOtp,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -448,7 +448,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
               const SizedBox(height: 8),
               Text(
                 l10n.bankAccountsOtpNote,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.textMuted,
                   fontSize: 12,
                   height: 1.4,
@@ -502,7 +502,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
               const SizedBox(height: 12),
               Text(
                 _infoMessage!,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.liveGreen,
                   fontSize: 13,
                 ),
@@ -535,7 +535,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontWeight: FontWeight.w600,
             fontSize: 13,
@@ -672,7 +672,7 @@ class _IfscSelectField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 12,
             fontWeight: FontWeight.w600,

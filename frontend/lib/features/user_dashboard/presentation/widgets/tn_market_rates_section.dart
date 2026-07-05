@@ -85,7 +85,7 @@ class _TnMarketRatesSectionState extends ConsumerState<TnMarketRatesSection> {
           child: Center(child: CircularProgressIndicator()),
         ),
       ),
-      error: (_, __) => AurumSurfaceCard(
+      error: (_, _) => AurumSurfaceCard(
         child: TextButton(
           onPressed: () => ref.invalidate(metalPricesProvider),
           child: const Text('Retry loading live rates'),
@@ -143,13 +143,13 @@ class _RateTile extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 price,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
                   color: AurumConsumerTheme.textPrimary,
                 ),
               ),
-              const Text(
+              Text(
                 '/gm',
                 style: TextStyle(
                   fontSize: 11,

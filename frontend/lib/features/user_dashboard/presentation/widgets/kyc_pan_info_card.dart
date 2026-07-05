@@ -17,7 +17,7 @@ class KycPanInfoCard extends StatelessWidget {
         children: [
           Text(
             l10n.howPanVerificationWorks,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -26,7 +26,7 @@ class KycPanInfoCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             l10n.panVerificationFlowSubtitle,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textMuted,
               fontSize: 13,
               height: 1.4,
@@ -136,7 +136,7 @@ class _FlowStep extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 10,
             height: 1.2,

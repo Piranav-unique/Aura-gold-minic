@@ -113,8 +113,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         'password': password,
         if (referralCode != null && referralCode.isNotEmpty)
           'referral_code': referralCode,
-        if (referralSchemeGrams != null)
-          'referral_scheme_grams': referralSchemeGrams,
+        'referral_scheme_grams': ?referralSchemeGrams,
       },
     );
   }
@@ -327,7 +326,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
     _loadPersisted();
-    return ThemeMode.system;
+    // Default to the light cream + gold experience; dark remains available
+    // as a user toggle and is restored from persistence when set.
+    return ThemeMode.light;
   }
 
   Future<void> _loadPersisted() async {

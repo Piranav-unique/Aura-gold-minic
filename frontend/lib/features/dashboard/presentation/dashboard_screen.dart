@@ -61,14 +61,18 @@ class DashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DashboardHero(
-                    greeting: _greeting(data.displayName),
-                    subtitle: _subtitle(resolvedRole),
-                    roleLabel: executiveRoleLabel(resolvedRole),
-                    unreadNotifications: data.unreadNotifications,
-                    refreshedAt: data.refreshedAt,
-                  ),
-                  const SizedBox(height: 24),
+                  // Admin uses its own "Command Center" header inside
+                  // AdminExecutiveView; other roles keep the greeting hero.
+                  if (resolvedRole != ExecutiveRole.admin) ...[
+                    DashboardHero(
+                      greeting: _greeting(data.displayName),
+                      subtitle: _subtitle(resolvedRole),
+                      roleLabel: executiveRoleLabel(resolvedRole),
+                      unreadNotifications: data.unreadNotifications,
+                      refreshedAt: data.refreshedAt,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   switch (resolvedRole) {
                     ExecutiveRole.admin => AdminExecutiveView(data: data),
                     ExecutiveRole.manager => ManagerExecutiveView(data: data),

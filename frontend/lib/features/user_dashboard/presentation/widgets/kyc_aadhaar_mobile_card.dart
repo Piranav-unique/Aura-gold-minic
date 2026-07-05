@@ -29,7 +29,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
                   color: AurumConsumerTheme.liveGreen.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.verified_user_outlined,
                   color: AurumConsumerTheme.liveGreen,
                   size: 22,
@@ -39,7 +39,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.aadhaarVerified,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AurumConsumerTheme.liveGreen,
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -51,7 +51,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             l10n.aadhaarMobileVerifiedSubtitle,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textMuted,
               fontSize: 13,
               height: 1.4,
@@ -60,7 +60,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             l10n.mobileNumber,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textMuted,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -69,7 +69,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             mobileMasked,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textPrimary,
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -78,7 +78,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.phone_android_outlined,
                 size: 16,
                 color: AurumConsumerTheme.liveGreen,
@@ -86,7 +86,7 @@ class KycAadhaarMobileCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 l10n.mobileLinkedAadhaar,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.liveGreen,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

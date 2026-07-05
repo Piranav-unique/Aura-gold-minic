@@ -92,7 +92,7 @@ class _ReferBody extends StatelessWidget {
       children: [
         Text(
           l10n.referAndEarn,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
             color: AurumConsumerTheme.textPrimary,
@@ -101,7 +101,7 @@ class _ReferBody extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           l10n.referAndEarnSubtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             height: 1.5,
             color: AurumConsumerTheme.textMuted,
@@ -115,7 +115,7 @@ class _ReferBody extends StatelessWidget {
             children: [
               Text(
                 l10n.digitalWalletBalance,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
@@ -156,12 +156,12 @@ class _ReferBody extends StatelessWidget {
                   children: [
                     Text(
                       l10n.yourReferralCode,
-                      style: const TextStyle(color: AurumConsumerTheme.textMuted),
+                      style: TextStyle(color: AurumConsumerTheme.textMuted),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       summary.referralCode.isEmpty ? '—' : summary.referralCode,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.4,
@@ -192,7 +192,7 @@ class _ReferBody extends StatelessWidget {
         const SizedBox(height: 22),
         Text(
           l10n.shareSchemeEarn,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
             color: AurumConsumerTheme.textPrimary,
@@ -207,7 +207,7 @@ class _ReferBody extends StatelessWidget {
               children: [
                 Text(
                   l10n.referralSchemeTitle(tier.schemeGrams),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                     color: AurumConsumerTheme.textPrimary,
@@ -216,7 +216,7 @@ class _ReferBody extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   l10n.referralSchemeReward(currency.format(tier.rewardInr)),
-                  style: const TextStyle(color: AurumConsumerTheme.textMuted),
+                  style: TextStyle(color: AurumConsumerTheme.textMuted),
                 ),
                 const SizedBox(height: 14),
                 FilledButton.icon(
@@ -233,7 +233,7 @@ class _ReferBody extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             l10n.recentReferralRewards,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
               color: AurumConsumerTheme.textPrimary,
@@ -253,7 +253,7 @@ class _ReferBody extends StatelessWidget {
                       children: [
                         Text(
                           reward.refereeName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: AurumConsumerTheme.textPrimary,
                           ),
@@ -263,7 +263,7 @@ class _ReferBody extends StatelessWidget {
                             reward.schemeGrams.toStringAsFixed(0),
                             currency.format(reward.rewardInr),
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AurumConsumerTheme.textMuted,
                             fontSize: 13,
                           ),
@@ -299,11 +299,11 @@ class _MetricChip extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: AurumConsumerTheme.textMuted)),
+            Text(label, style: TextStyle(fontSize: 12, color: AurumConsumerTheme.textMuted)),
             const SizedBox(height: 2),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: AurumConsumerTheme.textPrimary,

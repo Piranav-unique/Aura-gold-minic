@@ -300,6 +300,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not switch scheme. Please try again.';
 
   @override
+  String get goldSchemeChangePlan => 'Change plan';
+
+  @override
+  String get goldSchemeChangePlanTitle => 'Which plan are you shifting to?';
+
+  @override
   String get mySavings => 'My savings';
 
   @override
@@ -803,6 +809,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editProfile => 'Edit profile';
+
+  @override
+  String get profileUpdated => 'Profile updated successfully.';
+
+  @override
+  String get profileUpdateFailed =>
+      'Could not update profile. Please try again.';
+
+  @override
+  String get currentPasswordRequired =>
+      'Enter your current password to change email.';
+
+  @override
+  String get currentPasswordLabel => 'Current password';
+
+  @override
+  String get newPasswordLabel => 'New password';
+
+  @override
+  String get newPasswordMinLength => 'Password must be at least 8 characters.';
+
+  @override
+  String get passwordChangedRelogin => 'Password changed. Please log in again.';
+
+  @override
+  String get passwordChangeFailed =>
+      'Could not change password. Please try again.';
+
+  @override
+  String get firstNameRequired => 'First name is required.';
+
+  @override
+  String get avatarUpdated => 'Profile photo updated.';
+
+  @override
+  String get avatarUploadFailed =>
+      'Could not upload profile photo. Please try again.';
 
   @override
   String get accountStatus => 'Account status';

@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
 import 'package:ags_gold/features/user_dashboard/domain/gold_scheme.dart';
-import 'package:ags_gold/features/user_dashboard/domain/gold_scheme_utils.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/gold_payment_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_prices_provider.dart';
@@ -212,6 +211,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
 
     if (justCompleted && scheme != null) {
       final choice = await showSchemeCompletionDialog(context, ref, scheme);
+      if (!mounted) return;
       await navigateAfterSchemeCompletion(context, ref, choice);
       return;
     }
@@ -247,7 +247,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
                 children: [
                   Text(
                     l10n.goldSchemeBuyBlockedTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AurumConsumerTheme.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -256,7 +256,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
                   const SizedBox(height: 8),
                   Text(
                     l10n.goldSchemeBuyBlockedBody,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AurumConsumerTheme.textMuted,
                       fontSize: 13,
                       height: 1.45,
@@ -330,7 +330,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
               Expanded(
                 child: Text(
                   rateLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AurumConsumerTheme.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -398,7 +398,7 @@ class _Field extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -411,7 +411,7 @@ class _Field extends StatelessWidget {
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
           ],
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,

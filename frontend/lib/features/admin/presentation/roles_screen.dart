@@ -153,7 +153,7 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                                   crossAxisCount: 3,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
-                                  childAspectRatio: 1.3,
+                                  mainAxisExtent: 200,
                                 ),
                             itemCount: roles.length,
                             itemBuilder: (context, idx) => _buildRoleCard(
@@ -272,7 +272,7 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const Spacer(),
+              const SizedBox(height: 12),
               const Divider(height: 16),
               Row(
                 children: [

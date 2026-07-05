@@ -35,7 +35,7 @@ class KycVerifiedSuccessView extends StatelessWidget {
             color: AurumConsumerTheme.liveGreen.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.verified_user_rounded,
             color: AurumConsumerTheme.liveGreen,
             size: 52,
@@ -45,7 +45,7 @@ class KycVerifiedSuccessView extends StatelessWidget {
         Text(
           l10n.kycVerifiedHeading,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textPrimary,
             fontSize: 26,
             fontWeight: FontWeight.w800,
@@ -56,7 +56,7 @@ class KycVerifiedSuccessView extends StatelessWidget {
         Text(
           l10n.verifiedViaSandbox,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.liveGreen,
             fontSize: 14,
             fontWeight: FontWeight.w700,
@@ -66,7 +66,7 @@ class KycVerifiedSuccessView extends StatelessWidget {
         Text(
           l10n.panVerificationLabel,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 13,
           ),
@@ -113,7 +113,7 @@ class KycVerifiedSuccessView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.phone_android_outlined,
               size: 16,
               color: AurumConsumerTheme.liveGreen,
@@ -121,7 +121,7 @@ class KycVerifiedSuccessView extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               l10n.mobileLinkedAadhaar,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AurumConsumerTheme.liveGreen,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -164,7 +164,7 @@ class _CenteredDetail extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -174,7 +174,7 @@ class _CenteredDetail extends StatelessWidget {
         Text(
           value,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textPrimary,
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -211,7 +211,7 @@ class KycVerifiedBanner extends StatelessWidget {
               color: AurumConsumerTheme.liveGreen.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.verified_user_rounded,
               color: AurumConsumerTheme.liveGreen,
               size: 22,
@@ -224,7 +224,7 @@ class KycVerifiedBanner extends StatelessWidget {
               children: [
                 Text(
                   l10n.kycVerifiedTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AurumConsumerTheme.liveGreen,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -250,8 +250,13 @@ class KycVerifiedBanner extends StatelessWidget {
 
 class AccountSection extends StatelessWidget {
   final bool kycVerified;
+  final bool showProfileTile;
 
-  const AccountSection({super.key, required this.kycVerified});
+  const AccountSection({
+    super.key,
+    required this.kycVerified,
+    this.showProfileTile = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,20 +267,22 @@ class AccountSection extends StatelessWidget {
       children: [
         Text(
           l10n.accountSection,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 14),
-        _AccountTile(
-          icon: Icons.person_outline,
-          title: l10n.myProfile,
-          subtitle: l10n.manageYourProfile,
-          onTap: () => context.push('/profile'),
-        ),
-        const SizedBox(height: 10),
+        if (showProfileTile) ...[
+          _AccountTile(
+            icon: Icons.person_outline,
+            title: l10n.myProfile,
+            subtitle: l10n.manageYourProfile,
+            onTap: () => context.push('/profile'),
+          ),
+          const SizedBox(height: 10),
+        ],
         _AccountTile(
           icon: Icons.badge_outlined,
           title: l10n.kycVerification,
@@ -338,7 +345,7 @@ class _AccountTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AurumConsumerTheme.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -347,7 +354,7 @@ class _AccountTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AurumConsumerTheme.textMuted,
                         fontSize: 12,
                       ),
@@ -355,7 +362,7 @@ class _AccountTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 color: AurumConsumerTheme.textMuted,
               ),

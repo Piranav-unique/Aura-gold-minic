@@ -135,7 +135,7 @@ class _SavingsCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AurumConsumerTheme.textMuted,
                     fontWeight: FontWeight.w600,
                   ),
@@ -153,7 +153,7 @@ class _SavingsCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${grams.toStringAsFixed(4)} g',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AurumConsumerTheme.textPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -170,7 +170,7 @@ class _SavingsCard extends StatelessWidget {
                   ),
                 Text(
                   invested,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AurumConsumerTheme.textMuted,
                     fontSize: 14,
                   ),

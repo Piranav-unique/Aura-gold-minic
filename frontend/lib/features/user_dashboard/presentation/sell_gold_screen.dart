@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/buy_gold_screen.dart';

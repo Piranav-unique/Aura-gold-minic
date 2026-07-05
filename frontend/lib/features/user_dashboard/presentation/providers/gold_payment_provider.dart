@@ -68,8 +68,8 @@ final goldPaymentProvider = Provider((ref) {
       '/payments/razorpay/order',
       data: {
         'metal': metal,
-        if (grams != null) 'grams': grams,
-        if (amountInr != null) 'amount_inr': amountInr,
+        'grams': ?grams,
+        'amount_inr': ?amountInr,
       },
     );
     return RazorpayOrderDetails.fromJson(response.data as Map<String, dynamic>);

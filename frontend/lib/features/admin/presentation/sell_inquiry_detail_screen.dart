@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
@@ -239,7 +240,8 @@ class _SellInquiryDetailScreenState
           title: 'Failed to load inquiry',
           subtitle: '$e',
           actionLabel: 'Back',
-          onAction: () => context.go('/admin/sell-inquiries'),
+          onAction: () =>
+              handleAppBack(context, '/admin/sell-inquiries/${widget.inquiryId}'),
         ),
         data: (detail) {
           final canAct = detail.status == 'pending' || detail.status == 'needs_info';
@@ -362,20 +364,16 @@ class _SellInquiryDetailScreenState
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => context.go('/admin/sell-inquiries'),
-                      icon: const Icon(Icons.arrow_back),
-                    ),
                     Expanded(
                       child: Text(
                         detail.name,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
                       ),
                     ),
                     TextButton.icon(
-                      onPressed: () => context.go(
+                      onPressed: () => context.push(
                         '/transactions?user=${Uri.encodeComponent(detail.name)}',
                       ),
                       icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),

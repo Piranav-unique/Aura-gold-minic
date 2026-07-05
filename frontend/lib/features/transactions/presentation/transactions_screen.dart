@@ -78,84 +78,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     return ResponsiveNavigationWrapper(
       title: 'Transactions',
       child: Padding(
-        padding: EdgeInsets.all(isDesktop ? 24 : 16),
+        padding: EdgeInsets.fromLTRB(isDesktop ? 24 : 16, 12, isDesktop ? 24 : 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Transactions',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Buy, sell, referral, and savings activity across all users.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.65),
-                  ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _userSearchController,
-              decoration: InputDecoration(
-                hintText: 'Filter by user name, mobile, or email…',
-                prefixIcon: const Icon(Icons.person_search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: _onUserSearchChanged,
-            ),
+            _buildFilterPanel(timeRange),
             const SizedBox(height: 12),
-            FilterChipBar(
-              options: const ['All time', 'Today', '7 days', '30 days'],
-              selected: _timeRangeLabel(timeRange),
-              allowClear: false,
-              onSelected: (value) {
-                ref
-                    .read(walletActivityTimeRangeProvider.notifier)
-                    .update(_timeRangeFromLabel(value));
-                ref.read(recentWalletTransactionsPageProvider.notifier).update(1);
-              },
-            ),
-            const SizedBox(height: 8),
-            FilterChipBar(
-              options: const ['BUY', 'SELL', 'REFERRAL', 'SAVINGS'],
-              selected: ref.watch(recentWalletTxnTypeFilterProvider),
-              onSelected: (value) {
-                ref.read(recentWalletTxnTypeFilterProvider.notifier).update(value);
-                ref.read(recentWalletTransactionsPageProvider.notifier).update(1);
-              },
-            ),
-            const SizedBox(height: 8),
-            FilterChipBar(
-              options: const ['gold', 'silver'],
-              selected: ref.watch(walletTxnMetalFilterProvider),
-              onSelected: (value) {
-                ref.read(walletTxnMetalFilterProvider.notifier).update(value);
-                ref.read(recentWalletTransactionsPageProvider.notifier).update(1);
-              },
-            ),
-            const SizedBox(height: 8),
-            FilterChipBar(
-              options: const [
-                'paid',
-                'pending',
-                'approved',
-                'rejected',
-                'failed',
-              ],
-              selected: ref.watch(walletTxnStatusFilterProvider),
-              onSelected: (value) {
-                ref.read(walletTxnStatusFilterProvider.notifier).update(value);
-                ref.read(recentWalletTransactionsPageProvider.notifier).update(1);
-              },
-            ),
-            const SizedBox(height: 16),
             Expanded(
               child: recentAsync.when(
                 loading: () => const PremiumSkeleton(height: 200),
@@ -205,6 +133,117 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     ],
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterPanel(WalletActivityTimeRange timeRange) {
+    final typeFilter = ref.watch(recentWalletTxnTypeFilterProvider);
+    final metalFilter = ref.watch(walletTxnMetalFilterProvider);
+    final statusFilter = ref.watch(walletTxnStatusFilterProvider);
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.55);
+
+    void resetPage() =>
+        ref.read(recentWalletTransactionsPageProvider.notifier).update(1);
+
+    return Material(
+      color: theme.cardColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: theme.dividerColor),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _userSearchController,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Search user, mobile, or email',
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 20),
+                prefixIconConstraints: const BoxConstraints(minWidth: 36),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onChanged: _onUserSearchChanged,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 34,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _FilterGroupLabel(label: 'Time', muted: muted),
+                    FilterChipBar(
+                      compact: true,
+                      options: const ['All time', 'Today', '7 days', '30 days'],
+                      selected: _timeRangeLabel(timeRange),
+                      allowClear: false,
+                      onSelected: (value) {
+                        ref
+                            .read(walletActivityTimeRangeProvider.notifier)
+                            .update(_timeRangeFromLabel(value));
+                        resetPage();
+                      },
+                    ),
+                    _FilterDivider(color: theme.dividerColor),
+                    _FilterGroupLabel(label: 'Type', muted: muted),
+                    FilterChipBar(
+                      compact: true,
+                      options: const ['BUY', 'SELL', 'REFERRAL', 'SAVINGS'],
+                      selected: typeFilter,
+                      onSelected: (value) {
+                        ref
+                            .read(recentWalletTxnTypeFilterProvider.notifier)
+                            .update(value);
+                        resetPage();
+                      },
+                    ),
+                    _FilterDivider(color: theme.dividerColor),
+                    _FilterGroupLabel(label: 'Metal', muted: muted),
+                    FilterChipBar(
+                      compact: true,
+                      options: const ['gold', 'silver'],
+                      selected: metalFilter,
+                      onSelected: (value) {
+                        ref.read(walletTxnMetalFilterProvider.notifier).update(value);
+                        resetPage();
+                      },
+                    ),
+                    _FilterDivider(color: theme.dividerColor),
+                    _FilterGroupLabel(label: 'Status', muted: muted),
+                    FilterChipBar(
+                      compact: true,
+                      options: const [
+                        'paid',
+                        'pending',
+                        'approved',
+                        'rejected',
+                        'failed',
+                      ],
+                      selected: statusFilter,
+                      onSelected: (value) {
+                        ref.read(walletTxnStatusFilterProvider.notifier).update(value);
+                        resetPage();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -389,6 +428,45 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FilterGroupLabel extends StatelessWidget {
+  final String label;
+  final Color muted;
+
+  const _FilterGroupLabel({required this.label, required this.muted});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6, left: 2),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: muted,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterDivider extends StatelessWidget {
+  final Color color;
+
+  const _FilterDivider({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 22,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: color,
     );
   }
 }

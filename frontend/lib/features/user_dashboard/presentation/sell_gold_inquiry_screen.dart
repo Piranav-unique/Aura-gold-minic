@@ -92,7 +92,7 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
               children: [
                 Text(
                   l10n.sellGoldInquiryTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: AurumConsumerTheme.textPrimary,
@@ -101,7 +101,7 @@ class _SellGoldInquiryScreenState extends ConsumerState<SellGoldInquiryScreen> {
                 const SizedBox(height: 8),
                 Text(
                   l10n.sellGoldInquirySubtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
                     color: AurumConsumerTheme.textMuted,

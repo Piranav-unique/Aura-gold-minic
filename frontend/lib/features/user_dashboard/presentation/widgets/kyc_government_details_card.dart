@@ -32,7 +32,7 @@ class KycGovernmentDetailsCard extends StatelessWidget {
                   color: AurumConsumerTheme.liveGreen.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.verified_user_outlined,
                   color: AurumConsumerTheme.liveGreen,
                   size: 22,
@@ -42,7 +42,7 @@ class KycGovernmentDetailsCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.governmentVerifiedIdentity,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AurumConsumerTheme.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -94,7 +94,7 @@ class _DetailRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textMuted,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -103,7 +103,7 @@ class _DetailRow extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: AurumConsumerTheme.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w700,

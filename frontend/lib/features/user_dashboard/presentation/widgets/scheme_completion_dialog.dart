@@ -51,7 +51,7 @@ Future<SchemeCompletionResult?> showSchemeCompletionDialog(
             Expanded(
               child: Text(
                 l10n.goldSchemeCompletionTitle(completedGrams),
-                style: const TextStyle(
+                style: TextStyle(
                   color: AurumConsumerTheme.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -64,7 +64,7 @@ Future<SchemeCompletionResult?> showSchemeCompletionDialog(
           upgradeOptions.isEmpty
               ? l10n.goldSchemeCompletionBodyMaxTier
               : l10n.goldSchemeCompletionBody,
-          style: const TextStyle(
+          style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 14,
             height: 1.45,

@@ -9,6 +9,7 @@ import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/user_dashboard_screen.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/widgets/kyc_prompt_dialog.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_prices_provider.dart';
@@ -27,6 +28,11 @@ final _userProfile = UserProfile(
   updatedAt: DateTime.utc(2026, 6, 8),
 );
 
+class _ShownKycPromptNotifier extends KycPromptShownNotifier {
+  @override
+  bool build() => true;
+}
+
 PersonalDashboard _mockPersonal({KycStatus kycStatus = KycStatus.notStarted}) {
   return PersonalDashboard(
     displayName: 'Gold User',
@@ -44,6 +50,7 @@ PersonalDashboard _mockPersonal({KycStatus kycStatus = KycStatus.notStarted}) {
 Future<void> _pumpDashboard(
   WidgetTester tester, {
   required PersonalDashboard dashboard,
+  bool showKycPopup = false,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1.0;
@@ -76,6 +83,8 @@ Future<void> _pumpDashboard(
         unreadNotificationsCountProvider.overrideWithValue(
           const AsyncValue.data(3),
         ),
+        if (!showKycPopup)
+          kycPromptShownProvider.overrideWith(_ShownKycPromptNotifier.new),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -100,13 +109,12 @@ void main() {
     await _pumpDashboard(tester, dashboard: _mockPersonal());
 
     expect(find.text('AURUM'), findsWidgets);
-    expect(find.textContaining('GOOD '), findsOneWidget);
-    expect(find.text('CUSTOMER'), findsOneWidget);
-    expect(find.text('Complete KYC to trade'), findsOneWidget);
+    // No KYC banner/prompt should be rendered inline on the home page.
+    expect(find.text('Complete KYC to trade'), findsNothing);
+    expect(find.text('Verify your identity'), findsNothing);
     expect(find.text('0.0000 g'), findsOneWidget);
     expect(find.text('Buy Gold'), findsOneWidget);
     expect(find.text('Sell Gold'), findsOneWidget);
-    expect(find.text('KYC required'), findsNWidgets(2));
     expect(find.text('My Profile'), findsNothing);
   });
 
@@ -118,14 +126,7 @@ void main() {
       dashboard: _mockPersonal(kycStatus: KycStatus.verified),
     );
 
-    expect(find.textContaining('GOOD '), findsOneWidget);
-    expect(find.text('Mobile verified'), findsOneWidget);
-    expect(find.text('KYC verified'), findsOneWidget);
-    expect(find.text('You can buy and sell gold securely.'), findsOneWidget);
-    expect(find.text('Your account is verified. Buy or sell gold anytime.'),
-        findsOneWidget);
     expect(find.text('Gold holdings'), findsOneWidget);
-    expect(find.text('Trade gold'), findsOneWidget);
     expect(find.text('Buy Gold'), findsOneWidget);
     expect(find.text('Sell Gold'), findsOneWidget);
     expect(find.text('KYC required'), findsNothing);
@@ -133,5 +134,21 @@ void main() {
     expect(find.text('My Profile'), findsOneWidget);
     expect(find.text('Identity verified'), findsOneWidget);
     expect(find.text('Complete KYC to trade'), findsNothing);
+    // Verified users never see the KYC popup.
+    expect(find.text('Verify your identity'), findsNothing);
+  });
+
+  testWidgets('UserDashboardScreen pops up KYC reminder for unverified users', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDashboard(
+      tester,
+      dashboard: _mockPersonal(),
+      showKycPopup: true,
+    );
+
+    expect(find.text('Verify your identity'), findsOneWidget);
+    expect(find.text('Verify now'), findsOneWidget);
+    expect(find.text('Later'), findsOneWidget);
   });
 }

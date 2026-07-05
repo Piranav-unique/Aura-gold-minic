@@ -11,7 +11,7 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_pr
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/metal_history_range_selector.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
-const _aurumPurple = Color(0xFF6236FF);
+const _aurumPurple = AppTheme.primaryGold;
 
 class LivePriceScreen extends ConsumerStatefulWidget {
   final MetalType initialMetal;
@@ -252,6 +252,7 @@ class _LivePriceScreenState extends ConsumerState<LivePriceScreen> {
             onPressed: () => context.go('/user-dashboard'),
             style: FilledButton.styleFrom(
               backgroundColor: _aurumPurple,
+              foregroundColor: AppTheme.ink,
               minimumSize: const Size.fromHeight(52),
             ),
             child: Text(l10n.backToAurum),
@@ -364,7 +365,7 @@ class _Segment extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: selected ? Colors.white : null,
+                color: selected ? AppTheme.ink : null,
                 fontWeight: FontWeight.w700,
               ),
             ),
