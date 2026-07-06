@@ -161,12 +161,12 @@ class GoldSellInquiryService:
                 f"You can sell up to {holdings} g based on your current gold balance."
             )
 
-        bank = await self.bank_repo.get_for_user(user.id, body.bank_account_id)
-        if not bank:
-            raise ValidationException(
-                "Link a verified bank account before selling gold. "
-                "Payout is sent to the bank you select."
-            )
+        bank_account_id = None
+        if body.bank_account_id:
+            bank = await self.bank_repo.get_for_user(user.id, body.bank_account_id)
+            if not bank:
+                raise ValidationException("Selected bank account was not found.")
+            bank_account_id = bank.id
 
         payout = await self.payout_service.calculate(body.quantity_grams)
 
@@ -178,7 +178,7 @@ class GoldSellInquiryService:
                 "quantity_grams": body.quantity_grams,
                 "message": body.message,
                 "status": "pending",
-                "bank_account_id": bank.id,
+                "bank_account_id": bank_account_id,
                 "sell_rate_per_gram": payout["sell_rate_per_gram"],
                 "gross_amount_inr": payout["gross_amount_inr"],
                 "platform_charge_inr": payout["platform_charge_inr"],

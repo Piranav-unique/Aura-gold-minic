@@ -8,7 +8,6 @@ final submitSellGoldInquiryProvider = Provider((ref) {
     required String mobileNumber,
     required double quantityGrams,
     required String message,
-    required String bankAccountId,
   }) async {
     final apiClient = ref.read(apiClientProvider);
     final response = await apiClient.post(
@@ -18,7 +17,6 @@ final submitSellGoldInquiryProvider = Provider((ref) {
         'mobile_number': mobileNumber,
         'quantity_grams': quantityGrams,
         'message': message,
-        'bank_account_id': bankAccountId,
       },
     );
     return SellGoldInquiry.fromJson(response.data as Map<String, dynamic>);
