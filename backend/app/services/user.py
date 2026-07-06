@@ -15,10 +15,7 @@ from app.repositories.role import RoleRepository
 from app.schemas.user import UserCreate, UserUpdate
 from app.services.audit import AuditService
 from app.services.referral import ReferralService
-from app.utils.device_binding import (
-    ensure_device_available_for_registration,
-    normalize_device_id,
-)
+from app.utils.device_binding import normalize_device_id
 
 
 class UserService:
@@ -94,9 +91,6 @@ class UserService:
             raise ValidationException("Device identifier is required")
 
         normalized_device_id = normalize_device_id(device_id)
-        await ensure_device_available_for_registration(
-            self.user_repo, normalized_device_id
-        )
 
         user_role = await self.role_repo.get_by_name("user")
         if not user_role:

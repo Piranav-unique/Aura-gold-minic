@@ -22,6 +22,7 @@ def normalize_database_url(url: str) -> str:
 
 def database_connect_args(url: str) -> dict:
     """Railway public Postgres endpoints require TLS; private *.railway.internal does not."""
+    import ssl
     from urllib.parse import urlparse
 
     host = (urlparse(url).hostname or "").lower()
@@ -31,7 +32,11 @@ def database_connect_args(url: str) -> dict:
         marker in host
         for marker in (".rlwy.net", "railway.app", "amazonaws.com", "neon.tech")
     ):
-        return {"ssl": True}
+        # Railway proxy certs may fail verification from local Windows/Python tooling.
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        return {"ssl": ctx}
     return {}
 
 
@@ -135,7 +140,9 @@ class Settings(BaseSettings):
     MSG91_BANK_FLOW_ID: str = "6a4a7eae9fe09e57d9000643"
     MSG91_BANK_OTP_LENGTH: int = 6
     MSG91_BANK_OTP_USE_MSG91_VERIFY: bool = False
-    MSG91_BANK_SMS_CHANNELS: str = "flow,sendhttp"
+    MSG91_BANK_SMS_CHANNELS: str = "sendhttp,flow"
+    # Bank DLT template Aurum_Bank_Add_OTP is registered on sender CP-AURUS-S (not AURUS).
+    MSG91_BANK_SENDER_ID: str = "CP-AURUS-S"
     # Local dev: use SIGNUP_OTP_DEV_CODE for bank link (skip MSG91 bank Flow SMS).
     BANK_OTP_DEV_MODE: bool = True
 

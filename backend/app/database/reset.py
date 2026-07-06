@@ -37,6 +37,26 @@ from app.models.workflow import (
 )
 
 
+async def _table_exists(session: AsyncSession, table_name: str) -> bool:
+    from sqlalchemy import text
+
+    result = await session.execute(
+        text(
+            "SELECT EXISTS ("
+            "SELECT FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = :table_name"
+            ")"
+        ),
+        {"table_name": table_name},
+    )
+    return bool(result.scalar())
+
+
+async def _delete_signup_email_otp_challenges(session: AsyncSession) -> None:
+    if await _table_exists(session, SignupEmailOtpChallenge.__tablename__):
+        await session.execute(delete(SignupEmailOtpChallenge))
+
+
 async def reset_application_data(session: AsyncSession) -> None:
     """Delete users and transactional records; keep schema and re-seed defaults."""
     logger.info("database_reset", message="Clearing application data...")
@@ -58,7 +78,7 @@ async def reset_application_data(session: AsyncSession) -> None:
     await session.execute(delete(BankLinkChallenge))
     await session.execute(delete(UserBankAccount))
     await session.execute(delete(SignupOtpChallenge))
-    await session.execute(delete(SignupEmailOtpChallenge))
+    await _delete_signup_email_otp_challenges(session)
     await session.execute(delete(ReferralReward))
     await session.execute(delete(StockMovement))
     await session.execute(delete(InventoryItem))

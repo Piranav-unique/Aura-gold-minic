@@ -115,7 +115,7 @@ class SignupOtpService:
 
     async def send_login_otp(self, mobile_number: str, device_id: str) -> None:
         mobile = normalize_mobile(mobile_number)
-        normalized_device = normalize_device_id(device_id)
+        normalize_device_id(device_id)
         user = await self.user_repo.get_by_mobile(mobile)
         if (
             not user
@@ -126,14 +126,6 @@ class SignupOtpService:
             raise ValidationException("No account found for this mobile number.")
         if user.is_superuser:
             raise ValidationException("Use email and password to sign in as staff.")
-        if (
-            user.registered_device_id
-            and user.registered_device_id != normalized_device
-        ):
-            raise ValidationException(
-                "This account is registered on another device. "
-                "Please sign in using the phone you signed up with."
-            )
         await self._send_otp_challenge(mobile)
 
     async def consume_login_otp(self, mobile_number: str, otp: str) -> None:

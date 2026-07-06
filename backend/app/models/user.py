@@ -91,12 +91,4 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
             unique=True,
             postgresql_where="is_deleted = false AND mobile_number IS NOT NULL",
         ),
-        Index(
-            "ix_users_registered_device_active",
-            "registered_device_id",
-            unique=True,
-            postgresql_where=(
-                "is_deleted = false AND registered_device_id IS NOT NULL"
-            ),
-        ),
     )

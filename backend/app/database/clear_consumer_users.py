@@ -34,6 +34,26 @@ from app.models.workflow import (
 STAFF_ROLE_NAMES = frozenset({"super_admin", "admin", "manager", "employee"})
 
 
+async def _table_exists(session: AsyncSession, table_name: str) -> bool:
+    from sqlalchemy import text
+
+    result = await session.execute(
+        text(
+            "SELECT EXISTS ("
+            "SELECT FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = :table_name"
+            ")"
+        ),
+        {"table_name": table_name},
+    )
+    return bool(result.scalar())
+
+
+async def _delete_signup_email_otp_challenges(session: AsyncSession) -> None:
+    if await _table_exists(session, SignupEmailOtpChallenge.__tablename__):
+        await session.execute(delete(SignupEmailOtpChallenge))
+
+
 def is_staff_user(user: User) -> bool:
     if user.is_superuser:
         return True
@@ -77,7 +97,7 @@ async def clear_consumer_users(session: AsyncSession) -> int:
 
     if not consumer_ids:
         await session.execute(delete(SignupOtpChallenge))
-        await session.execute(delete(SignupEmailOtpChallenge))
+        await _delete_signup_email_otp_challenges(session)
         await session.commit()
         logger.info(
             "consumer_users_cleared",
@@ -159,7 +179,7 @@ async def clear_consumer_users(session: AsyncSession) -> int:
         )
 
     await session.execute(delete(SignupOtpChallenge))
-    await session.execute(delete(SignupEmailOtpChallenge))
+    await _delete_signup_email_otp_challenges(session)
 
     for user_id in consumer_ids:
         user = await session.get(User, user_id)

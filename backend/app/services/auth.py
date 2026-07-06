@@ -20,7 +20,6 @@ from app.services.audit import AuditService
 from app.utils.mobile import normalize_mobile
 from app.utils.device_binding import (
     bind_device_for_mobile_login,
-    ensure_device_available_for_registration,
     normalize_device_id,
 )
 
@@ -123,7 +122,7 @@ class AuthService:
     ) -> User:
         """Allow the first sign-in on the registration device without OTP."""
         mobile = normalize_mobile(mobile_number)
-        normalized_device_id = normalize_device_id(device_id)
+        normalize_device_id(device_id)
         identifier = mobile
         try:
             user = await self.user_repo.get_by_mobile(mobile)
@@ -143,10 +142,6 @@ class AuthService:
             if user.has_completed_mobile_login:
                 raise AuthenticationException(
                     "OTP verification is required to sign in."
-                )
-            if user.registered_device_id != normalized_device_id:
-                raise AuthenticationException(
-                    "Please sign in using the device you registered with."
                 )
 
             user.has_completed_mobile_login = True
