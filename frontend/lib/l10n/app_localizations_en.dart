@@ -257,7 +257,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goldHoldingsSchemeActiveFooter =>
-      'Keep buying until your scheme target is complete.';
+      'Plan in progress. Tap Sell Gold to submit a sell enquiry — our team will review it.';
 
   @override
   String get goldSchemeBuyBlockedTitle => 'Choose your gold scheme first';
@@ -276,8 +276,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Would you like to sell your gold or start a higher savings plan?';
 
   @override
+  String get goldSchemeCompletionBodyAfter1g =>
+      'You reached your 1 g goal. Sell your gold now, or start a 5 g or 10 g savings plan.';
+
+  @override
+  String get goldSchemeCompletionBodyAfter5g =>
+      'You reached your 5 g goal. Sell your gold now, or start a 10 g savings plan.';
+
+  @override
   String get goldSchemeCompletionBodyMaxTier =>
-      'You completed the highest plan. Sell your gold or keep holding.';
+      'You completed the 10 g plan — the highest tier. Sell your gold to receive payout in your bank.';
+
+  @override
+  String get goldSchemeCompletionAutoSell =>
+      '10 g plan complete! Choose how much to sell and which bank to credit.';
 
   @override
   String get goldSchemeCompletionSell => 'Sell gold';
@@ -341,6 +353,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentFailed => 'Payment failed. Please try again.';
 
   @override
+  String get confirmingPayment => 'Confirming your payment…';
+
+  @override
+  String get paymentPending =>
+      'Payment not completed yet. If you already paid, stay on this screen while we confirm.';
+
+  @override
   String get enterValidTradeAmount => 'Enter a valid gold weight or amount.';
 
   @override
@@ -399,7 +418,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bankAccountsInfo =>
-      'Link your Indian bank account to receive payouts when you sell gold.';
+      'Link up to 2 Indian bank accounts. When you sell gold, choose which account receives the payout.';
 
   @override
   String get noBankAccountLinked => 'No bank account linked';
@@ -1358,6 +1377,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not submit your request. Please try again.';
 
   @override
+  String get sellGoldPayoutBankTitle => 'Credit payout to this bank';
+
+  @override
+  String get sellGoldPayoutBankSubtitle =>
+      'Select which linked bank account should receive the sell amount.';
+
+  @override
+  String get bankAccountsMaxReached =>
+      'You can link up to 2 bank accounts. Use one of your linked accounts for sell payouts.';
+
+  @override
+  String get sellGoldSuccessPayoutNote =>
+      'After we verify your request, the amount will be transferred directly to your selected bank account.';
+
+  @override
+  String get sellGoldNoBankLinked =>
+      'Add a bank account to receive your sell payout.';
+
+  @override
+  String get sellGoldAddBankAccount => 'Add bank account';
+
+  @override
+  String get sellGoldSelectPayoutBank => 'Select the bank account for payout';
+
+  @override
   String get navSellInquiries => 'Sell Inquiries';
 
   @override
@@ -1383,4 +1427,138 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navUserWallets => 'User Wallets';
+
+  @override
+  String get navPortfolio => 'Portfolio';
+
+  @override
+  String get myPortfolio => 'My Portfolio';
+
+  @override
+  String get recentSavings => 'Recent Savings';
+
+  @override
+  String get viewAll => 'View All';
+
+  @override
+  String get goldValue => 'Gold Value';
+
+  @override
+  String get silverValue => 'Silver Value';
+
+  @override
+  String get milestoneReached => 'Milestone reached';
+
+  @override
+  String get totalPortfolioValue => 'Total Portfolio Value';
+
+  @override
+  String get signUpMobileOtpSubtitle =>
+      'Sign up with your mobile OTP to access AURUM GOLD & SILVERS.';
+
+  @override
+  String get fullName => 'Full Name';
+
+  @override
+  String get yourName => 'Your name';
+
+  @override
+  String get fullNameRequired => 'Name is required.';
+
+  @override
+  String get tenDigitMobile => '10-digit mobile';
+
+  @override
+  String get tenDigitMobileLogin => '10-digit mobile number';
+
+  @override
+  String get mobileNumberRequired => 'Mobile number is required.';
+
+  @override
+  String get otpFromSms => '6-digit OTP from SMS';
+
+  @override
+  String get enterSixDigitOtp => 'Enter the 6-digit OTP.';
+
+  @override
+  String get loginOtpIncorrect => 'Please check and enter your OTP.';
+
+  @override
+  String get verified => 'Verified';
+
+  @override
+  String get verify => 'Verify';
+
+  @override
+  String get signUpButton => 'Sign Up';
+
+  @override
+  String get reenterPassword => 'Re-enter your password';
+
+  @override
+  String get confirmPasswordPrompt => 'Please confirm your password.';
+
+  @override
+  String get passwordMin8 => 'Password must be at least 8 characters.';
+
+  @override
+  String get passwordAtLeast8 => 'At least 8 characters';
+
+  @override
+  String get emailHint => 'name@example.com';
+
+  @override
+  String get referralHint => 'ABCD1234';
+
+  @override
+  String get joinAurum => 'Join AURUM';
+
+  @override
+  String get joinAurumSubtitle => 'Access gold savings & live bullion prices';
+
+  @override
+  String get promoInsuredTitle => '100% INSURED';
+
+  @override
+  String get promoInsuredSubtitle => 'Vault-backed gold & silver';
+
+  @override
+  String get promoPurityTitle => '24K PURITY';
+
+  @override
+  String get promoPuritySubtitle => 'Certified bullion';
+
+  @override
+  String get socialProofHighlight => 'Thousands of investors ';
+
+  @override
+  String get socialProofRest => 'started their wealth journey this month';
+
+  @override
+  String get kycDialogTitle => 'Verify your identity';
+
+  @override
+  String get kycDialogMessage =>
+      'Complete your KYC to unlock buying and selling gold & silver. It only takes a couple of minutes.';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get verifyNow => 'Verify now';
+
+  @override
+  String get panCategory => 'PAN category';
+
+  @override
+  String get aadhaarLabel => 'Aadhaar';
+
+  @override
+  String get panLabel => 'PAN';
+
+  @override
+  String get searchHint => 'Search';
+
+  @override
+  String get stateLabel => 'State';
 }

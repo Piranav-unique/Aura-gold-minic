@@ -100,6 +100,10 @@ class GoldSchemeService:
         return GoldSchemeService.sell_locked_reason(user) is None
 
     @staticmethod
+    def can_submit_sell_inquiry(user: User) -> bool:
+        return GoldSchemeService.sell_inquiry_blocked_reason(user) is None
+
+    @staticmethod
     def sell_locked_reason(user: User) -> str | None:
         if user.kyc_status != "verified":
             return "Complete your KYC before selling."
@@ -111,6 +115,18 @@ class GoldSchemeService:
             return "Your savings scheme has not yet matured for selling."
         if scheme_status == "not_selected":
             return "Choose and complete your gold savings scheme before selling."
+        return None
+
+    @staticmethod
+    def sell_inquiry_blocked_reason(user: User) -> str | None:
+        if user.kyc_status != "verified":
+            return "Complete your KYC before selling."
+        holdings = Decimal(str(user.gold_savings_grams or 0))
+        if holdings <= 0:
+            return "Buy gold first to unlock selling."
+        scheme_status = user.gold_scheme_status or "not_selected"
+        if scheme_status == "not_selected":
+            return "Choose a gold savings scheme before selling."
         return None
 
     @classmethod
@@ -127,12 +143,14 @@ class GoldSchemeService:
             progress = min(Decimal("100"), (saved / target * Decimal("100")).quantize(Decimal("0.01")))
 
         can_sell = cls.can_sell_gold(user)
+        can_sell_inquiry = cls.can_submit_sell_inquiry(user)
         return GoldSchemeResponse(
             status=status,  # type: ignore[arg-type]
             target_grams=target,
             saved_grams=saved,
             progress_percent=progress,
             can_sell=can_sell,
+            can_sell_inquiry=can_sell_inquiry,
             sell_locked_reason=None if can_sell else cls.sell_locked_reason(user),
             started_at=user.gold_scheme_started_at,
         )

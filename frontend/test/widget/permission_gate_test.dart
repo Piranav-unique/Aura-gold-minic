@@ -8,7 +8,7 @@ import 'package:ags_gold/services/service_providers.dart';
 
 final _viewerProfile = UserProfile(
   id: '2',
-  email: 'viewer@example.com',
+  mobileNumber: '9876543210',
   isActive: true,
   isSuperuser: false,
   roles: const [
@@ -24,7 +24,7 @@ final _viewerProfile = UserProfile(
 
 final _customerViewerProfile = UserProfile(
   id: '3',
-  email: 'customer@example.com',
+  mobileNumber: '9876543210',
   isActive: true,
   isSuperuser: false,
   roles: const [

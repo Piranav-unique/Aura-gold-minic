@@ -12,10 +12,12 @@ import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/features/profile/presentation/profile_dialogs.dart';
 import 'package:ags_gold/features/profile/presentation/widgets/profile_settings_widgets.dart';
 import 'package:ags_gold/features/settings/presentation/providers/settings_provider.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/kyc_verified_success_view.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
+import 'package:ags_gold/l10n/locale_preference_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -33,6 +35,8 @@ class ProfileScreen extends ConsumerWidget {
           ref.invalidate(profileProvider);
           ref.invalidate(profileActivityProvider);
           ref.invalidate(userSettingsProvider);
+          ref.invalidate(kycStatusProvider);
+          await ref.read(personalDashboardProvider.notifier).refresh();
         },
         child: profileAsync.when(
           data: (user) => audience == AppAudience.staffAdmin
@@ -99,6 +103,9 @@ class _ConsumerProfileBody extends ConsumerWidget {
                       ? const Icon(Icons.check, color: AppTheme.goldDeep)
                       : null,
                   onTap: () async {
+                    await ref
+                        .read(localePreferenceProvider.notifier)
+                        .setLocale(option.code);
                     await ref.read(updateUserSettingsProvider)(
                       settings.copyWith(locale: option.code),
                     );
@@ -131,27 +138,10 @@ class _ConsumerProfileBody extends ConsumerWidget {
                   showChangePasswordDialog(context, ref);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.notifications_active_outlined),
-                title: Text(l10n.notificationPreferences),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.go('/settings');
-                },
-              ),
             ],
           ),
         );
       },
-    );
-  }
-
-  void _clearCache(BuildContext context) {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.cacheCleared)),
     );
   }
 
@@ -182,9 +172,7 @@ class _ConsumerProfileBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final kycComplete =
-        ref.watch(personalDashboardProvider).value?.kycStatus.isComplete ??
-            false;
+    final kycComplete = ref.watch(effectiveKycCompleteProvider);
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView(
@@ -192,12 +180,12 @@ class _ConsumerProfileBody extends ConsumerWidget {
         children: [
           ProfileHeaderCard(
             displayName: user.displayName,
-            contactLine: user.email,
+            contactLine: user.displayContactLine,
             memberSinceLine: _memberSinceLine(context),
             initials: user.initials,
-            showVerifiedBadge: user.isActive,
+            showVerifiedBadge: user.isActive || kycComplete,
             kycVerified: kycComplete,
-            onVerifyTap: () => context.push('/kyc'),
+            onVerifyTap: kycComplete ? null : () => context.push('/kyc'),
             onAvatarTap: () => pickAndUploadAvatar(context, ref),
           ),
           const SizedBox(height: 8),
@@ -206,14 +194,18 @@ class _ConsumerProfileBody extends ConsumerWidget {
             showProfileTile: false,
           ),
           const SizedBox(height: 8),
-          ProfileSectionHeader(title: l10n.kycVerification),
+          ProfileSectionHeader(
+            title: kycComplete ? l10n.kycVerifiedHeading : l10n.kycVerification,
+          ),
           ProfileSettingsGroup(
             children: [
               ProfileSettingsTile(
                 icon: kycComplete
-                    ? Icons.verified_user_outlined
+                    ? Icons.verified_user_rounded
                     : Icons.gpp_maybe_outlined,
-                title: l10n.identityVerification,
+                title: kycComplete
+                    ? l10n.kycVerifiedHeading
+                    : l10n.identityVerification,
                 trailing: _KycStatusChip(verified: kycComplete),
                 onTap: () => context.push('/kyc'),
               ),
@@ -230,7 +222,7 @@ class _ConsumerProfileBody extends ConsumerWidget {
               ProfileSettingsTile(
                 icon: Icons.description_outlined,
                 title: l10n.statements,
-                onTap: () => _showComingSoon(context, l10n.statements),
+                onTap: () => context.push('/user-transactions'),
               ),
               ProfileSettingsTile(
                 icon: Icons.account_balance_outlined,
@@ -241,16 +233,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 icon: Icons.person_add_alt_1_outlined,
                 title: l10n.nomineeDetails,
                 onTap: () => _showComingSoon(context, l10n.nomineeDetails),
-              ),
-            ],
-          ),
-          ProfileSectionHeader(title: l10n.autoSavings),
-          ProfileSettingsGroup(
-            children: [
-              ProfileSettingsTile(
-                icon: Icons.savings_outlined,
-                title: l10n.modifyAutoSavings,
-                onTap: () => _showComingSoon(context, l10n.autoSavings),
               ),
             ],
           ),
@@ -273,11 +255,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 onTap: () => context.push('/refer-and-earn'),
               ),
               ProfileSettingsTile(
-                icon: Icons.confirmation_number_outlined,
-                title: l10n.applyVoucher,
-                onTap: () => _showComingSoon(context, l10n.applyVoucher),
-              ),
-              ProfileSettingsTile(
                 icon: Icons.security_outlined,
                 title: l10n.securityAndPermission,
                 onTap: () => _showSecuritySheet(context, ref),
@@ -291,31 +268,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 icon: Icons.privacy_tip_outlined,
                 title: l10n.privacyPolicy,
                 onTap: () => context.push('/privacy-policy'),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.help_outline,
-                title: l10n.helpAndSupport,
-                onTap: () => _showComingSoon(context, l10n.helpAndSupport),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.chat_outlined,
-                title: l10n.joinWhatsappChannel,
-                onTap: () => _showComingSoon(context, l10n.joinWhatsappChannel),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.share_outlined,
-                title: l10n.shareAuraGold,
-                onTap: () => _showComingSoon(context, l10n.shareAuraGold),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.star_outline,
-                title: l10n.rateAuraGold,
-                onTap: () => _showComingSoon(context, l10n.rateAuraGold),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.cleaning_services_outlined,
-                title: l10n.clearCache,
-                onTap: () => _clearCache(context),
               ),
             ],
           ),
@@ -366,6 +318,15 @@ class _KycStatusChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (verified)
+          const Padding(
+            padding: EdgeInsets.only(right: 6),
+            child: Icon(
+              Icons.check_circle_rounded,
+              color: AppTheme.emerald,
+              size: 18,
+            ),
+          ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -373,7 +334,7 @@ class _KycStatusChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            verified ? l10n.identityVerified : l10n.completeKyc,
+            verified ? l10n.kycVerifiedHeading : l10n.completeKyc,
             style: TextStyle(
               color: color,
               fontSize: 11.5,
@@ -439,7 +400,7 @@ class _AdminProfileBody extends ConsumerWidget {
       children: [
         ProfileHeaderCard(
           displayName: user.displayName,
-          contactLine: user.email,
+          contactLine: user.displayContactLine,
           memberSinceLine: _memberSinceLine(context),
           initials: user.initials,
           showVerifiedBadge: user.isActive,

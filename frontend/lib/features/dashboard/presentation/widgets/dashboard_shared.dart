@@ -6,7 +6,6 @@ class DashboardHero extends StatelessWidget {
   final String greeting;
   final String subtitle;
   final String roleLabel;
-  final int unreadNotifications;
   final DateTime? refreshedAt;
 
   const DashboardHero({
@@ -14,7 +13,6 @@ class DashboardHero extends StatelessWidget {
     required this.greeting,
     required this.subtitle,
     required this.roleLabel,
-    this.unreadNotifications = 0,
     this.refreshedAt,
   });
 
@@ -81,28 +79,6 @@ class DashboardHero extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (unreadNotifications > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppTheme.rose.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$unreadNotifications unread',
-                    style: TextStyle(
-                      color: isDark ? AppTheme.rose : const Color(0xFF7A2018),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 8),
               Row(
                 children: [
                   Container(

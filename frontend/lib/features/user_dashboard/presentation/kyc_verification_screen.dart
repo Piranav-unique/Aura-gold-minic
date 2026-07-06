@@ -856,7 +856,7 @@ class _StepIndicator extends StatelessWidget {
           step: 3,
           label: confirmLabel,
           active: currentStage == 3,
-          done: false,
+          done: currentStage >= 3,
         ),
       ],
     );

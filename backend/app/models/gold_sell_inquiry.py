@@ -74,6 +74,11 @@ class GoldSellInquiry(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     payout_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     payout_failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    bank_account_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("user_bank_accounts.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     user: Mapped["User"] = relationship(
         "User",

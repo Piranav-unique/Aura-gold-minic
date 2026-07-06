@@ -12,8 +12,6 @@ class RazorpayCheckout {
     required String keyId,
     required String orderId,
     required int amountPaise,
-    required String userEmail,
-    required String userName,
     required RazorpaySuccessHandler onSuccess,
     required RazorpayErrorHandler onError,
   }) {
@@ -31,10 +29,6 @@ class RazorpayCheckout {
         'description': 'Gold purchase',
         'order_id': orderId,
         'currency': 'INR',
-        'prefill': {
-          'email': userEmail,
-          'name': userName,
-        },
         'theme': {'color': '#D4AF37'},
       });
   }

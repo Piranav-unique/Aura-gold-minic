@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ags_gold/core/widgets/aura_components.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Social-proof trust card shown on the consumer home screen.
 class SocialProofCard extends StatelessWidget {
@@ -7,6 +8,7 @@ class SocialProofCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     return AuraCard(
@@ -31,15 +33,13 @@ class SocialProofCard extends StatelessWidget {
                 style: TextStyle(color: muted, fontSize: 13.5, height: 1.35),
                 children: [
                   TextSpan(
-                    text: 'Thousands of investors ',
+                    text: l10n.socialProofHighlight,
                     style: TextStyle(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const TextSpan(
-                    text: 'started their wealth journey this month',
-                  ),
+                  TextSpan(text: l10n.socialProofRest),
                 ],
               ),
             ),
@@ -72,39 +72,25 @@ class FeatureBadgesRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    final l10n = context.l10n;
+    return Row(
       children: [
         Expanded(
           child: FeatureBadgeCard(
             icon: Icons.verified_user_outlined,
-            title: '100% INSURED',
-            subtitle: 'Vault-backed gold & silver',
+            title: l10n.promoInsuredTitle,
+            subtitle: l10n.promoInsuredSubtitle,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: FeatureBadgeCard(
-            icon: Icons.workspace_premium_outlined,
-            title: '24K PURITY',
-            subtitle: 'Certified bullion',
+            icon: Icons.diamond_outlined,
+            title: l10n.promoPurityTitle,
+            subtitle: l10n.promoPuritySubtitle,
           ),
         ),
       ],
-    );
-  }
-}
-
-/// "Start SIP in 10 seconds" dark call-to-action banner.
-class StartSipBanner extends StatelessWidget {
-  final VoidCallback onTap;
-  const StartSipBanner({super.key, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return DarkCtaBanner(
-      label: 'Start SIP in 10 seconds',
-      trailingIcon: Icons.arrow_forward_rounded,
-      onTap: onTap,
     );
   }
 }

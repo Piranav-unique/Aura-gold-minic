@@ -30,20 +30,41 @@ class TradeAmountForm extends ConsumerStatefulWidget {
   ConsumerState<TradeAmountForm> createState() => _TradeAmountFormState();
 }
 
-class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
+class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
+    with WidgetsBindingObserver {
   final _gramsController = TextEditingController();
   final _amountController = TextEditingController();
   final _checkout = RazorpayCheckout();
   bool _syncing = false;
   bool _paying = false;
+  bool _syncingPendingPayment = false;
+  String? _pendingOrderId;
   GoldSchemeStatus? _schemeWasActiveBeforePayment;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _gramsController.dispose();
     _amountController.dispose();
     _checkout.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _pendingOrderId != null) {
+      Future<void>.delayed(const Duration(milliseconds: 900), () {
+        if (mounted && _pendingOrderId != null) {
+          _syncPendingPayment();
+        }
+      });
+    }
   }
 
   void _syncFromGrams(double rate) {
@@ -103,15 +124,63 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         return;
       }
 
+      _pendingOrderId = order.orderId;
       _checkout.open(
         keyId: order.keyId,
         orderId: order.orderId,
         amountPaise: order.amountPaise,
-        userEmail: order.userEmail,
-        userName: order.userName,
-        onSuccess: (response) => _onPaymentSuccess(response),
-        onError: (response) => _onPaymentError(response.message),
+        onSuccess: (response) {
+          _pendingOrderId = null;
+          _onPaymentSuccess(response);
+        },
+        onError: (response) {
+          _pendingOrderId = null;
+          _onPaymentError(response.message);
+        },
       );
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+        setState(() => _paying = false);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.paymentFailed)),
+        );
+        setState(() => _paying = false);
+      }
+    }
+  }
+
+  Future<void> _syncPendingPayment() async {
+    final orderId = _pendingOrderId;
+    if (orderId == null || _syncingPendingPayment) return;
+
+    _syncingPendingPayment = true;
+    if (mounted) setState(() => _paying = true);
+    try {
+      final result = await ref.read(syncGoldPaymentProvider)(orderId: orderId);
+      if (!mounted) return;
+
+      if (result.isPaid) {
+        _pendingOrderId = null;
+        await _finishSuccessfulPayment(result.message);
+        return;
+      }
+
+      if (result.isPending) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.paymentPending)),
+        );
+      } else {
+        _pendingOrderId = null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message)),
+        );
+      }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,8 +194,21 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         );
       }
     } finally {
-      if (mounted) setState(() => _paying = false);
+      _syncingPendingPayment = false;
+      if (mounted && _pendingOrderId == null) {
+        setState(() => _paying = false);
+      }
     }
+  }
+
+  Future<void> _finishSuccessfulPayment(String message) async {
+    await ref.read(personalDashboardProvider.notifier).refresh();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+    await _handlePostPaymentNavigation();
+    if (mounted) setState(() => _paying = false);
   }
 
   Future<void> _completeDevMockPayment(String orderId) async {
@@ -137,12 +219,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         paymentId: 'pay_dev_mock',
         signature: 'dev_mock',
       );
-      await ref.read(personalDashboardProvider.notifier).refresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-      await _handlePostPaymentNavigation();
+      await _finishSuccessfulPayment(result.message);
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,6 +241,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.paymentFailed)),
         );
+        setState(() => _paying = false);
       }
       return;
     }
@@ -175,12 +253,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         paymentId: paymentId,
         signature: signature,
       );
-      await ref.read(personalDashboardProvider.notifier).refresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-      await _handlePostPaymentNavigation();
+      await _finishSuccessfulPayment(result.message);
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -194,6 +267,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
 
   void _onPaymentError(String? message) {
     if (!mounted) return;
+    setState(() => _paying = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message ?? context.l10n.paymentFailed)),
     );
@@ -210,9 +284,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         scheme?.status.isCompleted == true;
 
     if (justCompleted && scheme != null) {
-      final choice = await showSchemeCompletionDialog(context, ref, scheme);
-      if (!mounted) return;
-      await navigateAfterSchemeCompletion(context, ref, choice);
+      await handleSchemeJustCompleted(context, ref, scheme);
       return;
     }
 
@@ -313,66 +385,99 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm> {
         ? l10n.buyRatePerGram(currency.format(rate))
         : l10n.sellRatePerGram(currency.format(rate));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Stack(
       children: [
-        AurumSurfaceCard(
-          child: Row(
-            children: [
-              Icon(
-                widget.isBuy
-                    ? Icons.trending_up_rounded
-                    : Icons.trending_down_rounded,
-                color: AurumConsumerTheme.liveGreen,
-                size: 20,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AurumSurfaceCard(
+              child: Row(
+                children: [
+                  Icon(
+                    widget.isBuy
+                        ? Icons.trending_up_rounded
+                        : Icons.trending_down_rounded,
+                    color: AurumConsumerTheme.liveGreen,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      rateLabel,
+                      style: TextStyle(
+                        color: AurumConsumerTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  rateLabel,
-                  style: TextStyle(
-                    color: AurumConsumerTheme.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
+            ),
+            const SizedBox(height: 20),
+            _Field(
+              label: l10n.goldWeightGrams,
+              controller: _gramsController,
+              hint: '0.0000',
+              onChanged: (_) => _syncFromGrams(rate),
+            ),
+            const SizedBox(height: 16),
+            _Field(
+              label: l10n.amountInr,
+              controller: _amountController,
+              hint: '0.00',
+              onChanged: (_) => _syncFromAmount(rate),
+            ),
+            const SizedBox(height: 28),
+            FilledButton(
+              onPressed: _paying
+                  ? null
+                  : widget.isBuy
+                      ? () => _startPayment(rate)
+                      : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.paymentComingSoon)),
+                          );
+                        },
+              child: _paying
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.continueToPayment),
+            ),
+          ],
+        ),
+        if (_paying && _pendingOrderId != null)
+          Positioned.fill(
+            child: ColoredBox(
+              color: Colors.black.withValues(alpha: 0.45),
+              child: Center(
+                child: AurumSurfaceCard(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.confirmingPayment,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AurumConsumerTheme.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
-        _Field(
-          label: l10n.goldWeightGrams,
-          controller: _gramsController,
-          hint: '0.0000',
-          onChanged: (_) => _syncFromGrams(rate),
-        ),
-        const SizedBox(height: 16),
-        _Field(
-          label: l10n.amountInr,
-          controller: _amountController,
-          hint: '0.00',
-          onChanged: (_) => _syncFromAmount(rate),
-        ),
-        const SizedBox(height: 28),
-        FilledButton(
-          onPressed: _paying
-              ? null
-              : widget.isBuy
-                  ? () => _startPayment(rate)
-                  : () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.paymentComingSoon)),
-                      );
-                    },
-          child: _paying
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(l10n.continueToPayment),
-        ),
       ],
     );
   }

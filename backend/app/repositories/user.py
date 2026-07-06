@@ -27,6 +27,15 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(query)
         return result.scalars().first()
 
+    async def get_by_registered_device_id(self, device_id: str) -> Optional[User]:
+        """Fetch a user linked to a device, excluding soft-deleted ones."""
+        query = select(User).where(
+            User.registered_device_id == device_id,
+            User.is_deleted.is_(False),
+        )
+        result = await self.db.execute(query)
+        return result.scalars().first()
+
     async def get_by_referral_code(self, referral_code: str) -> Optional[User]:
         query = select(User).where(
             User.referral_code == referral_code,

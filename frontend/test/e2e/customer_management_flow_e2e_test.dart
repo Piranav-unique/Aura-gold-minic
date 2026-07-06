@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ags_gold/features/customers/presentation/customers_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_form_screen.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
@@ -109,15 +108,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          apiClientProvider.overrideWithValue(mockApi),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          apiClientProvider.overrideWithValue(mockApi)
           profileProvider.overrideWithValue(
             AsyncValue.data(
               UserProfile(
                 id: '11111111-1111-1111-1111-111111111111',
-                email: 'admin@agsgold.com',
+                mobileNumber: '9876543210',
                 firstName: 'Admin',
                 lastName: 'User',
                 isActive: true,

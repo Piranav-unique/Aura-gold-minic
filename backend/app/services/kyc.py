@@ -21,6 +21,7 @@ from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.profile import KycGovernmentProfile, KycStatusResponse
 from app.services.audit import AuditService
+from app.services.dashboard_cache import clear_personal_dashboard_cache
 from app.services.sandbox_kyc import SandboxKycClient
 from app.utils.mobile import normalize_mobile
 
@@ -49,6 +50,7 @@ class KycService:
         if user.kyc_status == "rejected":
             self._reset_kyc_progress(user)
             await self.user_repo.db.commit()
+            clear_personal_dashboard_cache(str(user_id))
         normalized = self._normalize_aadhaar(aadhaar_number)
         reference_id = await self.sandbox.generate_aadhaar_otp(normalized)
         if self.audit_service:
@@ -87,6 +89,7 @@ class KycService:
         user.kyc_aadhaar_last4 = normalized[-4:]
         user.kyc_profile = dumps_profile(profile)
         await self.user_repo.db.commit()
+        clear_personal_dashboard_cache(str(user_id))
 
         if self.audit_service:
             try:
@@ -129,6 +132,7 @@ class KycService:
         if link_status.upper() not in _LINKED_STATUSES:
             user.kyc_status = "rejected"
             await self.user_repo.db.commit()
+            clear_personal_dashboard_cache(str(user_id))
             raise ValidationException(
                 "PAN is not linked with your verified Aadhaar. Link them on the "
                 "Income Tax portal and try again."
@@ -148,6 +152,7 @@ class KycService:
         if str(pan_data.get("status", "valid")).lower() == "invalid":
             user.kyc_status = "rejected"
             await self.user_repo.db.commit()
+            clear_personal_dashboard_cache(str(user_id))
             raise ValidationException("PAN could not be verified with government records.")
 
         profile = merge_kyc_profile(
@@ -167,6 +172,7 @@ class KycService:
             user.last_name = parts[1] if len(parts) > 1 else None
 
         await self.user_repo.db.commit()
+        clear_personal_dashboard_cache(str(user_id))
 
         if self.audit_service:
             await self.audit_service.log_action(

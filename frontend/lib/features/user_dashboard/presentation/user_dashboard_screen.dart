@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_prices_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/gold_holdings_card.dart';
@@ -15,15 +15,12 @@ import 'package:ags_gold/core/logging/app_event_log.dart';
 class UserDashboardScreen extends ConsumerWidget {
   const UserDashboardScreen({super.key});
 
-  void _onStartSip(BuildContext context, bool kycComplete) {
-    AppEventLog.action('start_sip_tap', data: {'kyc_complete': kycComplete});
-    context.push(kycComplete ? '/buy-gold?metal=gold' : '/kyc');
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final dashboardAsync = ref.watch(personalDashboardProvider);
+    final kycComplete = ref.watch(effectiveKycCompleteProvider);
+    final kycStatus = ref.watch(effectiveKycStatusProvider);
 
     return ResponsiveNavigationWrapper(
       title: l10n.navAurum,
@@ -31,16 +28,15 @@ class UserDashboardScreen extends ConsumerWidget {
         color: AurumConsumerTheme.chipGold,
         onRefresh: () async {
           AppEventLog.action('dashboard_pull_refresh');
+          ref.invalidate(kycStatusProvider);
           await ref.read(personalDashboardProvider.notifier).refresh();
           ref.invalidate(metalPricesProvider);
         },
         child: dashboardAsync.when(
           data: (data) {
-            final verified = data.kycStatus.isComplete;
-
             // Unverified users get a one-time-per-session reminder popup
             // instead of any KYC banner on the home page itself.
-            maybeShowKycPrompt(context, ref, verified: verified);
+            maybeShowKycPrompt(context, ref, verified: kycComplete);
 
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -51,14 +47,10 @@ class UserDashboardScreen extends ConsumerWidget {
                   GoldHoldingsCard(
                     goldGrams: data.goldSavingsGrams,
                     goldInvestedInr: data.goldInvestedInr,
-                    kycStatus: data.kycStatus,
+                    kycStatus: kycStatus,
                     goldScheme: data.goldScheme,
                   ),
                   const SizedBox(height: 22),
-                  StartSipBanner(
-                    onTap: () => _onStartSip(context, verified),
-                  ),
-                  const SizedBox(height: 16),
                   const SocialProofCard(),
                   const SizedBox(height: 14),
                   const FeatureBadgesRow(),

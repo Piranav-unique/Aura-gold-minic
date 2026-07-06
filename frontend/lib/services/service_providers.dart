@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ags_gold/config/env_config.dart';
+import 'package:ags_gold/features/auth/domain/device_auth_storage.dart';
 import 'package:ags_gold/services/interfaces/secure_storage.dart';
 import 'package:ags_gold/services/secure_storage_service.dart';
 import 'package:ags_gold/services/api_client.dart';
@@ -19,7 +20,19 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   FutureOr<AuthStatus> build() async {
     _storage = ref.watch(secureStorageProvider);
     final hasToken = await _storage.hasAccessToken();
-    return hasToken ? AuthStatus.authenticated : AuthStatus.unauthenticated;
+    if (!hasToken) {
+      return AuthStatus.unauthenticated;
+    }
+
+    // Token may still exist on the device after a DB reset or logout elsewhere.
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.get('/auth/me');
+      return AuthStatus.authenticated;
+    } catch (_) {
+      await _storage.clearTokens();
+      return AuthStatus.unauthenticated;
+    }
   }
 
   Future<void> login({
@@ -58,13 +71,59 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     );
   }
 
-  Future<void> loginWithMobile(String mobileNumber) async {
+  Future<void> sendLoginOtp(String mobileNumber) async {
+    final deviceId =
+        await ref.read(deviceAuthStorageProvider).getOrCreateDeviceId();
+    final apiClient = ref.read(apiClientProvider);
+    await apiClient.post(
+      '/auth/login/otp/send',
+      data: {
+        'mobile_number': mobileNumber,
+        'device_id': deviceId,
+      },
+    );
+  }
+
+  Future<void> loginWithTrustedMobile(String mobileNumber) async {
     state = const AsyncValue.loading();
     try {
+      final deviceAuth = ref.read(deviceAuthStorageProvider);
+      final deviceId = await deviceAuth.getOrCreateDeviceId();
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.post(
+        '/auth/login/mobile/trusted',
+        data: {
+          'mobile_number': mobileNumber,
+          'device_id': deviceId,
+        },
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      await _storage.saveTokens(
+        accessToken: responseData['access_token'] as String,
+        refreshToken: responseData['refresh_token'] as String,
+      );
+      await deviceAuth.clearPendingTrustedFirstLogin();
+      state = const AsyncValue.data(AuthStatus.authenticated);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> loginWithMobile(String mobileNumber, String otp) async {
+    state = const AsyncValue.loading();
+    try {
+      final deviceAuth = ref.read(deviceAuthStorageProvider);
+      final deviceId = await deviceAuth.getOrCreateDeviceId();
       final apiClient = ref.read(apiClientProvider);
       final response = await apiClient.post(
         '/auth/login/mobile',
-        data: {'mobile_number': mobileNumber},
+        data: {
+          'mobile_number': mobileNumber,
+          'otp': otp,
+          'device_id': deviceId,
+        },
       );
 
       final responseData = response.data as Map<String, dynamic>;
@@ -102,6 +161,8 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     String? referralCode,
     int? referralSchemeGrams,
   }) async {
+    final deviceAuth = ref.read(deviceAuthStorageProvider);
+    final deviceId = await deviceAuth.getOrCreateDeviceId();
     final apiClient = ref.read(apiClientProvider);
     await apiClient.post(
       '/auth/register',
@@ -111,6 +172,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         'otp': otp,
         'email': email,
         'password': password,
+        'device_id': deviceId,
         if (referralCode != null && referralCode.isNotEmpty)
           'referral_code': referralCode,
         'referral_scheme_grams': ?referralSchemeGrams,
@@ -148,6 +210,10 @@ final envConfigProvider = Provider<EnvConfig>((ref) => EnvConfig.active);
 
 final secureStorageProvider = Provider<ISecureStorage>((ref) {
   return SecureStorageService();
+});
+
+final deviceAuthStorageProvider = Provider<IDeviceAuthStorage>((ref) {
+  return DeviceAuthStorage();
 });
 
 final apiClientProvider = Provider<ApiClient>((ref) {

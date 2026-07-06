@@ -58,20 +58,23 @@ class KycGovernmentProfileCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (profile.dateOfBirth != null)
-              _InfoRow(label: 'Date of birth', value: profile.dateOfBirth!),
+              _InfoRow(label: l10n.dateOfBirth, value: profile.dateOfBirth!),
             if (profile.gender != null)
-              _InfoRow(label: 'Gender', value: profile.gender!),
+              _InfoRow(label: l10n.gender, value: profile.gender!),
             if (profile.fullAddress != null)
-              _InfoRow(label: 'Address', value: profile.fullAddress!),
+              _InfoRow(label: l10n.address, value: profile.fullAddress!),
             if (profile.state != null)
-              _InfoRow(label: 'State', value: profile.state!),
+              _InfoRow(label: l10n.stateLabel, value: profile.state!),
             if (profile.aadhaarLast4 != null)
-              _InfoRow(label: 'Aadhaar', value: 'XXXX XXXX ${profile.aadhaarLast4}'),
+              _InfoRow(
+                label: l10n.aadhaarLabel,
+                value: 'XXXX XXXX ${profile.aadhaarLast4}',
+              ),
             if (profile.panNumberMasked != null)
-              _InfoRow(label: 'PAN', value: profile.panNumberMasked!),
+              _InfoRow(label: l10n.panLabel, value: profile.panNumberMasked!),
             if (profile.panCategory != null)
               _InfoRow(
-                label: 'PAN category',
+                label: l10n.panCategory,
                 value: profile.panCategory!.replaceAll('_', ' '),
               ),
           ],

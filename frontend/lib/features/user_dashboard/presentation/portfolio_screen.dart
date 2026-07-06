@@ -5,32 +5,19 @@ import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/aura_components.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
-import 'package:ags_gold/core/widgets/premium_trend_chart.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/user_dashboard/domain/market_linked_holdings.dart';
-import 'package:ags_gold/features/user_dashboard/domain/metal_history.dart';
-import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_prices_provider.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_price_history_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/widgets/metal_history_range_selector.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Consumer "My Portfolio" tab: total value, gold/silver split, milestone
-/// progress, an investment-growth chart, and recent holdings. Reuses the same
-/// providers as the dashboard and My Savings so no new data source is needed.
-class PortfolioScreen extends ConsumerStatefulWidget {
+/// progress, and recent holdings.
+class PortfolioScreen extends ConsumerWidget {
   const PortfolioScreen({super.key});
 
   @override
-  ConsumerState<PortfolioScreen> createState() => _PortfolioScreenState();
-}
-
-class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
-  MetalHistoryRange _range = MetalHistoryRange.m6;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final dashboardAsync = ref.watch(personalDashboardProvider);
     final pricesAsync = ref.watch(metalPricesProvider);
@@ -41,7 +28,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     );
 
     return ResponsiveNavigationWrapper(
-      title: 'My Portfolio',
+      title: l10n.myPortfolio,
       child: RefreshIndicator(
         color: AppTheme.primaryGold,
         onRefresh: () async {
@@ -114,20 +101,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                           '${data.goldScheme.progressPercent.toStringAsFixed(0)}%',
                       caption: data.goldScheme.remainingGrams > 0
                           ? '${_trimGrams(data.goldScheme.remainingGrams)}g more to reach your next milestone'
-                          : 'Milestone reached',
+                          : l10n.milestoneReached,
                       captionIcon: Icons.flag_outlined,
                     ),
                   ),
                 ],
-                const SizedBox(height: 14),
-                _InvestmentGrowthCard(
-                  range: _range,
-                  onRangeChanged: (r) => setState(() => _range = r),
-                ),
                 const SizedBox(height: 20),
                 SectionHeader(
-                  title: 'Recent Savings',
-                  actionLabel: 'View All',
+                  title: l10n.recentSavings,
+                  actionLabel: l10n.viewAll,
                   onAction: () => context.push('/my-savings'),
                 ),
                 const SizedBox(height: 6),
@@ -193,12 +175,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       ),
     );
   }
+}
 
-  String _trimGrams(double value, [int digits = 2]) {
-    final s = value.toStringAsFixed(digits);
-    if (!s.contains('.')) return s;
-    return s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
-  }
+String _trimGrams(double value, [int digits = 2]) {
+  final s = value.toStringAsFixed(digits);
+  if (!s.contains('.')) return s;
+  return s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
 }
 
 class _TotalValueHero extends StatelessWidget {
@@ -216,13 +198,14 @@ class _TotalValueHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return GoldGradientCard(
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Total Portfolio Value',
+            l10n.totalPortfolioValue,
             style: TextStyle(
               color: AppTheme.goldDeep,
               fontSize: 12.5,
@@ -266,11 +249,11 @@ class _TotalValueHero extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _HeroSplit(label: 'Gold Value', value: goldValue),
+                child: _HeroSplit(label: l10n.goldValue, value: goldValue),
               ),
               Expanded(
                 child: _HeroSplit(
-                  label: 'Silver Value',
+                  label: l10n.silverValue,
                   value: silverValue,
                   alignEnd: true,
                 ),
@@ -389,156 +372,6 @@ class _MetalOwnedCard extends StatelessWidget {
               color: AppTheme.goldDeep,
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InvestmentGrowthCard extends ConsumerWidget {
-  final MetalHistoryRange range;
-  final ValueChanged<MetalHistoryRange> onRangeChanged;
-
-  const _InvestmentGrowthCard({
-    required this.range,
-    required this.onRangeChanged,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(
-      metalHistoryProvider((metal: MetalType.gold, range: range)),
-    );
-    final currency = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
-
-    return historyAsync.when(
-      data: (history) {
-        final points = history.points;
-        final values = points.map((p) => p.price).toList();
-        final labels = points.map((p) => p.label).toList();
-        final tooltipDates = points.map((p) => p.date ?? '').toList();
-        final minVal =
-            values.isEmpty ? 0.0 : values.reduce((a, b) => a < b ? a : b);
-        final maxVal =
-            values.isEmpty ? 0.0 : values.reduce((a, b) => a > b ? a : b);
-        final profit =
-            values.length >= 2 ? values.last - values.first : 0.0;
-
-        return PremiumTrendChart(
-          title: 'Investment Growth',
-          subtitle: 'Gold price per gram',
-          values: values,
-          labels: labels,
-          tooltipDates: tooltipDates,
-          interactive: true,
-          formatValue: (v) => currency.format(v),
-          badge: range.apiValue,
-          bottomChild: Column(
-            children: [
-              const SizedBox(height: 8),
-              MetalHistoryRangeSelector(
-                selected: range,
-                onChanged: onRangeChanged,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(label: 'Min', value: currency.format(minVal)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MiniStat(label: 'Max', value: currency.format(maxVal)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Profit',
-                      value:
-                          '${profit >= 0 ? '+' : ''}${currency.format(profit)}',
-                      highlight: true,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-      loading: () => const AuraCard(
-        child: SizedBox(
-          height: 240,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ),
-      error: (e, _) => AuraCard(
-        child: SizedBox(
-          height: 120,
-          child: Center(
-            child: Text(
-              'Unable to load chart',
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.6),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool highlight;
-
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      decoration: BoxDecoration(
-        color: highlight
-            ? AppTheme.primaryGold.withValues(alpha: 0.16)
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: highlight ? AppTheme.goldDeep : muted,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: highlight ? AppTheme.goldDeep : theme.colorScheme.onSurface,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
             ),
           ),
         ],

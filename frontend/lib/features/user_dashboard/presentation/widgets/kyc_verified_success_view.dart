@@ -285,8 +285,11 @@ class AccountSection extends StatelessWidget {
         ],
         _AccountTile(
           icon: Icons.badge_outlined,
-          title: l10n.kycVerification,
-          subtitle: kycVerified ? l10n.identityVerified : l10n.completeKyc,
+          title: kycVerified ? l10n.kycVerifiedHeading : l10n.kycVerification,
+          subtitle: kycVerified
+              ? l10n.identityVerified
+              : l10n.completeKycToStartTrading,
+          verified: kycVerified,
           onTap: () => context.push('/kyc'),
         ),
         const SizedBox(height: 10),
@@ -306,16 +309,20 @@ class _AccountTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool verified;
 
   const _AccountTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.verified = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final accent = verified ? AppTheme.emerald : AppTheme.primaryGold;
+
     return Material(
       color: AurumConsumerTheme.surface,
       borderRadius: BorderRadius.circular(18),
@@ -326,17 +333,25 @@ class _AccountTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AurumConsumerTheme.border),
+            border: Border.all(
+              color: verified
+                  ? AppTheme.emerald.withValues(alpha: 0.35)
+                  : AurumConsumerTheme.border,
+            ),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGold.withValues(alpha: 0.12),
+                  color: accent.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: AppTheme.primaryGold, size: 22),
+                child: Icon(
+                  verified ? Icons.verified_user_rounded : icon,
+                  color: accent,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -355,13 +370,26 @@ class _AccountTile extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: AurumConsumerTheme.textMuted,
+                        color: verified
+                            ? AppTheme.emerald
+                            : AurumConsumerTheme.textMuted,
                         fontSize: 12,
+                        fontWeight:
+                            verified ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ],
                 ),
               ),
+              if (verified)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: AppTheme.emerald,
+                    size: 22,
+                  ),
+                ),
               Icon(
                 Icons.chevron_right_rounded,
                 color: AurumConsumerTheme.textMuted,

@@ -10,6 +10,7 @@ from app.repositories.signup_otp import SignupOtpRepository
 from app.repositories.user import UserRepository
 from app.services.sms import SmsService
 from app.utils.mobile import normalize_mobile
+from app.utils.device_binding import normalize_device_id
 
 _MSG91_NATIVE_SENTINEL = "msg91-native"
 
@@ -111,6 +112,32 @@ class SignupOtpService:
         if existing:
             raise ValidationException("This mobile number is already registered.")
         await self._send_otp_challenge(mobile)
+
+    async def send_login_otp(self, mobile_number: str, device_id: str) -> None:
+        mobile = normalize_mobile(mobile_number)
+        normalized_device = normalize_device_id(device_id)
+        user = await self.user_repo.get_by_mobile(mobile)
+        if (
+            not user
+            or not user.mobile_verified
+            or not user.is_active
+            or user.is_deleted
+        ):
+            raise ValidationException("No account found for this mobile number.")
+        if user.is_superuser:
+            raise ValidationException("Use email and password to sign in as staff.")
+        if (
+            user.registered_device_id
+            and user.registered_device_id != normalized_device
+        ):
+            raise ValidationException(
+                "This account is registered on another device. "
+                "Please sign in using the phone you signed up with."
+            )
+        await self._send_otp_challenge(mobile)
+
+    async def consume_login_otp(self, mobile_number: str, otp: str) -> None:
+        await self._check_otp_code(mobile_number, otp, consume=True)
 
     async def _check_otp_code(
         self, mobile_number: str, otp: str, *, consume: bool

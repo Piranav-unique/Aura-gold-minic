@@ -15,6 +15,12 @@ def _normalize_mobile_input(raw: str) -> str:
     return digits
 
 
+def _validate_device_id_field(v: str) -> str:
+    from app.utils.device_binding import validate_device_id
+
+    return validate_device_id(v)
+
+
 class LoginRequest(BaseModel):
     """Schema for user login credentials request."""
 
@@ -60,8 +66,63 @@ class SignupOtpSendRequest(BaseModel):
         return digits
 
 
-class MobileLoginRequest(SignupOtpSendRequest):
-    """End-user login with registered mobile number (no OTP)."""
+class LoginOtpSendRequest(BaseModel):
+    mobile_number: str
+    device_id: str = Field(..., min_length=36, max_length=36)
+
+    @field_validator("mobile_number")
+    @classmethod
+    def validate_mobile(cls, v: str) -> str:
+        digits = _normalize_mobile_input(v)
+        if not _INDIAN_MOBILE.match(digits):
+            raise ValueError("Invalid mobile number")
+        return digits
+
+    @field_validator("device_id")
+    @classmethod
+    def validate_device_id(cls, v: str) -> str:
+        return _validate_device_id_field(v)
+
+
+class MobileLoginRequest(BaseModel):
+    """End-user login with mobile OTP."""
+
+    mobile_number: str
+    otp: str = Field(..., min_length=4, max_length=6)
+    device_id: str = Field(..., min_length=36, max_length=36)
+
+    @field_validator("mobile_number")
+    @classmethod
+    def validate_mobile(cls, v: str) -> str:
+        digits = _normalize_mobile_input(v)
+        if not _INDIAN_MOBILE.match(digits):
+            raise ValueError("Invalid mobile number")
+        return digits
+
+    @field_validator("device_id")
+    @classmethod
+    def validate_device_id(cls, v: str) -> str:
+        return _validate_device_id_field(v)
+
+
+class TrustedMobileLoginRequest(BaseModel):
+    """First sign-in on the registration device without OTP."""
+
+    mobile_number: str
+    device_id: str = Field(..., min_length=36, max_length=36)
+
+    @field_validator("mobile_number")
+    @classmethod
+    def validate_mobile(cls, v: str) -> str:
+        digits = _normalize_mobile_input(v)
+        if not _INDIAN_MOBILE.match(digits):
+            raise ValueError("Invalid mobile number")
+        return digits
+
+    @field_validator("device_id")
+    @classmethod
+    def validate_device_id(cls, v: str) -> str:
+        return _validate_device_id_field(v)
 
 
 class SignupOtpVerifyRequest(BaseModel):
@@ -87,6 +148,12 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=8)
     referral_code: Optional[str] = Field(default=None, max_length=16)
     referral_scheme_grams: Optional[int] = None
+    device_id: str = Field(..., min_length=36, max_length=36)
+
+    @field_validator("device_id")
+    @classmethod
+    def validate_device_id(cls, v: str) -> str:
+        return _validate_device_id_field(v)
 
     @field_validator("referral_code")
     @classmethod

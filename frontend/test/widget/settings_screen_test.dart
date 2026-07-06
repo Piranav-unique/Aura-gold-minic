@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/features/settings/presentation/settings_screen.dart';
 import 'package:ags_gold/features/settings/presentation/providers/settings_provider.dart';
 import 'package:ags_gold/features/settings/domain/user_settings.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -34,10 +33,7 @@ void main() {
           apiClientProvider.overrideWithValue(MockApiClient()),
           userSettingsProvider.overrideWithValue(
             const AsyncValue.data(UserSettings()),
-          ),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          )
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -46,7 +42,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Theme Settings'), findsOneWidget);
-    expect(find.text('Notification Settings'), findsOneWidget);
     expect(find.text('Security Settings'), findsOneWidget);
     expect(find.text('Language Settings'), findsOneWidget);
     expect(find.text('Account Settings'), findsOneWidget);

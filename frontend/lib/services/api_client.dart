@@ -110,6 +110,11 @@ class ApiClient {
 
       configureHttpAdapters(_dio, _refreshDio, activeConfig.connectionTimeout);
 
+      const apiLogsOnly = bool.fromEnvironment('API_LOGS_ONLY');
+      if (kDebugMode && apiLogsOnly) {
+        apiLog('Using API base URL: ${activeConfig.baseUrl}');
+      }
+
       const verboseApiLogs = bool.fromEnvironment('VERBOSE_API_LOGS');
       if (kDebugMode && verboseApiLogs) {
         _dio.interceptors.add(

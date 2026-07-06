@@ -127,6 +127,7 @@ class PersonalDashboardResponse(BaseModel):
 
     display_name: str
     email: str
+    mobile_number: Optional[str] = None
     roles: List[str]
     unread_notifications: int
     refreshed_at: datetime

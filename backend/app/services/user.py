@@ -15,6 +15,10 @@ from app.repositories.role import RoleRepository
 from app.schemas.user import UserCreate, UserUpdate
 from app.services.audit import AuditService
 from app.services.referral import ReferralService
+from app.utils.device_binding import (
+    ensure_device_available_for_registration,
+    normalize_device_id,
+)
 
 
 class UserService:
@@ -83,8 +87,17 @@ class UserService:
         last_name: Optional[str] = None,
         referral_code: Optional[str] = None,
         referral_scheme_grams: Optional[int] = None,
+        device_id: str | None = None,
     ) -> User:
         """Create a standard end-user account via public self-registration."""
+        if not device_id:
+            raise ValidationException("Device identifier is required")
+
+        normalized_device_id = normalize_device_id(device_id)
+        await ensure_device_available_for_registration(
+            self.user_repo, normalized_device_id
+        )
+
         user_role = await self.role_repo.get_by_name("user")
         if not user_role:
             raise ValidationException("Registration is temporarily unavailable")
@@ -108,14 +121,15 @@ class UserService:
         user = await self.create_user(user_in, performing_user_id=None)
         user.mobile_number = mobile_number
         user.mobile_verified = True
+        user.registered_device_id = normalized_device_id
         if self.referral_service:
             await self.referral_service.apply_signup_referral(
                 user,
                 referral_code=referral_code,
                 scheme_grams=referral_scheme_grams,
             )
-        else:
-            await self.user_repo.db.commit()
+        await self.user_repo.db.commit()
+        await self.user_repo.db.refresh(user)
         return await self.user_repo.get_with_roles_and_permissions(user.id)
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> User:

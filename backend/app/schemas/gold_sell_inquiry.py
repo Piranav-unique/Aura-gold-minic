@@ -15,6 +15,7 @@ class GoldSellInquiryCreate(BaseModel):
     mobile_number: str = Field(..., min_length=10, max_length=15)
     quantity_grams: Decimal = Field(..., gt=0)
     message: str = Field(..., min_length=10, max_length=2000)
+    bank_account_id: uuid.UUID
 
     @field_validator("name")
     @classmethod

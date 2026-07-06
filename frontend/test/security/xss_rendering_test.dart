@@ -6,7 +6,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -95,7 +94,7 @@ void main() {
             AsyncValue.data(
               UserProfile(
                 id: '22222222-2222-2222-2222-222222222222',
-                email: 'xss@example.com',
+                mobileNumber: '9876543210',
                 firstName: xssPayload,
                 lastName: 'User',
                 isActive: true,
@@ -105,10 +104,7 @@ void main() {
               ),
             ),
           ),
-          profileActivityProvider.overrideWithValue(const AsyncValue.data([])),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          profileActivityProvider.overrideWithValue(const AsyncValue.data([]))
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

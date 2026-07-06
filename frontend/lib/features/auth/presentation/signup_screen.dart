@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
+import 'package:ags_gold/features/auth/domain/login_route_args.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
@@ -26,12 +27,10 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
   final _otpController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
   late final TextEditingController _referralController;
 
   bool _isLoading = false;
@@ -39,11 +38,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _isVerifyingOtp = false;
   bool _otpSent = false;
   bool _otpVerified = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _acceptedTerms = false;
+  bool _attemptedSubmit = false;
   String? _errorMessage;
   String? _otpMessage;
+
+  ButtonStyle get _inlineFilledButtonStyle => FilledButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+      );
 
   @override
   void initState() {
@@ -51,19 +54,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _referralController = TextEditingController(
       text: widget.initialReferralCode?.toUpperCase() ?? '',
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(appAudienceProvider.notifier).setAudience(AppAudience.endUser);
     });
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _nameController.dispose();
     _mobileController.dispose();
     _otpController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _referralController.dispose();
     super.dispose();
   }
@@ -74,6 +75,25 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return digits.substring(2);
     }
     return digits;
+  }
+
+  /// Backend still requires email/password; end-users sign in with mobile only.
+  String _signupEmailFor(String mobile) => '$mobile@mobile.agsgold.com';
+
+  String _signupPasswordFor(String mobile) => 'Ag$mobile!x';
+
+  void _showSignupError(String message) {
+    setState(() {
+      _errorMessage = message;
+      _otpMessage = null;
+    });
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Future<void> _sendOtp() async {
@@ -154,7 +174,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       if (mounted) {
         setState(() {
           _otpVerified = true;
-          _otpMessage = 'Mobile number verified. Complete the form and sign up.';
+          _otpMessage = 'Mobile number verified. Accept terms and tap Sign Up.';
         });
       }
     } on ApiException catch (e) {
@@ -179,26 +199,47 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
-    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _attemptedSubmit = true);
+
+    final l10n = context.l10n;
+    final name = _nameController.text.trim();
+    final mobile = _normalizeMobile(_mobileController.text.trim());
+
+    _formKey.currentState?.validate();
+
+    if (name.length < 2) {
+      _showSignupError(l10n.fullNameRequired);
+      return;
+    }
+
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+      _showSignupError(l10n.mobileNumberRequired);
+      return;
+    }
 
     if (!_otpSent) {
-      setState(() {
-        _errorMessage = 'Tap Send OTP to receive a code on your mobile number.';
-      });
+      _showSignupError(
+        'Tap Send OTP to receive a code on your mobile number.',
+      );
       return;
     }
 
     if (!_otpVerified) {
-      setState(() {
-        _errorMessage = 'Enter the OTP and tap Verify before signing up.';
-      });
+      _showSignupError(
+        'Enter the OTP from SMS and tap Verify before signing up.',
+      );
       return;
     }
 
     if (!_acceptedTerms) {
-      setState(() {
-        _errorMessage = context.l10n.mustAcceptDigiGoldTerms;
-      });
+      _showSignupError(l10n.mustAcceptDigiGoldTerms);
+      return;
+    }
+
+    final otp = _otpController.text.trim();
+    if (otp.length != 6) {
+      _showSignupError(l10n.enterSixDigitOtp);
       return;
     }
 
@@ -208,21 +249,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     });
 
     try {
+      final mobile = _normalizeMobile(_mobileController.text.trim());
       await ref.read(authNotifierProvider.notifier).register(
             name: _nameController.text.trim(),
-            mobileNumber: _normalizeMobile(_mobileController.text.trim()),
+            mobileNumber: mobile,
             otp: _otpController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
+            email: _signupEmailFor(mobile),
+            password: _signupPasswordFor(mobile),
             referralCode: _referralController.text.trim().isEmpty
                 ? null
                 : _referralController.text.trim().toUpperCase(),
             referralSchemeGrams: widget.initialReferralSchemeGrams,
           );
+      await ref.read(deviceAuthStorageProvider).saveRegisteredMobile(mobile);
+      await ref
+          .read(deviceAuthStorageProvider)
+          .markPendingTrustedFirstLogin();
       if (mounted) {
         context.go(
           '/login',
-          extra: 'Account created! Sign in with your mobile number.',
+          extra: LoginRouteArgs(
+            successMessage:
+                'Account created! Tap Sign In — no OTP needed this time.',
+            mobile: mobile,
+          ),
         );
       }
     } on ApiException catch (e) {
@@ -257,6 +307,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return SafeArea(
       child: Center(
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: _buildSignupForm(),
         ),
@@ -283,14 +334,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Join AURUM',
+                    context.l10n.joinAurum,
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Verify your mobile and start trading gold securely.',
+                    context.l10n.signUpMobileOtpSubtitle,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -304,6 +355,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           flex: 5,
           child: Center(
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 48),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 420),
@@ -318,9 +370,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   Widget _buildSignupForm() {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Form(
       key: _formKey,
+      autovalidateMode: _attemptedSubmit
+          ? AutovalidateMode.onUserInteraction
+          : AutovalidateMode.disabled,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -336,14 +392,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             const SizedBox(height: 24),
           ],
           Text(
-            'Create Account',
+            context.l10n.createAccount,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Sign up with your mobile OTP to access AURUM GOLD & SILVERS.',
+            context.l10n.signUpMobileOtpSubtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
@@ -376,27 +432,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             child: TextFormField(
               controller: _referralController,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                hintText: 'ABCD1234',
-                prefixIcon: Icon(Icons.card_giftcard_outlined),
+              decoration: InputDecoration(
+                hintText: l10n.referralHint,
+                prefixIcon: const Icon(Icons.card_giftcard_outlined),
               ),
             ),
           ),
           const SizedBox(height: 16),
           _labeledField(
-            label: 'Full Name',
+            label: l10n.fullName,
             child: TextFormField(
               key: const Key('nameField'),
               controller: _nameController,
               textInputAction: TextInputAction.next,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Your name',
-                prefixIcon: Icon(Icons.person_outline),
+              decoration: InputDecoration(
+                hintText: l10n.yourName,
+                prefixIcon: const Icon(Icons.person_outline),
               ),
               validator: (value) {
                 if (value == null || value.trim().length < 2) {
-                  return 'Name is required.';
+                  return l10n.fullNameRequired;
                 }
                 return null;
               },
@@ -404,7 +460,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           const SizedBox(height: 16),
           _labeledField(
-            label: 'Mobile Number',
+            label: l10n.mobileNumber,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -414,43 +470,41 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     controller: _mobileController,
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: '10-digit mobile',
-                      prefixIcon: Icon(Icons.phone_outlined),
+                    decoration: InputDecoration(
+                      hintText: l10n.tenDigitMobile,
+                      prefixIcon: const Icon(Icons.phone_outlined),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Mobile number is required.';
+                        return l10n.mobileNumberRequired;
                       }
                       final mobile = _normalizeMobile(value.trim());
                       if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
-                        return 'Enter a valid 10-digit mobile number.';
+                        return l10n.sellGoldInquiryMobileRequired;
                       }
                       return null;
                     },
                   ),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(
-                  height: 48,
-                  child: FilledButton(
-                    key: const Key('verifyMobileButton'),
-                    onPressed: _isSendingOtp ? null : _sendOtp,
-                    child: _isSendingOtp
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Send OTP'),
-                  ),
+                FilledButton(
+                  key: const Key('verifyMobileButton'),
+                  style: _inlineFilledButtonStyle,
+                  onPressed: _isSendingOtp ? null : _sendOtp,
+                  child: _isSendingOtp
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.sendOtp),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           _labeledField(
-            label: 'OTP',
+            label: l10n.enterOtp,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -469,7 +523,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       }
                     },
                     decoration: InputDecoration(
-                      hintText: '6-digit OTP from SMS',
+                      hintText: l10n.otpFromSms,
                       prefixIcon: Icon(
                         _otpVerified
                             ? Icons.verified_outlined
@@ -481,122 +535,29 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           : null,
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().length != 6) {
-                        return 'Enter the 6-digit OTP.';
+                      if (!_otpSent) return null;
+                      if (!_otpVerified &&
+                          (value == null || value.trim().length != 6)) {
+                        return l10n.enterSixDigitOtp;
                       }
                       return null;
                     },
                   ),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(
-                  height: 48,
-                  child: FilledButton(
-                    key: const Key('verifyOtpButton'),
-                    onPressed: (_isVerifyingOtp || _otpVerified) ? null : _verifyOtp,
-                    child: _isVerifyingOtp
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(_otpVerified ? 'Verified' : 'Verify'),
-                  ),
+                FilledButton(
+                  key: const Key('verifyOtpButton'),
+                  style: _inlineFilledButtonStyle,
+                  onPressed: (_isVerifyingOtp || _otpVerified) ? null : _verifyOtp,
+                  child: _isVerifyingOtp
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(_otpVerified ? l10n.verified : l10n.verify),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          _labeledField(
-            label: 'Email Address',
-            child: TextFormField(
-              key: const Key('signupEmailField'),
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                hintText: 'name@example.com',
-                prefixIcon: Icon(Icons.mail_outline),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Email address is required.';
-                }
-                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                if (!emailRegex.hasMatch(value)) {
-                  return 'Enter a valid email address.';
-                }
-                return null;
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          _labeledField(
-            label: 'Password',
-            child: TextFormField(
-              key: const Key('signupPasswordField'),
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                hintText: 'At least 8 characters',
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                  onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Password is required.';
-                }
-                if (value.length < 8) {
-                  return 'Password must be at least 8 characters.';
-                }
-                return null;
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          _labeledField(
-            label: 'Confirm Password',
-            child: TextFormField(
-              key: const Key('confirmPasswordField'),
-              controller: _confirmPasswordController,
-              obscureText: _obscureConfirmPassword,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _handleSignup(),
-              decoration: InputDecoration(
-                hintText: 'Re-enter your password',
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                  onPressed: () {
-                    setState(
-                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                    );
-                  },
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please confirm your password.';
-                }
-                if (value != _passwordController.text) {
-                  return 'Passwords do not match.';
-                }
-                return null;
-              },
             ),
           ),
           const SizedBox(height: 20),
@@ -614,14 +575,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text('Sign Up'),
+                : Text(l10n.signUpButton),
           ),
           const SizedBox(height: 16),
           Center(
             child: TextButton(
               key: const Key('goToLoginLink'),
               onPressed: () => context.go('/login'),
-              child: const Text('Already have an account? Sign in'),
+              child: Text(l10n.alreadyHaveAccountSignIn),
             ),
           ),
         ],

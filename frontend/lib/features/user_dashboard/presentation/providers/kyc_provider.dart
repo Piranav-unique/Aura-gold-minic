@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 final kycStatusProvider = FutureProvider.autoDispose<KycStatusDetails>((ref) async {
@@ -11,6 +12,24 @@ final kycStatusProvider = FutureProvider.autoDispose<KycStatusDetails>((ref) asy
 });
 
 /// Cached KYC gate used by app routing for end-user onboarding.
+/// Prefer the live KYC status endpoint so the UI updates immediately after
+/// verification, even when the personal dashboard response is still cached.
+final effectiveKycCompleteProvider = Provider<bool>((ref) {
+  final fromKyc = ref.watch(kycStatusProvider).value?.status.isComplete;
+  if (fromKyc == true) return true;
+  if (fromKyc != null) return fromKyc;
+  return ref.watch(personalDashboardProvider).value?.kycStatus.isComplete ??
+      false;
+});
+
+/// KYC status for trading and profile UI; prefers [kycStatusProvider].
+final effectiveKycStatusProvider = Provider<KycStatus>((ref) {
+  final fromKyc = ref.watch(kycStatusProvider).value?.status;
+  if (fromKyc != null) return fromKyc;
+  return ref.watch(personalDashboardProvider).value?.kycStatus ??
+      KycStatus.notStarted;
+});
+
 final userKycGateProvider = FutureProvider<KycStatusDetails?>((ref) async {
   final auth = await ref.watch(authNotifierProvider.future);
   if (auth != AuthStatus.authenticated) return null;

@@ -60,6 +60,7 @@ class BankLinkVerifyRequest(BaseModel):
 class BankLinkInitiateResponse(BaseModel):
     message: str
     mobile_last4: Optional[str] = None
+    dev_otp_hint: Optional[str] = None
 
 
 class IfscLookupResponse(BaseModel):

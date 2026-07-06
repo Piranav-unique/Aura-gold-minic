@@ -258,7 +258,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get goldHoldingsSchemeActiveFooter =>
-      'உங்கள் திட்ட இலக்கு முடியும் வரை தொடர்ந்து வாங்குங்கள்.';
+      'திட்டம் நடந்து கொண்டிருக்கிறது. விற்பனை விசாரணை சமர்ப்பிக்க விற்க தட்டவும் — எங்கள் குழு மதிப்பாய்வு செய்யும்.';
 
   @override
   String get goldSchemeBuyBlockedTitle =>
@@ -278,8 +278,20 @@ class AppLocalizationsTa extends AppLocalizations {
       'தங்கம் விற்க வேண்டுமா அல்லது அடுத்த சேமிப்பு திட்டத்தைத் தொடங்க வேண்டுமா?';
 
   @override
+  String get goldSchemeCompletionBodyAfter1g =>
+      '1 g இலக்கை அடைந்தீர்கள். தங்கம் விற்கலாம் அல்லது 5 g / 10 g திட்டம் தொடங்கலாம்.';
+
+  @override
+  String get goldSchemeCompletionBodyAfter5g =>
+      '5 g இலக்கை அடைந்தீர்கள். தங்கம் விற்கலாம் அல்லது 10 g திட்டம் தொடங்கலாம்.';
+
+  @override
   String get goldSchemeCompletionBodyMaxTier =>
-      'உயர்ந்த திட்டம் முடிந்தது. விற்கலாம் அல்லது வைத்திருக்கலாம்.';
+      '10 g திட்டம் முடிந்தது. விற்பதன் மூலம் வங்கியில் பணம் பெறலாம்.';
+
+  @override
+  String get goldSchemeCompletionAutoSell =>
+      '10 g திட்டம் முடிந்தது! எவ்வளவு விற்க வேண்டும் மற்றும் எந்த வங்கிக்கு பணம் செல்ல வேண்டும் என்பதைத் தேர்ந்தெடுக்கவும்.';
 
   @override
   String get goldSchemeCompletionSell => 'தங்கம் விற்க';
@@ -344,6 +356,13 @@ class AppLocalizationsTa extends AppLocalizations {
       'பணம் செலுத்த முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
 
   @override
+  String get confirmingPayment => 'உங்கள் பணம் உறுதிப்படுத்தப்படுகிறது…';
+
+  @override
+  String get paymentPending =>
+      'பணம் இன்னும் முடிக்கப்படவில்லை. ஏற்கனவே செலுத்தியிருந்தால், உறுதிப்படுத்தும் வரை இந்தத் திரையில் இருங்கள்.';
+
+  @override
   String get enterValidTradeAmount =>
       'சரியான தங்க எடை அல்லது தொகையை உள்ளிடவும்.';
 
@@ -403,7 +422,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get bankAccountsInfo =>
-      'தங்கம் விற்கும்போது பணம் பெற உங்கள் இந்திய வங்கி கணக்கை இணைக்கவும்.';
+      'அதிகபட்சம் 2 இந்திய வங்கி கணக்குகள் இணைக்கலாம். தங்கம் விற்கும்போது பணம் பெறும் கணக்கைத் தேர்வு செய்யவும்.';
 
   @override
   String get noBankAccountLinked => 'வங்கி கணக்கு இணைக்கப்படவில்லை';
@@ -1378,6 +1397,32 @@ class AppLocalizationsTa extends AppLocalizations {
       'கோரிக்கையை சமர்ப்பிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
 
   @override
+  String get sellGoldPayoutBankTitle => 'பணம் செல்லும் வங்கி கணக்கு';
+
+  @override
+  String get sellGoldPayoutBankSubtitle =>
+      'விற்பனை தொகை எந்த இணைக்கப்பட்ட வங்கிக்கு செல்ல வேண்டும் என்பதைத் தேர்ந்தெடுக்கவும்.';
+
+  @override
+  String get bankAccountsMaxReached =>
+      'அதிகபட்சம் 2 வங்கி கணக்குகள் மட்டுமே இணைக்க முடியும்.';
+
+  @override
+  String get sellGoldSuccessPayoutNote =>
+      'உங்கள் கோரிக்கை சரிபார்க்கப்பட்ட பிறகு, தேர்ந்தெடுத்த வங்கி கணக்கிற்கு தொகை நேரடியாக அனுப்பப்படும்.';
+
+  @override
+  String get sellGoldNoBankLinked =>
+      'விற்பனை தொகை பெற வங்கி கணக்கைச் சேர்க்கவும்.';
+
+  @override
+  String get sellGoldAddBankAccount => 'வங்கி கணக்கு சேர்க்க';
+
+  @override
+  String get sellGoldSelectPayoutBank =>
+      'பணம் பெற வங்கி கணக்கைத் தேர்ந்தெடுக்கவும்';
+
+  @override
   String get navSellInquiries => 'விற்பனை விசாரணைகள்';
 
   @override
@@ -1403,4 +1448,141 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get navUserWallets => 'பயனர் பணப்பைகள்';
+
+  @override
+  String get navPortfolio => 'போர்ட்ஃபோலியோ';
+
+  @override
+  String get myPortfolio => 'என் போர்ட்ஃபோலியோ';
+
+  @override
+  String get recentSavings => 'சமீபத்திய சேமிப்பு';
+
+  @override
+  String get viewAll => 'அனைத்தையும் காண்';
+
+  @override
+  String get goldValue => 'தங்க மதிப்பு';
+
+  @override
+  String get silverValue => 'வெள்ளி மதிப்பு';
+
+  @override
+  String get milestoneReached => 'நிலை அடைந்தது';
+
+  @override
+  String get totalPortfolioValue => 'மொத்த போர்ட்ஃபோலியோ மதிப்பு';
+
+  @override
+  String get signUpMobileOtpSubtitle =>
+      'AURUM GOLD & SILVERS-ஐ அணுக உங்கள் மொபைல் OTP மூலம் பதிவு செய்யவும்.';
+
+  @override
+  String get fullName => 'முழு பெயர்';
+
+  @override
+  String get yourName => 'உங்கள் பெயர்';
+
+  @override
+  String get fullNameRequired => 'பெயர் அவசியம்.';
+
+  @override
+  String get tenDigitMobile => '10 இலக்க மொபைல்';
+
+  @override
+  String get tenDigitMobileLogin => '10 இலக்க மொபைல் எண்';
+
+  @override
+  String get mobileNumberRequired => 'மொபைல் எண் அவசியம்.';
+
+  @override
+  String get otpFromSms => 'SMS-ல் வந்த 6 இலக்க OTP';
+
+  @override
+  String get enterSixDigitOtp => '6 இலக்க OTP-ஐ உள்ளிடவும்.';
+
+  @override
+  String get loginOtpIncorrect => 'சரிபார்த்து உங்கள் OTP-ஐ உள்ளிடவும்.';
+
+  @override
+  String get verified => 'சரிபார்க்கப்பட்டது';
+
+  @override
+  String get verify => 'சரிபார்';
+
+  @override
+  String get signUpButton => 'பதிவு செய்';
+
+  @override
+  String get reenterPassword => 'கடவுச்சொல்லை மீண்டும் உள்ளிடவும்';
+
+  @override
+  String get confirmPasswordPrompt => 'கடவுச்சொல்லை உறுதிப்படுத்தவும்.';
+
+  @override
+  String get passwordMin8 =>
+      'கடவுச்சொல் குறைந்தது 8 எழுத்துகள் இருக்க வேண்டும்.';
+
+  @override
+  String get passwordAtLeast8 => 'குறைந்தது 8 எழுத்துகள்';
+
+  @override
+  String get emailHint => 'name@example.com';
+
+  @override
+  String get referralHint => 'ABCD1234';
+
+  @override
+  String get joinAurum => 'AURUM-இல் சேருங்கள்';
+
+  @override
+  String get joinAurumSubtitle =>
+      'தங்க சேமிப்பு மற்றும் நேரடி விலைகளை அணுகுங்கள்';
+
+  @override
+  String get promoInsuredTitle => '100% காப்பீடு';
+
+  @override
+  String get promoInsuredSubtitle =>
+      'பெட்டகத்தில் பாதுகாக்கப்பட்ட தங்கம் & வெள்ளி';
+
+  @override
+  String get promoPurityTitle => '24K தூய்மை';
+
+  @override
+  String get promoPuritySubtitle => 'சான்றளிக்கப்பட்ட விலையுயர்ந்த உலோகம்';
+
+  @override
+  String get socialProofHighlight => 'ஆயிரக்கணக்கான முதலீட்டாளர்கள் ';
+
+  @override
+  String get socialProofRest => 'இந்த மாதம் செல்வப் பயணத்தைத் தொடங்கினர்';
+
+  @override
+  String get kycDialogTitle => 'உங்கள் அடையாளத்தை சரிபார்க்கவும்';
+
+  @override
+  String get kycDialogMessage =>
+      'தங்கம் & வெள்ளி வாங்க/விற்பதைத் திறக்க KYC-ஐ முடிக்கவும். சில நிமிடங்களே ஆகும்.';
+
+  @override
+  String get later => 'பின்னர்';
+
+  @override
+  String get verifyNow => 'இப்போது சரிபார்';
+
+  @override
+  String get panCategory => 'PAN வகை';
+
+  @override
+  String get aadhaarLabel => 'ஆதார்';
+
+  @override
+  String get panLabel => 'PAN';
+
+  @override
+  String get searchHint => 'தேடு';
+
+  @override
+  String get stateLabel => 'மாநிலம்';
 }

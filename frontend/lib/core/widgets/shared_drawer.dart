@@ -8,9 +8,10 @@ import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/navigation/app_nav_destinations.dart';
-import 'package:ags_gold/features/notifications/presentation/notification_drawer.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/live_price_app_bar_chip.dart';
+import 'package:ags_gold/core/widgets/app_exit_guard.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
+
 class ResponsiveNavigationWrapper extends ConsumerWidget {
   final Widget child;
   final String title;
@@ -21,8 +22,19 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     required this.title,
   });
 
-
-
+  Future<void> _handleBack(
+    BuildContext context, {
+    required bool isHome,
+    required String homePath,
+    required bool didPop,
+  }) async {
+    if (didPop) return;
+    if (!isHome) {
+      context.go(homePath);
+      return;
+    }
+    await requestAppExit(context);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,17 +59,20 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     final homePath =
         audience == AppAudience.endUser ? '/user-dashboard' : '/dashboard';
     final isHome = currentPath == homePath;
-    void handleBackToHome(bool didPop, Object? result) {
-      if (didPop) return;
-      context.go(homePath);
+    void handleBack(bool didPop, Object? result) {
+      _handleBack(
+        context,
+        isHome: isHome,
+        homePath: homePath,
+        didPop: didPop,
+      );
     }
 
     if (isDesktop) {
       return PopScope(
-        canPop: isHome,
-        onPopInvokedWithResult: handleBackToHome,
+        canPop: false,
+        onPopInvokedWithResult: handleBack,
         child: Scaffold(
-        endDrawer: const NotificationDrawer(),
         body: Row(
           children: [
             NavigationRail(
@@ -99,7 +114,6 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
               child: Scaffold(
-                endDrawer: const NotificationDrawer(),
                 appBar: AppBar(
                   title: Text(
                     title,
@@ -109,7 +123,6 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
                   actions: [
                     if (audience == AppAudience.endUser || currentPath.startsWith('/inventory'))
                       const LivePriceAppBarChip(),
-                    const NotificationBellButton(),
                   ],
                 ),
                 body: child,
@@ -191,13 +204,12 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     );
 
     return PopScope(
-      canPop: isHome,
-      onPopInvokedWithResult: handleBackToHome,
+      canPop: false,
+      onPopInvokedWithResult: handleBack,
       child: Theme(
       data: consumerTheme,
       child: Scaffold(
       backgroundColor: consumerTheme.scaffoldBackgroundColor,
-      endDrawer: const NotificationDrawer(),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: mobileLeading,
@@ -211,7 +223,6 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
         actions: [
           if (audience == AppAudience.endUser || currentPath.startsWith('/inventory'))
             const LivePriceAppBarChip(),
-          const NotificationBellButton(),
         ],
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,

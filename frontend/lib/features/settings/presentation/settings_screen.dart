@@ -5,6 +5,7 @@ import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/features/settings/presentation/providers/settings_provider.dart';
 import 'package:ags_gold/features/profile/presentation/profile_dialogs.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
+import 'package:ags_gold/l10n/locale_preference_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/widgets/theme_mode_picker.dart';
@@ -35,48 +36,6 @@ class SettingsScreen extends ConsumerWidget {
                 l10n.themeSettings,
                 Icons.palette_outlined,
                 const ThemeModePicker(),
-              ),
-              const SizedBox(height: 16),
-              _sectionCard(
-                theme,
-                l10n.notificationSettings,
-                Icons.notifications_active_outlined,
-                Column(
-                  children: [
-                    SwitchListTile(
-                      title: Text(l10n.emailNotifications),
-                      value: settings.notificationEmailEnabled,
-                      onChanged: (v) => _saveSettings(
-                        ref,
-                        settings.copyWith(notificationEmailEnabled: v),
-                      ),
-                    ),
-                    SwitchListTile(
-                      title: Text(l10n.pushNotifications),
-                      value: settings.notificationPushEnabled,
-                      onChanged: (v) => _saveSettings(
-                        ref,
-                        settings.copyWith(notificationPushEnabled: v),
-                      ),
-                    ),
-                    SwitchListTile(
-                      title: Text(l10n.securityAlerts),
-                      value: settings.notificationSecurityAlerts,
-                      onChanged: (v) => _saveSettings(
-                        ref,
-                        settings.copyWith(notificationSecurityAlerts: v),
-                      ),
-                    ),
-                    SwitchListTile(
-                      title: Text(l10n.systemUpdates),
-                      value: settings.notificationSystemUpdates,
-                      onChanged: (v) => _saveSettings(
-                        ref,
-                        settings.copyWith(notificationSystemUpdates: v),
-                      ),
-                    ),
-                  ],
-                ),
               ),
               const SizedBox(height: 16),
               _sectionCard(
@@ -191,6 +150,10 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _saveSettings(WidgetRef ref, settings) async {
     await ref.read(updateUserSettingsProvider)(settings);
+    final locale = settings.locale;
+    if (locale != null && locale.isNotEmpty) {
+      await ref.read(localePreferenceProvider.notifier).setLocale(locale);
+    }
   }
 }
 

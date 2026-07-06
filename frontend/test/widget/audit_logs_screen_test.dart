@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/features/audit_logs/presentation/audit_logs_screen.dart';
 import 'package:ags_gold/features/audit_logs/presentation/providers/audit_logs_provider.dart';
 import 'package:ags_gold/features/audit_logs/domain/audit_log.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -36,10 +35,7 @@ void main() {
             const AsyncValue.data(
               PaginatedAuditLogs(items: [], total: 0, skip: 0, limit: 25),
             ),
-          ),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          )
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

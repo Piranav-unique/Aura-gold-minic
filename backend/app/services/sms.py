@@ -108,13 +108,150 @@ class SmsService:
             )
 
     async def send_bank_link_otp(self, mobile_number: str, otp: str | None = None) -> None:
-        """Send bank-account linking OTP to the user's registered mobile via MSG91."""
+        """Send bank-account linking OTP via the bank DLT template (Aurum_Bank_Add_OTP)."""
         mobile = normalize_mobile(mobile_number)
         if not mobile:
             raise ValidationException("Registered mobile number is invalid.")
 
-        logger.info("bank_link_otp_send", mobile=mobile)
-        await self.send_signup_otp(mobile, otp)
+        if settings.bank_otp_uses_dev_code():
+            logger.info("bank_link_otp_sms_mock", mobile=mobile, otp=otp)
+            return
+
+        if not self.is_live:
+            if settings.ENVIRONMENT == "production":
+                raise ValidationException(
+                    "SMS is not configured on the server. Please try again later."
+                )
+            logger.info("bank_link_otp_sms_mock", mobile=mobile, otp=otp)
+            return
+
+        await self._ensure_msg91_balance()
+
+        template_id = (
+            settings.MSG91_BANK_OTP_TEMPLATE_ID.strip()
+            or settings.MSG91_OTP_TEMPLATE_ID.strip()
+        )
+        dlt_template_id = (
+            settings.MSG91_BANK_DLT_TEMPLATE_ID.strip()
+            or settings.MSG91_DLT_TEMPLATE_ID.strip()
+        )
+        flow_id = (
+            settings.MSG91_BANK_FLOW_ID.strip()
+            or settings.MSG91_FLOW_ID.strip()
+            or template_id
+        )
+        dlt_te_id = settings.MSG91_DLT_TE_ID.strip()
+
+        if not flow_id:
+            raise ValidationException(
+                "Bank SMS Flow ID is not configured. Set MSG91_BANK_FLOW_ID on the server."
+            )
+
+        if not dlt_template_id:
+            raise ValidationException(
+                "Bank DLT template is not configured. Set MSG91_BANK_DLT_TEMPLATE_ID=1207178235534667442."
+            )
+
+        logger.info(
+            "msg91_bank_otp_config",
+            template_id=template_id,
+            dlt_template_id=dlt_template_id,
+            flow_id=flow_id,
+            sender=settings.SMS_SENDER_ID,
+            native_verify=settings.MSG91_BANK_OTP_USE_MSG91_VERIFY,
+            otp_length=settings.MSG91_BANK_OTP_LENGTH,
+        )
+
+        if not otp:
+            raise ValidationException(
+                "Bank OTP is required. Configure MSG91 bank Flow template."
+            )
+
+        channels = self._bank_sms_channels()
+        # Aurum_Bank_Add_OTP is a Flow template — v5 /otp and sendotp.php reject its ID (error 400).
+        channels = [c for c in channels if c not in {"otp", "sendotp"}]
+        if not channels:
+            channels = ["flow", "sendhttp"]
+        last_error: ValidationException | None = None
+        for channel in channels:
+            try:
+                if channel == "flow":
+                    if not otp:
+                        raise ValidationException("OTP value required for flow channel.")
+                    await self._send_msg91_flow(
+                        mobile,
+                        otp,
+                        flow_id=flow_id,
+                        dlt_template_id=dlt_template_id,
+                        dlt_te_id=dlt_te_id,
+                    )
+                elif channel == "otp":
+                    await self._send_msg91_otp_v5(
+                        mobile,
+                        otp,
+                        template_id=template_id,
+                        dlt_template_id=dlt_template_id,
+                        dlt_te_id=dlt_te_id,
+                        use_native_verify=settings.MSG91_BANK_OTP_USE_MSG91_VERIFY,
+                        otp_length=settings.MSG91_BANK_OTP_LENGTH,
+                    )
+                elif channel == "sendotp":
+                    if not otp:
+                        raise ValidationException("OTP value required for sendotp channel.")
+                    await self._send_msg91_sendotp(
+                        mobile,
+                        otp,
+                        template_id=template_id,
+                        dlt_template_id=dlt_template_id,
+                        dlt_te_id=dlt_te_id,
+                    )
+                elif channel == "sendhttp":
+                    if not otp:
+                        raise ValidationException("OTP value required for sendhttp channel.")
+                    await self._send_msg91_sendhttp(
+                        mobile,
+                        self.build_bank_link_otp_message(otp),
+                        dlt_template_id=dlt_template_id,
+                        dlt_te_id=dlt_te_id,
+                    )
+                else:
+                    logger.warning("msg91_bank_unknown_channel", channel=channel)
+                    continue
+
+                logger.info(
+                    "msg91_bank_otp_dispatched",
+                    mobile=mobile,
+                    channel=channel,
+                )
+                return
+            except ValidationException as exc:
+                last_error = exc
+                logger.warning(
+                    "msg91_bank_channel_failed",
+                    mobile=mobile,
+                    channel=channel,
+                    error=str(exc),
+                )
+
+        if last_error:
+            raise last_error
+        raise ValidationException("Unable to send OTP right now. Please try again.")
+
+    def build_bank_link_otp_message(self, otp: str) -> str:
+        """Must match DLT template Aurum_Bank_Add_OTP (1207178235534667442) exactly."""
+        return (
+            f"Your OTP {otp} confirms bank account linking on AURUM GOLD & SILVERS. "
+            f"Do not share it with anyone."
+        )
+
+    @property
+    def uses_msg91_native_bank_otp(self) -> bool:
+        return self.is_live and settings.MSG91_BANK_OTP_USE_MSG91_VERIFY
+
+    def _bank_sms_channels(self) -> list[str]:
+        raw = settings.MSG91_BANK_SMS_CHANNELS.strip() or settings.MSG91_SMS_CHANNELS
+        channels = [channel.strip() for channel in raw.split(",") if channel.strip()]
+        return channels or ["otp"]
 
     async def send_signup_otp(self, mobile_number: str, otp: str | None = None) -> None:
         mobile = normalize_mobile(mobile_number)
@@ -224,10 +361,20 @@ class SmsService:
         request_id = data.get("request_id") or data.get("message") or "ok"
         return str(request_id)
 
-    async def _send_msg91_flow(self, mobile_number: str, otp: str) -> None:
+    async def _send_msg91_flow(
+        self,
+        mobile_number: str,
+        otp: str,
+        *,
+        flow_id: str | None = None,
+        dlt_template_id: str | None = None,
+        dlt_te_id: str | None = None,
+    ) -> None:
         """MSG91 Flow API — DLT template + explicit sender (CP-AURUS-S)."""
         flow_id = (
-            settings.MSG91_FLOW_ID.strip() or settings.MSG91_OTP_TEMPLATE_ID.strip()
+            flow_id
+            or settings.MSG91_FLOW_ID.strip()
+            or settings.MSG91_OTP_TEMPLATE_ID.strip()
         )
         if not flow_id:
             raise ValidationException(
@@ -245,14 +392,18 @@ class SmsService:
             "recipients": [
                 {
                     "mobiles": f"91{mobile_number}",
+                    # Aurum_Bank_Add_OTP template variable: ##OTP##
                     "OTP": otp,
+                    "otp": otp,
                 }
             ],
         }
-        if settings.MSG91_DLT_TE_ID.strip():
-            payload["DLT_TE_ID"] = settings.MSG91_DLT_TE_ID.strip()
-        if settings.MSG91_DLT_TEMPLATE_ID.strip():
-            payload["DLT_TEMPLATE_ID"] = settings.MSG91_DLT_TEMPLATE_ID.strip()
+        te_id = (dlt_te_id or settings.MSG91_DLT_TE_ID).strip()
+        template_id = (dlt_template_id or settings.MSG91_DLT_TEMPLATE_ID).strip()
+        if te_id:
+            payload["DLT_TE_ID"] = te_id
+        if template_id:
+            payload["DLT_TEMPLATE_ID"] = template_id
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(_MSG91_FLOW_URL, headers=headers, json=payload)
@@ -274,10 +425,18 @@ class SmsService:
         )
 
     async def _send_msg91_otp_v5(
-        self, mobile_number: str, otp: str | None = None
+        self,
+        mobile_number: str,
+        otp: str | None = None,
+        *,
+        template_id: str | None = None,
+        dlt_template_id: str | None = None,
+        dlt_te_id: str | None = None,
+        use_native_verify: bool | None = None,
+        otp_length: int | None = None,
     ) -> None:
         """MSG91 v5 OTP — exact Postman payload (MSG91 generates OTP when otp omitted)."""
-        template_id = settings.MSG91_OTP_TEMPLATE_ID.strip()
+        template_id = (template_id or settings.MSG91_OTP_TEMPLATE_ID).strip()
         if not template_id:
             raise ValidationException(
                 "MSG91 template ID is not configured (error 400)."
@@ -290,13 +449,20 @@ class SmsService:
         payload: dict = {
             "template_id": template_id,
             "mobile": f"91{mobile_number}",
-            "otp_length": settings.SIGNUP_OTP_LENGTH,
+            "otp_length": otp_length or settings.SIGNUP_OTP_LENGTH,
         }
-        if settings.MSG91_DLT_TE_ID.strip():
-            payload["DLT_TE_ID"] = settings.MSG91_DLT_TE_ID.strip()
-        if settings.MSG91_DLT_TEMPLATE_ID.strip():
-            payload["DLT_TEMPLATE_ID"] = settings.MSG91_DLT_TEMPLATE_ID.strip()
-        if otp and not settings.SIGNUP_OTP_USE_MSG91_VERIFY:
+        te_id = (dlt_te_id or settings.MSG91_DLT_TE_ID).strip()
+        dlt_id = (dlt_template_id or settings.MSG91_DLT_TEMPLATE_ID).strip()
+        if te_id:
+            payload["DLT_TE_ID"] = te_id
+        if dlt_id:
+            payload["DLT_TEMPLATE_ID"] = dlt_id
+        native_verify = (
+            settings.SIGNUP_OTP_USE_MSG91_VERIFY
+            if use_native_verify is None
+            else use_native_verify
+        )
+        if otp and not native_verify:
             payload["otp"] = otp
 
         url = settings.MSG91_OTP_URL.rstrip("/")
@@ -352,9 +518,17 @@ class SmsService:
 
         logger.info("msg91_otp_verified", mobile=mobile)
 
-    async def _send_msg91_sendotp(self, mobile_number: str, otp: str) -> None:
+    async def _send_msg91_sendotp(
+        self,
+        mobile_number: str,
+        otp: str,
+        *,
+        template_id: str | None = None,
+        dlt_template_id: str | None = None,
+        dlt_te_id: str | None = None,
+    ) -> None:
         """SendOTP API fallback — template-driven."""
-        template_id = settings.MSG91_OTP_TEMPLATE_ID.strip()
+        template_id = (template_id or settings.MSG91_OTP_TEMPLATE_ID).strip()
         if not template_id:
             raise ValidationException(
                 "MSG91 template ID is not configured (error 400)."
@@ -368,10 +542,12 @@ class SmsService:
             "otp_expiry": str(settings.SIGNUP_OTP_EXPIRE_MINUTES),
             "template_id": template_id,
         }
-        if settings.MSG91_DLT_TE_ID.strip():
-            data["DLT_TE_ID"] = settings.MSG91_DLT_TE_ID.strip()
-        if settings.MSG91_DLT_TEMPLATE_ID.strip():
-            data["DLT_TEMPLATE_ID"] = settings.MSG91_DLT_TEMPLATE_ID.strip()
+        te_id = (dlt_te_id or settings.MSG91_DLT_TE_ID).strip()
+        dlt_id = (dlt_template_id or settings.MSG91_DLT_TEMPLATE_ID).strip()
+        if te_id:
+            data["DLT_TE_ID"] = te_id
+        if dlt_id:
+            data["DLT_TEMPLATE_ID"] = dlt_id
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(_MSG91_SENDOTP_URL, data=data)
@@ -418,8 +594,17 @@ class SmsService:
             raise ValidationException(f"SMS gateway error: {parsed[:120]}")
         return parsed
 
-    async def _send_msg91_sendhttp(self, mobile_number: str, message: str) -> None:
-        if not settings.MSG91_DLT_TE_ID.strip() or not settings.MSG91_DLT_TEMPLATE_ID.strip():
+    async def _send_msg91_sendhttp(
+        self,
+        mobile_number: str,
+        message: str,
+        *,
+        dlt_template_id: str | None = None,
+        dlt_te_id: str | None = None,
+    ) -> None:
+        te_id = (dlt_te_id or settings.MSG91_DLT_TE_ID).strip()
+        dlt_id = (dlt_template_id or settings.MSG91_DLT_TEMPLATE_ID).strip()
+        if not te_id or not dlt_id:
             raise ValidationException(
                 "DLT Template ID and Entity ID are required for sendhttp (error 203/211). "
                 "Add MSG91_DLT_TE_ID and MSG91_DLT_TEMPLATE_ID to backend/.env."
@@ -432,8 +617,8 @@ class SmsService:
             "sender": settings.SMS_SENDER_ID,
             "route": settings.SMS_ROUTE,
             "country": "91",
-            "DLT_TE_ID": settings.MSG91_DLT_TE_ID.strip(),
-            "DLT_TEMPLATE_ID": settings.MSG91_DLT_TEMPLATE_ID.strip(),
+            "DLT_TE_ID": te_id,
+            "DLT_TEMPLATE_ID": dlt_id,
         }
 
         url = settings.MSG91_SEND_URL.rstrip("/")

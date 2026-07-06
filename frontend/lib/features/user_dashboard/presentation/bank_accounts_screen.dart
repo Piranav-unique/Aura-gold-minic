@@ -58,11 +58,21 @@ class BankAccountsScreen extends ConsumerWidget {
                     children: [
                       ...accounts.map((a) => _BankCard(account: a)),
                       const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: () => context.push('/bank-accounts/add'),
-                        icon: const Icon(Icons.add),
-                        label: Text(l10n.addBankAccount),
-                      ),
+                      if (accounts.length < maxUserBankAccounts)
+                        OutlinedButton.icon(
+                          onPressed: () => context.push('/bank-accounts/add'),
+                          icon: const Icon(Icons.add),
+                          label: Text(l10n.addBankAccount),
+                        )
+                      else
+                        Text(
+                          l10n.bankAccountsMaxReached,
+                          style: TextStyle(
+                            color: AurumConsumerTheme.textMuted,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
                     ],
                   );
                 },

@@ -32,6 +32,7 @@ def _bank():
 def _inquiry():
     inquiry = MagicMock()
     inquiry.id = "inq-1"
+    inquiry.bank_account_id = None
     return inquiry
 
 

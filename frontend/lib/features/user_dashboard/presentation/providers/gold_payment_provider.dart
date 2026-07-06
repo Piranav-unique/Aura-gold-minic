@@ -50,6 +50,36 @@ class PaymentVerifyResult {
   }
 }
 
+class PaymentSyncResult {
+  final String status;
+  final String message;
+  final double? goldSavingsGrams;
+  final double? gramsPurchased;
+
+  const PaymentSyncResult({
+    required this.status,
+    required this.message,
+    this.goldSavingsGrams,
+    this.gramsPurchased,
+  });
+
+  factory PaymentSyncResult.fromJson(Map<String, dynamic> json) {
+    return PaymentSyncResult(
+      status: json['status'] as String? ?? 'pending',
+      message: json['message'] as String? ?? '',
+      goldSavingsGrams: json['gold_savings_grams'] == null
+          ? null
+          : _toDouble(json['gold_savings_grams']),
+      gramsPurchased: json['grams_purchased'] == null
+          ? null
+          : _toDouble(json['grams_purchased']),
+    );
+  }
+
+  bool get isPaid => status == 'paid';
+  bool get isPending => status == 'pending';
+}
+
 double _toDouble(dynamic value) {
   if (value == null) return 0;
   if (value is num) return value.toDouble();
@@ -93,5 +123,17 @@ final verifyGoldPaymentProvider = Provider((ref) {
       },
     );
     return PaymentVerifyResult.fromJson(response.data as Map<String, dynamic>);
+  };
+});
+
+final syncGoldPaymentProvider = Provider((ref) {
+  final api = ref.watch(apiClientProvider);
+
+  return ({required String orderId}) async {
+    final response = await api.post(
+      '/payments/razorpay/sync',
+      data: {'razorpay_order_id': orderId},
+    );
+    return PaymentSyncResult.fromJson(response.data as Map<String, dynamic>);
   };
 });

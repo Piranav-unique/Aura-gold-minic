@@ -8,6 +8,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/features/auth/presentation/login_screen.dart';
 import 'package:ags_gold/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/main.dart';
 import '../test_helpers/auth_dashboard_overrides.dart';
@@ -24,18 +25,29 @@ void main() {
   ) async {
     final mockApi = MockApiClient();
     final mockStorage = MockSecureStorage();
+    final mockDeviceAuth = MockDeviceAuthStorage();
 
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
+    when(() => mockDeviceAuth.getRegisteredMobile()).thenAnswer((_) async => null);
+    when(
+      () => mockDeviceAuth.getOrCreateDeviceId(),
+    ).thenAnswer((_) async => '11111111-1111-4111-8111-111111111111');
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           apiClientProvider.overrideWithValue(mockApi),
           secureStorageProvider.overrideWithValue(mockStorage),
+          deviceAuthStorageProvider.overrideWithValue(mockDeviceAuth),
         ],
-        child: const MaterialApp(home: LoginScreen()),
+        child: MaterialApp(
+          localizationsDelegates: const [AppLocalizations.delegate],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const LoginScreen(),
+        ),
       ),
     );
+    await tester.pump();
 
     // Verify initial components
     expect(find.text('Welcome Back'), findsOneWidget);
@@ -66,11 +78,16 @@ void main() {
   ) async {
     final mockApi = MockApiClient();
     final mockStorage = MockSecureStorage();
+    final mockDeviceAuth = MockDeviceAuthStorage();
     const testEmail = 'user@example.com';
     const testPassword = 'Password123';
     const fakeToken = 'fake-jwt-token';
 
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
+    when(() => mockDeviceAuth.getRegisteredMobile()).thenAnswer((_) async => null);
+    when(
+      () => mockDeviceAuth.getOrCreateDeviceId(),
+    ).thenAnswer((_) async => '11111111-1111-4111-8111-111111111111');
     when(
       () => mockStorage.saveTokens(
         accessToken: any(named: 'accessToken'),
@@ -108,6 +125,7 @@ void main() {
         overrides: [
           apiClientProvider.overrideWithValue(mockApi),
           secureStorageProvider.overrideWithValue(mockStorage),
+          deviceAuthStorageProvider.overrideWithValue(mockDeviceAuth),
           ...authDashboardTestOverrides,
         ],
         child: const AGSGoldApp(),
@@ -116,9 +134,15 @@ void main() {
 
     // Splash screen is displayed first
     await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
-    // With staff audience preset, we should be on LoginScreen
+    if (find.byKey(const Key('staffAdminCard')).evaluate().isNotEmpty) {
+      await tester.tap(find.byKey(const Key('staffAdminCard')));
+      await tester.pumpAndSettle();
+    }
+
+    // With staff audience, we should be on LoginScreen
     expect(find.byKey(const Key('loginButton')), findsOneWidget);
 
     // Input email and password

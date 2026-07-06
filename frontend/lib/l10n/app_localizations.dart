@@ -539,7 +539,7 @@ abstract class AppLocalizations {
   /// No description provided for @goldHoldingsSchemeActiveFooter.
   ///
   /// In en, this message translates to:
-  /// **'Keep buying until your scheme target is complete.'**
+  /// **'Plan in progress. Tap Sell Gold to submit a sell enquiry — our team will review it.'**
   String get goldHoldingsSchemeActiveFooter;
 
   /// No description provided for @goldSchemeBuyBlockedTitle.
@@ -566,11 +566,29 @@ abstract class AppLocalizations {
   /// **'Would you like to sell your gold or start a higher savings plan?'**
   String get goldSchemeCompletionBody;
 
+  /// No description provided for @goldSchemeCompletionBodyAfter1g.
+  ///
+  /// In en, this message translates to:
+  /// **'You reached your 1 g goal. Sell your gold now, or start a 5 g or 10 g savings plan.'**
+  String get goldSchemeCompletionBodyAfter1g;
+
+  /// No description provided for @goldSchemeCompletionBodyAfter5g.
+  ///
+  /// In en, this message translates to:
+  /// **'You reached your 5 g goal. Sell your gold now, or start a 10 g savings plan.'**
+  String get goldSchemeCompletionBodyAfter5g;
+
   /// No description provided for @goldSchemeCompletionBodyMaxTier.
   ///
   /// In en, this message translates to:
-  /// **'You completed the highest plan. Sell your gold or keep holding.'**
+  /// **'You completed the 10 g plan — the highest tier. Sell your gold to receive payout in your bank.'**
   String get goldSchemeCompletionBodyMaxTier;
+
+  /// No description provided for @goldSchemeCompletionAutoSell.
+  ///
+  /// In en, this message translates to:
+  /// **'10 g plan complete! Choose how much to sell and which bank to credit.'**
+  String get goldSchemeCompletionAutoSell;
 
   /// No description provided for @goldSchemeCompletionSell.
   ///
@@ -673,6 +691,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment failed. Please try again.'**
   String get paymentFailed;
+
+  /// No description provided for @confirmingPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming your payment…'**
+  String get confirmingPayment;
+
+  /// No description provided for @paymentPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment not completed yet. If you already paid, stay on this screen while we confirm.'**
+  String get paymentPending;
 
   /// No description provided for @enterValidTradeAmount.
   ///
@@ -785,7 +815,7 @@ abstract class AppLocalizations {
   /// No description provided for @bankAccountsInfo.
   ///
   /// In en, this message translates to:
-  /// **'Link your Indian bank account to receive payouts when you sell gold.'**
+  /// **'Link up to 2 Indian bank accounts. When you sell gold, choose which account receives the payout.'**
   String get bankAccountsInfo;
 
   /// No description provided for @noBankAccountLinked.
@@ -2516,6 +2546,48 @@ abstract class AppLocalizations {
   /// **'Could not submit your request. Please try again.'**
   String get sellGoldInquirySubmitFailed;
 
+  /// No description provided for @sellGoldPayoutBankTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit payout to this bank'**
+  String get sellGoldPayoutBankTitle;
+
+  /// No description provided for @sellGoldPayoutBankSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select which linked bank account should receive the sell amount.'**
+  String get sellGoldPayoutBankSubtitle;
+
+  /// No description provided for @bankAccountsMaxReached.
+  ///
+  /// In en, this message translates to:
+  /// **'You can link up to 2 bank accounts. Use one of your linked accounts for sell payouts.'**
+  String get bankAccountsMaxReached;
+
+  /// No description provided for @sellGoldSuccessPayoutNote.
+  ///
+  /// In en, this message translates to:
+  /// **'After we verify your request, the amount will be transferred directly to your selected bank account.'**
+  String get sellGoldSuccessPayoutNote;
+
+  /// No description provided for @sellGoldNoBankLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a bank account to receive your sell payout.'**
+  String get sellGoldNoBankLinked;
+
+  /// No description provided for @sellGoldAddBankAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bank account'**
+  String get sellGoldAddBankAccount;
+
+  /// No description provided for @sellGoldSelectPayoutBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the bank account for payout'**
+  String get sellGoldSelectPayoutBank;
+
   /// No description provided for @navSellInquiries.
   ///
   /// In en, this message translates to:
@@ -2557,6 +2629,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'User Wallets'**
   String get navUserWallets;
+
+  /// No description provided for @navPortfolio.
+  ///
+  /// In en, this message translates to:
+  /// **'Portfolio'**
+  String get navPortfolio;
+
+  /// No description provided for @myPortfolio.
+  ///
+  /// In en, this message translates to:
+  /// **'My Portfolio'**
+  String get myPortfolio;
+
+  /// No description provided for @recentSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Savings'**
+  String get recentSavings;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
+  /// No description provided for @goldValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold Value'**
+  String get goldValue;
+
+  /// No description provided for @silverValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver Value'**
+  String get silverValue;
+
+  /// No description provided for @milestoneReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Milestone reached'**
+  String get milestoneReached;
+
+  /// No description provided for @totalPortfolioValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Portfolio Value'**
+  String get totalPortfolioValue;
+
+  /// No description provided for @signUpMobileOtpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with your mobile OTP to access AURUM GOLD & SILVERS.'**
+  String get signUpMobileOtpSubtitle;
+
+  /// No description provided for @fullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get fullName;
+
+  /// No description provided for @yourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get yourName;
+
+  /// No description provided for @fullNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required.'**
+  String get fullNameRequired;
+
+  /// No description provided for @tenDigitMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'10-digit mobile'**
+  String get tenDigitMobile;
+
+  /// No description provided for @tenDigitMobileLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'10-digit mobile number'**
+  String get tenDigitMobileLogin;
+
+  /// No description provided for @mobileNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number is required.'**
+  String get mobileNumberRequired;
+
+  /// No description provided for @otpFromSms.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit OTP from SMS'**
+  String get otpFromSms;
+
+  /// No description provided for @enterSixDigitOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit OTP.'**
+  String get enterSixDigitOtp;
+
+  /// No description provided for @loginOtpIncorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check and enter your OTP.'**
+  String get loginOtpIncorrect;
+
+  /// No description provided for @verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verified;
+
+  /// No description provided for @verify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verify;
+
+  /// No description provided for @signUpButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signUpButton;
+
+  /// No description provided for @reenterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter your password'**
+  String get reenterPassword;
+
+  /// No description provided for @confirmPasswordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm your password.'**
+  String get confirmPasswordPrompt;
+
+  /// No description provided for @passwordMin8.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters.'**
+  String get passwordMin8;
+
+  /// No description provided for @passwordAtLeast8.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get passwordAtLeast8;
+
+  /// No description provided for @emailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'name@example.com'**
+  String get emailHint;
+
+  /// No description provided for @referralHint.
+  ///
+  /// In en, this message translates to:
+  /// **'ABCD1234'**
+  String get referralHint;
+
+  /// No description provided for @joinAurum.
+  ///
+  /// In en, this message translates to:
+  /// **'Join AURUM'**
+  String get joinAurum;
+
+  /// No description provided for @joinAurumSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access gold savings & live bullion prices'**
+  String get joinAurumSubtitle;
+
+  /// No description provided for @promoInsuredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'100% INSURED'**
+  String get promoInsuredTitle;
+
+  /// No description provided for @promoInsuredSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault-backed gold & silver'**
+  String get promoInsuredSubtitle;
+
+  /// No description provided for @promoPurityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'24K PURITY'**
+  String get promoPurityTitle;
+
+  /// No description provided for @promoPuritySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Certified bullion'**
+  String get promoPuritySubtitle;
+
+  /// No description provided for @socialProofHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Thousands of investors '**
+  String get socialProofHighlight;
+
+  /// No description provided for @socialProofRest.
+  ///
+  /// In en, this message translates to:
+  /// **'started their wealth journey this month'**
+  String get socialProofRest;
+
+  /// No description provided for @kycDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity'**
+  String get kycDialogTitle;
+
+  /// No description provided for @kycDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your KYC to unlock buying and selling gold & silver. It only takes a couple of minutes.'**
+  String get kycDialogMessage;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @verifyNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify now'**
+  String get verifyNow;
+
+  /// No description provided for @panCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN category'**
+  String get panCategory;
+
+  /// No description provided for @aadhaarLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar'**
+  String get aadhaarLabel;
+
+  /// No description provided for @panLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN'**
+  String get panLabel;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchHint;
+
+  /// No description provided for @stateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get stateLabel;
 }
 
 class _AppLocalizationsDelegate

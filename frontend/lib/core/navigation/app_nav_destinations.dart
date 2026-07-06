@@ -42,9 +42,9 @@ List<AppNavDestination> buildNavDestinations(
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
     ),
-    const AppNavDestination(
+    AppNavDestination(
       routePrefix: '/portfolio',
-      label: 'Portfolio',
+      label: l10n.navPortfolio,
       icon: Icons.account_balance_wallet_outlined,
       selectedIcon: Icons.account_balance_wallet,
     ),

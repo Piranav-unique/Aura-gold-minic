@@ -62,6 +62,9 @@ class ReferralService:
                 raise ValidationException("Invalid referral scheme. Choose 1 g, 5 g, or 10 g.")
             user.referral_scheme_grams = grams
 
+        await self.user_repo.db.commit()
+        await self.user_repo.db.refresh(user)
+
     async def maybe_credit_referrer(
         self, referee: User, selected_grams: Decimal
     ) -> Decimal | None:

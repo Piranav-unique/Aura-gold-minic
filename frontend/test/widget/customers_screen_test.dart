@@ -5,14 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/features/customers/domain/customer.dart';
 import 'package:ags_gold/features/customers/presentation/customers_screen.dart';
 import 'package:ags_gold/features/customers/presentation/providers/customers_provider.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
 final _adminProfile = UserProfile(
   id: '11111111-1111-1111-1111-111111111111',
-  email: 'admin@agsgold.com',
+  mobileNumber: '9876543210',
   firstName: 'Admin',
   lastName: 'User',
   isActive: true,
@@ -69,10 +68,7 @@ void main() {
                 limit: 25,
               ),
             ),
-          ),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          )
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -110,10 +106,7 @@ void main() {
             const AsyncValue.data(
               PaginatedCustomers(items: [], total: 0, skip: 0, limit: 25),
             ),
-          ),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          )
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

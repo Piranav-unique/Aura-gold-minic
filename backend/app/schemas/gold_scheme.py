@@ -13,6 +13,7 @@ class GoldSchemeResponse(BaseModel):
     saved_grams: Decimal = Decimal("0")
     progress_percent: Decimal = Decimal("0")
     can_sell: bool = False
+    can_sell_inquiry: bool = False
     sell_locked_reason: str | None = None
     started_at: datetime | None = None
 

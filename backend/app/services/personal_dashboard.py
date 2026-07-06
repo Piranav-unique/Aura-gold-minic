@@ -22,7 +22,9 @@ _personal_cache = get_personal_dashboard_cache()
 
 def _display_name(user: User) -> str:
     parts = [p for p in (user.first_name, user.last_name) if p]
-    return " ".join(parts) if parts else user.email
+    if parts:
+        return " ".join(parts)
+    return user.mobile_number or user.email
 
 
 class PersonalDashboardService:
@@ -144,6 +146,7 @@ class PersonalDashboardService:
         payload = PersonalDashboardResponse(
             display_name=_display_name(user),
             email=user.email,
+            mobile_number=user.mobile_number,
             roles=[role.name for role in user.roles],
             unread_notifications=unread,
             refreshed_at=refreshed_at,

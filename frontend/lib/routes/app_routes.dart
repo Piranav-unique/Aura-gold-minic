@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/features/splash/presentation/splash_screen.dart';
+import 'package:ags_gold/features/auth/domain/login_route_args.dart';
 import 'package:ags_gold/features/auth/presentation/login_screen.dart';
 import 'package:ags_gold/features/auth/presentation/signup_screen.dart';
 import 'package:ags_gold/features/auth/presentation/role_selection_screen.dart';
@@ -74,6 +75,9 @@ void _logNavigation(GoRouterState state) {
   _lastLoggedNavigationPath = location;
 }
 
+/// Root navigator used for dialogs that need a localized [BuildContext].
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   ref.watch(authNotifierProvider);
   ref.watch(appAudienceProvider);
@@ -101,6 +105,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   }
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: listenable,
     redirect: (context, state) {
@@ -210,8 +215,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) {
-          final message = state.extra is String ? state.extra as String : null;
-          return LoginScreen(successMessage: message);
+          final args = LoginRouteArgs.fromExtra(state.extra);
+          return LoginScreen(
+            successMessage: args?.successMessage,
+            initialMobile: args?.mobile,
+          );
         },
       ),
       GoRoute(

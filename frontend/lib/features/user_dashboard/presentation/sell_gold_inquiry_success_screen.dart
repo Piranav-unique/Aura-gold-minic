@@ -5,12 +5,14 @@ import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/admin/presentation/providers/organization_profile_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_surface_card.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class SellGoldInquirySuccessScreen extends ConsumerWidget {
   const SellGoldInquirySuccessScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final contactAsync = ref.watch(organizationContactProvider);
 
     return Theme(
@@ -38,7 +40,7 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Our administrator will review your request and contact you shortly.',
+                l10n.sellGoldSuccessPayoutNote,
                 style: TextStyle(
                   fontSize: 15,
                   height: 1.5,
@@ -62,7 +64,7 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Admin Contact Details',
+                        'Support contact',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -71,16 +73,10 @@ class SellGoldInquirySuccessScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       _contactRow(Icons.person_outline, contact.adminName),
-                      _contactRow(Icons.phone_outlined, contact.supportContactNumber),
-                      if (contact.supportEmail != null &&
-                          contact.supportEmail!.isNotEmpty)
-                        _contactRow(Icons.email_outlined, contact.supportEmail!),
-                      if (contact.officeAddress != null &&
-                          contact.officeAddress!.isNotEmpty)
-                        _contactRow(
-                          Icons.location_on_outlined,
-                          contact.officeAddress!,
-                        ),
+                      _contactRow(
+                        Icons.phone_outlined,
+                        contact.supportContactNumber,
+                      ),
                     ],
                   ),
                 ),

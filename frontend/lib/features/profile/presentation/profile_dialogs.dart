@@ -56,8 +56,6 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
-  late final TextEditingController _emailController;
-  late final TextEditingController _passwordController;
   bool _saving = false;
   String? _errorMessage;
 
@@ -70,20 +68,14 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _lastNameController = TextEditingController(
       text: widget.profile.lastName ?? '',
     );
-    _emailController = TextEditingController(text: widget.profile.email);
-    _passwordController = TextEditingController();
-    _emailController.addListener(_clearError);
     _firstNameController.addListener(_clearError);
     _lastNameController.addListener(_clearError);
-    _passwordController.addListener(_clearError);
   }
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -93,20 +85,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     }
   }
 
-  bool get _emailChanged =>
-      _emailController.text.trim().toLowerCase() !=
-      widget.profile.email.toLowerCase();
-
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
-
-    if (_emailChanged && _passwordController.text.isEmpty) {
-      setState(() {
-        _errorMessage = context.l10n.currentPasswordRequired;
-      });
-      return;
-    }
 
     setState(() {
       _saving = true;
@@ -118,11 +99,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       final payload = <String, dynamic>{
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
-        'email': _emailController.text.trim(),
       };
-      if (_emailChanged) {
-        payload['current_password'] = _passwordController.text;
-      }
 
       await apiClient.put('/profile/', data: payload);
 
@@ -235,43 +212,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: _emailChanged
-                  ? TextInputAction.next
-                  : TextInputAction.done,
-              autocorrect: false,
+              initialValue: widget.profile.displayContactLine,
+              readOnly: true,
+              enabled: false,
               decoration: InputDecoration(
-                labelText: l10n.emailAddress,
+                labelText: l10n.mobileNumber,
                 filled: true,
                 fillColor: AppTheme.creamElevated,
               ),
-              validator: (value) {
-                final email = value?.trim() ?? '';
-                if (email.isEmpty) return l10n.emailRequired;
-                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
-                  return l10n.emailInvalid;
-                }
-                return null;
-              },
-              onChanged: (_) => setState(() {}),
             ),
-            if (_emailChanged) ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText: l10n.password,
-                  helperText: l10n.currentPasswordRequired,
-                  helperMaxLines: 2,
-                  filled: true,
-                  fillColor: AppTheme.creamElevated,
-                ),
-                onFieldSubmitted: (_) => _save(),
-              ),
-            ],
             const SizedBox(height: 24),
             Row(
               children: [

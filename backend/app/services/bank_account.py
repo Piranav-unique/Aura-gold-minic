@@ -22,9 +22,6 @@ from app.services.ifsc import IfscService
 from app.utils.mobile import normalize_mobile
 from app.services.sms import SmsService
 
-_MSG91_NATIVE_SENTINEL = "msg91-native"
-
-
 def _hash_bank_otp(user_id: UUID, otp: str) -> str:
     payload = f"bank:{user_id}:{otp}".encode()
     key = settings.SECRET_KEY.encode()
@@ -33,6 +30,9 @@ def _hash_bank_otp(user_id: UUID, otp: str) -> str:
 
 def _encrypt_account_number(account_number: str) -> str:
     return encrypt_aadhaar(account_number)
+
+
+MAX_BANK_ACCOUNTS_PER_USER = 2
 
 
 class BankAccountService:
@@ -57,11 +57,8 @@ class BankAccountService:
         return mobile
 
     def _generate_otp(self) -> str:
-        length = settings.SIGNUP_OTP_LENGTH
+        length = settings.MSG91_BANK_OTP_LENGTH
         return "".join(str(secrets.randbelow(10)) for _ in range(length))
-
-    def _uses_msg91_native(self) -> bool:
-        return self.sms_service.uses_msg91_native_otp
 
     async def list_accounts(self, user: User) -> list[BankAccountResponse]:
         rows = await self.bank_repo.list_for_user(user.id)
@@ -72,22 +69,23 @@ class BankAccountService:
     ) -> BankLinkInitiateResponse:
         mobile = self._require_mobile(user)
 
+        existing = await self.bank_repo.list_for_user(user.id)
+        if len(existing) >= MAX_BANK_ACCOUNTS_PER_USER:
+            raise ValidationException(
+                f"You can link at most {MAX_BANK_ACCOUNTS_PER_USER} bank accounts."
+            )
+
         lookup = await self.ifsc_service.lookup_ifsc(body.ifsc)
         ifsc_bank = str(lookup.get("BANK") or body.bank_name).strip()
         ifsc_branch = str(lookup.get("BRANCH") or body.branch_name).strip()
 
-        use_msg91_native = self._uses_msg91_native()
-        if use_msg91_native:
-            otp_to_send = None
-            otp_hash = _hash_bank_otp(user.id, _MSG91_NATIVE_SENTINEL)
-        else:
-            otp_to_send = self._generate_otp()
-            if (
-                not settings.MSG91_AUTH_KEY.strip()
-                and settings.ENVIRONMENT == "development"
-            ):
-                otp_to_send = settings.SIGNUP_OTP_DEV_CODE
-            otp_hash = _hash_bank_otp(user.id, otp_to_send)
+        use_dev_otp = settings.bank_otp_uses_dev_code()
+        otp_to_send = (
+            settings.SIGNUP_OTP_DEV_CODE
+            if use_dev_otp
+            else self._generate_otp()
+        )
+        otp_hash = _hash_bank_otp(user.id, otp_to_send)
 
         expires_at = datetime.now(timezone.utc) + timedelta(
             minutes=settings.SIGNUP_OTP_EXPIRE_MINUTES
@@ -113,7 +111,15 @@ class BankAccountService:
         )
 
         try:
-            await self.sms_service.send_bank_link_otp(mobile, otp_to_send)
+            if not use_dev_otp:
+                await self.sms_service.send_bank_link_otp(mobile, otp_to_send)
+            else:
+                logger.info(
+                    "bank_link_otp_dev_mode",
+                    user_id=str(user.id),
+                    mobile=mobile,
+                    otp=otp_to_send,
+                )
         except ValidationException:
             await self.challenge_repo.db.rollback()
             raise
@@ -132,11 +138,11 @@ class BankAccountService:
         )
 
     async def verify_link(self, user: User, otp: str) -> BankAccountResponse:
-        mobile = self._require_mobile(user)
+        self._require_mobile(user)
         code = otp.strip()
-        if len(code) != settings.SIGNUP_OTP_LENGTH:
+        if len(code) != settings.MSG91_BANK_OTP_LENGTH:
             raise ValidationException(
-                f"Enter the {settings.SIGNUP_OTP_LENGTH}-digit OTP."
+                f"Enter the {settings.MSG91_BANK_OTP_LENGTH}-digit OTP."
             )
 
         challenge = await self.challenge_repo.get_latest_active(user.id)
@@ -151,9 +157,7 @@ class BankAccountService:
         challenge.attempts += 1
 
         try:
-            if self._uses_msg91_native():
-                await self.sms_service.verify_msg91_otp(mobile, code)
-            elif _hash_bank_otp(user.id, code) != challenge.otp_hash:
+            if _hash_bank_otp(user.id, code) != challenge.otp_hash:
                 await self.challenge_repo.db.commit()
                 raise ValidationException("Invalid OTP. Please try again.")
         except ValidationException:

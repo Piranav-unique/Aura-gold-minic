@@ -1,3 +1,6 @@
+/// Maximum linked bank accounts per end-user (sell payout).
+const int maxUserBankAccounts = 2;
+
 class BankAccount {
   final String id;
   final String accountHolderName;

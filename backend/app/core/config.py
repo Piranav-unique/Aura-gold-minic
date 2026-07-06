@@ -126,6 +126,18 @@ class Settings(BaseSettings):
     SIGNUP_OTP_MIN_RESEND_SECONDS: int = 60
     SIGNUP_OTP_SEND_COOLDOWN_HOURS: int = 1
     SIGNUP_OTP_USE_MSG91_VERIFY: bool = True
+    SIGNUP_OTP_DEV_CODE: str = "123456"
+
+    # Bank link OTP (MSG91 Flow only — Aurum_Bank_Add_OTP, DLT 1207178235534667442).
+    # Do NOT use the v5 /otp API for this template (MSG91 error 400).
+    MSG91_BANK_OTP_TEMPLATE_ID: str = "6a4a7eae9fe09e57d9000643"
+    MSG91_BANK_DLT_TEMPLATE_ID: str = "1207178235534667442"
+    MSG91_BANK_FLOW_ID: str = "6a4a7eae9fe09e57d9000643"
+    MSG91_BANK_OTP_LENGTH: int = 6
+    MSG91_BANK_OTP_USE_MSG91_VERIFY: bool = False
+    MSG91_BANK_SMS_CHANNELS: str = "flow,sendhttp"
+    # Local dev: use SIGNUP_OTP_DEV_CODE for bank link (skip MSG91 bank Flow SMS).
+    BANK_OTP_DEV_MODE: bool = True
 
     # Android in-app update (public APK URL + version; bump when publishing a new APK)
     APP_ANDROID_VERSION_NAME: str = ""
@@ -209,6 +221,13 @@ class Settings(BaseSettings):
                 self.TRUSTED_PROXY = True
 
         return self
+
+    def bank_otp_uses_dev_code(self) -> bool:
+        return (
+            self.BANK_OTP_DEV_MODE
+            and self.ENVIRONMENT == "development"
+            and bool(self.SIGNUP_OTP_DEV_CODE.strip())
+        )
 
 
 settings = Settings()

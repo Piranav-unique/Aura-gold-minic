@@ -28,16 +28,16 @@ void main() {
     expect(profile.initials, 'J');
   });
 
-  test('UserProfile displayName falls back to email', () {
+  test('UserProfile displayName falls back to mobile number', () {
     final profile = UserProfile(
       id: '1',
-      email: 'solo@test.com',
+      mobileNumber: '9876543210',
       isActive: true,
       isSuperuser: false,
       createdAt: DateTime.utc(2026, 6, 8),
       updatedAt: DateTime.utc(2026, 6, 8),
     );
-    expect(profile.displayName, 'solo@test.com');
-    expect(profile.initials, 'S');
+    expect(profile.displayName, '+91 98765 43210');
+    expect(profile.initials, '9');
   });
 }

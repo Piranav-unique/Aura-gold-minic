@@ -1,3 +1,5 @@
+import 'package:ags_gold/core/utils/mobile_format.dart';
+
 class UserRole {
   final String id;
   final String name;
@@ -37,7 +39,7 @@ class UserPermission {
 
 class UserProfile {
   final String id;
-  final String email;
+  final String? mobileNumber;
   final String? firstName;
   final String? lastName;
   final bool isActive;
@@ -49,7 +51,7 @@ class UserProfile {
 
   const UserProfile({
     required this.id,
-    required this.email,
+    this.mobileNumber,
     this.firstName,
     this.lastName,
     required this.isActive,
@@ -62,14 +64,18 @@ class UserProfile {
 
   String get displayName {
     final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
-    return name.isEmpty ? email : name;
+    return name.isEmpty ? displayContactLine : name;
   }
+
+  String get displayContactLine => formatDisplayMobile(mobileNumber);
 
   String get initials {
     if (firstName != null && firstName!.isNotEmpty) {
       return firstName![0].toUpperCase();
     }
-    return email.isNotEmpty ? email[0].toUpperCase() : 'U';
+    final digits = mobileNumber?.replaceAll(RegExp(r'\D'), '') ?? '';
+    if (digits.isNotEmpty) return digits[0];
+    return 'U';
   }
 
   Set<String> get effectivePermissions {
@@ -89,7 +95,7 @@ class UserProfile {
         .toList();
     return UserProfile(
       id: json['id'] as String,
-      email: json['email'] as String? ?? '',
+      mobileNumber: json['mobile_number'] as String?,
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
       isActive: json['is_active'] as bool? ?? false,

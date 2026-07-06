@@ -4,7 +4,7 @@ import 'package:ags_gold/features/profile/domain/profile.dart';
 
 final _superuser = UserProfile(
   id: '1',
-  email: 'admin@example.com',
+  mobileNumber: '9876543210',
   isActive: true,
   isSuperuser: true,
   createdAt: DateTime.utc(2026, 6, 8),
@@ -13,7 +13,7 @@ final _superuser = UserProfile(
 
 final _viewer = UserProfile(
   id: '2',
-  email: 'viewer@example.com',
+  mobileNumber: '9876543210',
   isActive: true,
   isSuperuser: false,
   roles: const [

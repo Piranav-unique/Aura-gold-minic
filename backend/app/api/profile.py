@@ -1,9 +1,15 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
+from typing import Optional
 
 from fastapi.responses import Response
 
 
-from app.api.dependencies import get_current_user, get_kyc_service, get_profile_service
+from app.api.dependencies import (
+    get_admin_wallet_service,
+    get_current_user,
+    get_kyc_service,
+    get_profile_service,
+)
 
 from app.models.user import User
 
@@ -25,8 +31,10 @@ from app.schemas.profile import (
 from app.schemas.base import MessageResponse
 
 from app.core.kyc_profile import mask_mobile
+from app.schemas.admin_wallet import WalletTransactionListResponse
 from app.services.profile import ProfileService
 from app.services.kyc import KycService
+from app.services.admin_wallet import AdminWalletService
 
 
 router = APIRouter()
@@ -37,6 +45,7 @@ def _to_profile_response(user: User) -> ProfileResponse:
     return ProfileResponse(
         id=user.id,
         email=user.email,
+        mobile_number=user.mobile_number,
         first_name=user.first_name,
         last_name=user.last_name,
         is_active=user.is_active,
@@ -243,4 +252,27 @@ async def verify_pan_link(
 ) -> KycStatusResponse:
     return await kyc_service.verify_pan_aadhaar_link(
         current_user.id, body.pan_number
+    )
+
+
+@router.get(
+    "/statements",
+    response_model=WalletTransactionListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List current user's buy, sell, and wallet activity",
+)
+async def list_my_statements(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    transaction_type: Optional[str] = Query(
+        None, description="Filter: BUY, SELL, REFERRAL, or SAVINGS"
+    ),
+    current_user: User = Depends(get_current_user),
+    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
+) -> WalletTransactionListResponse:
+    return await wallet_service.list_user_transactions(
+        current_user.id,
+        skip=skip,
+        limit=limit,
+        transaction_type=transaction_type,
     )

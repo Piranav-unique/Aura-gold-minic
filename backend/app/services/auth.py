@@ -18,6 +18,11 @@ from app.repositories.token_blacklist import TokenBlacklistRepository
 from app.schemas.auth import Token
 from app.services.audit import AuditService
 from app.utils.mobile import normalize_mobile
+from app.utils.device_binding import (
+    bind_device_for_mobile_login,
+    ensure_device_available_for_registration,
+    normalize_device_id,
+)
 
 
 class AuthService:
@@ -77,9 +82,12 @@ class AuthService:
                 )
             raise e
 
-    async def authenticate_user_by_mobile(self, mobile_number: str) -> User:
+    async def authenticate_user_by_mobile(
+        self, mobile_number: str, device_id: str
+    ) -> User:
         """Log in an end-user who registered with a verified mobile number."""
         mobile = normalize_mobile(mobile_number)
+        normalized_device_id = normalize_device_id(device_id)
         identifier = mobile
         try:
             user = await self.user_repo.get_by_mobile(mobile)
@@ -96,6 +104,9 @@ class AuthService:
                 raise AuthenticationException(
                     "Use email and password to sign in as staff."
                 )
+            await bind_device_for_mobile_login(
+                self.user_repo, user, normalized_device_id
+            )
             return user
         except AuthenticationException as e:
             if self.audit_service:
@@ -106,6 +117,57 @@ class AuthService:
                     metadata={"identifier": identifier, "reason": e.message},
                 )
             raise e
+
+    async def authenticate_trusted_first_mobile_login(
+        self, mobile_number: str, device_id: str
+    ) -> User:
+        """Allow the first sign-in on the registration device without OTP."""
+        mobile = normalize_mobile(mobile_number)
+        normalized_device_id = normalize_device_id(device_id)
+        identifier = mobile
+        try:
+            user = await self.user_repo.get_by_mobile(mobile)
+            if (
+                not user
+                or user.is_deleted
+                or not user.is_active
+                or not user.mobile_verified
+            ):
+                raise AuthenticationException(
+                    "No account found for this mobile number."
+                )
+            if user.is_superuser:
+                raise AuthenticationException(
+                    "Use email and password to sign in as staff."
+                )
+            if user.has_completed_mobile_login:
+                raise AuthenticationException(
+                    "OTP verification is required to sign in."
+                )
+            if user.registered_device_id != normalized_device_id:
+                raise AuthenticationException(
+                    "Please sign in using the device you registered with."
+                )
+
+            user.has_completed_mobile_login = True
+            await self.user_repo.db.commit()
+            return user
+        except AuthenticationException as e:
+            if self.audit_service:
+                await self.audit_service.log_action(
+                    user_id=None,
+                    action=audit_actions.LOGIN_FAILURE,
+                    entity_type="User",
+                    metadata={"identifier": identifier, "reason": e.message},
+                )
+            raise e
+
+    async def complete_mobile_login(self, user: User) -> None:
+        """Mark that the user has finished their first OTP-based mobile login."""
+        if user.has_completed_mobile_login:
+            return
+        user.has_completed_mobile_login = True
+        await self.user_repo.db.commit()
 
     async def issue_tokens_for_user(
         self, user: User, *, login_method: str = "mobile_otp"

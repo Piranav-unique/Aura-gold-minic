@@ -36,6 +36,12 @@ Future<SchemeCompletionResult?> showSchemeCompletionDialog(
   final l10n = context.l10n;
   final completedGrams = scheme.targetGrams?.toStringAsFixed(0) ?? '';
   final upgradeOptions = goldSchemeUpgradeOptions(scheme);
+  final completedTier = scheme.targetGrams?.round() ?? 0;
+  final bodyText = completedTier <= 1
+      ? l10n.goldSchemeCompletionBodyAfter1g
+      : completedTier <= 5
+          ? l10n.goldSchemeCompletionBodyAfter5g
+          : l10n.goldSchemeCompletionBodyMaxTier;
 
   return showDialog<SchemeCompletionResult>(
     context: context,
@@ -61,9 +67,7 @@ Future<SchemeCompletionResult?> showSchemeCompletionDialog(
           ],
         ),
         content: Text(
-          upgradeOptions.isEmpty
-              ? l10n.goldSchemeCompletionBodyMaxTier
-              : l10n.goldSchemeCompletionBody,
+          bodyText,
           style: TextStyle(
             color: AurumConsumerTheme.textMuted,
             fontSize: 14,
@@ -140,6 +144,28 @@ Future<void> navigateAfterSchemeCompletion(
   }
 }
 
+/// Called when a scheme becomes completed (after buy, join, or upgrade).
+Future<void> handleSchemeJustCompleted(
+  BuildContext context,
+  WidgetRef ref,
+  GoldScheme scheme,
+) async {
+  if (!scheme.status.isCompleted) return;
+
+  if (goldSchemeIsMaxTier(scheme)) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.goldSchemeCompletionAutoSell)),
+    );
+    openSellGoldInquiry(context);
+    return;
+  }
+
+  final choice = await showSchemeCompletionDialog(context, ref, scheme);
+  if (!context.mounted) return;
+  await navigateAfterSchemeCompletion(context, ref, choice);
+}
+
 Future<void> handleSchemeUpgrade({
   required BuildContext context,
   required WidgetRef ref,
@@ -158,7 +184,9 @@ Future<void> handleSchemeUpgrade({
       ),
     );
 
-    if (updated.status.isActive) {
+    if (updated.status.isCompleted) {
+      await handleSchemeJustCompleted(context, ref, updated);
+    } else if (updated.status.isActive) {
       context.push('/buy-gold?metal=gold');
     }
   } on ApiException catch (e) {

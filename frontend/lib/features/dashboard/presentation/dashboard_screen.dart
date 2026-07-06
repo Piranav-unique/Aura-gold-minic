@@ -68,7 +68,6 @@ class DashboardScreen extends ConsumerWidget {
                       greeting: _greeting(data.displayName),
                       subtitle: _subtitle(resolvedRole),
                       roleLabel: executiveRoleLabel(resolvedRole),
-                      unreadNotifications: data.unreadNotifications,
                       refreshedAt: data.refreshedAt,
                     ),
                     const SizedBox(height: 24),

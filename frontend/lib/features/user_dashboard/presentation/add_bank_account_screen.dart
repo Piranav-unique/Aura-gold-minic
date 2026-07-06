@@ -805,9 +805,9 @@ class _SearchablePickerSheetState extends State<_SearchablePickerSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Search',
-                    prefixIcon: Icon(Icons.search),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.searchHint,
+                    prefixIcon: const Icon(Icons.search),
                   ),
                   onChanged: (v) => setState(() => _query = v),
                 ),

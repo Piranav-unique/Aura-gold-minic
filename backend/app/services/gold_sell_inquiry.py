@@ -151,7 +151,7 @@ class GoldSellInquiryService:
         user: User,
         body: GoldSellInquiryCreate,
     ) -> GoldSellInquiryResponse:
-        reason = GoldSchemeService.sell_locked_reason(user)
+        reason = GoldSchemeService.sell_inquiry_blocked_reason(user)
         if reason:
             raise ValidationException(reason)
 
@@ -159,6 +159,13 @@ class GoldSellInquiryService:
         if body.quantity_grams > holdings:
             raise ValidationException(
                 f"You can sell up to {holdings} g based on your current gold balance."
+            )
+
+        bank = await self.bank_repo.get_for_user(user.id, body.bank_account_id)
+        if not bank:
+            raise ValidationException(
+                "Link a verified bank account before selling gold. "
+                "Payout is sent to the bank you select."
             )
 
         payout = await self.payout_service.calculate(body.quantity_grams)
@@ -171,6 +178,7 @@ class GoldSellInquiryService:
                 "quantity_grams": body.quantity_grams,
                 "message": body.message,
                 "status": "pending",
+                "bank_account_id": bank.id,
                 "sell_rate_per_gram": payout["sell_rate_per_gram"],
                 "gross_amount_inr": payout["gross_amount_inr"],
                 "platform_charge_inr": payout["platform_charge_inr"],
@@ -225,15 +233,19 @@ class GoldSellInquiryService:
         )
 
     async def _user_payment_info(
-        self, user_id: uuid.UUID
+        self, user_id: uuid.UUID, bank_account_id: uuid.UUID | None = None
     ) -> tuple[Optional[str], Optional[str]]:
-        accounts = await self.bank_repo.list_for_user(user_id)
-        if not accounts:
-            return None, None
-        primary = accounts[0]
+        bank = None
+        if bank_account_id:
+            bank = await self.bank_repo.get_for_user(user_id, bank_account_id)
+        if not bank:
+            accounts = await self.bank_repo.list_for_user(user_id)
+            if not accounts:
+                return None, None
+            bank = accounts[0]
         return (
             "bank_account",
-            f"{primary.bank_name} • XXXX{primary.account_number_last4} • {primary.ifsc}",
+            f"{bank.bank_name} • XXXX{bank.account_number_last4} • {bank.ifsc}",
         )
 
     async def get_inquiry_detail(
@@ -269,7 +281,9 @@ class GoldSellInquiryService:
             calc = await self.payout_service.calculate(inquiry.quantity_grams)
             payout = SellPayoutBreakdown(**calc)
 
-        pay_method, pay_dest = await self._user_payment_info(inquiry.user_id)
+        pay_method, pay_dest = await self._user_payment_info(
+            inquiry.user_id, inquiry.bank_account_id
+        )
         base = self._to_response(inquiry)
         return GoldSellInquiryDetailResponse(
             **base.model_dump(),
@@ -373,14 +387,6 @@ class GoldSellInquiryService:
             raise ValidationException("This inquiry is already finalized.")
 
         user = inquiry.user
-        scheme_status = user.gold_scheme_status or "not_selected"
-        if scheme_status == "active":
-            target = Decimal(str(user.gold_scheme_target_grams or 0))
-            holdings = Decimal(str(user.gold_savings_grams or 0))
-            if target > 0 and holdings < target:
-                raise ValidationException(
-                    "Cannot approve: user's gold savings scheme is not yet completed."
-                )
 
         quantity = Decimal(str(inquiry.quantity_grams or 0))
         holdings = Decimal(str(user.gold_savings_grams or 0))

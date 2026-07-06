@@ -8,7 +8,7 @@ UserProfile _profile({
 }) {
   return UserProfile(
     id: '1',
-    email: 'user@test.com',
+    mobileNumber: '9876543210',
     isActive: true,
     isSuperuser: superuser,
     roles: roles,

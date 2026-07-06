@@ -5,14 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/features/inventory/domain/inventory_item.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_screen.dart';
 import 'package:ags_gold/features/inventory/presentation/providers/inventory_provider.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
 final _adminProfile = UserProfile(
   id: '11111111-1111-1111-1111-111111111111',
-  email: 'admin@agsgold.com',
+  mobileNumber: '9876543210',
   firstName: 'Admin',
   lastName: 'User',
   isActive: true,
@@ -80,10 +79,7 @@ void main() {
                 lowStockCount: 0,
               ),
             ),
-          ),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          )
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

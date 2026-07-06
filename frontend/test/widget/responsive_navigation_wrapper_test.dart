@@ -7,14 +7,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/services/service_providers.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/l10n/app_localizations.dart';
 import '../mocks/mock_services.dart';
 
 final _testProfile = UserProfile(
   id: '11111111-1111-1111-1111-111111111111',
-  email: 'operator@agsgold.com',
+  mobileNumber: '9876543210',
   firstName: 'AGS GOLD',
   lastName: 'Operator',
   isActive: true,
@@ -41,9 +40,6 @@ void main() {
       overrides: [
         apiClientProvider.overrideWithValue(mockApi),
         secureStorageProvider.overrideWithValue(mockStorage),
-        unreadNotificationsCountProvider.overrideWithValue(
-          const AsyncValue.data(0),
-        ),
         profileProvider.overrideWithValue(AsyncValue.data(_testProfile)),
       ],
       child: MaterialApp.router(

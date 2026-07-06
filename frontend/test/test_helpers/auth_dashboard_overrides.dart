@@ -4,7 +4,6 @@ import 'package:ags_gold/features/auth/presentation/providers/app_audience_provi
 import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
 import 'package:ags_gold/features/dashboard/domain/executive_dashboard.dart';
 import 'package:ags_gold/features/dashboard/presentation/providers/executive_dashboard_provider.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/features/user_dashboard/domain/personal_dashboard.dart';
 import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
@@ -36,7 +35,7 @@ class FixedPersonalDashboardNotifier extends PersonalDashboardNotifier {
 
 final dashboardTestProfile = UserProfile(
   id: '11111111-1111-1111-1111-111111111111',
-  email: 'test@agsgold.com',
+  mobileNumber: '9876543210',
   firstName: 'Test',
   lastName: 'User',
   isActive: true,
@@ -57,7 +56,7 @@ ExecutiveDashboard dashboardTestExecutive({String role = 'admin'}) {
 PersonalDashboard dashboardTestPersonal() {
   return PersonalDashboard(
     displayName: 'Test User',
-    email: 'test@agsgold.com',
+    mobileNumber: '9876543210',
     roles: const ['user'],
     unreadNotifications: 0,
     refreshedAt: DateTime.utc(2026, 6, 8, 10),
@@ -99,9 +98,6 @@ final authDashboardTestOverrides = [
   executiveDashboardProvider.overrideWith(
     (ref) => Stream.value(dashboardTestExecutive()),
   ),
-  unreadNotificationsCountProvider.overrideWithValue(
-    const AsyncValue.data(0),
-  ),
 ];
 
 /// Overrides for auth flows that land on the end-user personal dashboard.
@@ -115,8 +111,5 @@ final userDashboardTestOverrides = [
   ),
   metalPricesProvider.overrideWith(
     (ref) => Stream.value(dashboardTestMetalPrices()),
-  ),
-  unreadNotificationsCountProvider.overrideWithValue(
-    const AsyncValue.data(0),
   ),
 ];

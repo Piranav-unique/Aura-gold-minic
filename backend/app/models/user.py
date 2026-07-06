@@ -68,6 +68,10 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
         Numeric(18, 2), default=Decimal("0"), nullable=False
     )
     razorpay_contact_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    registered_device_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    has_completed_mobile_login: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
 
     # Relationships
     roles: Mapped[List["Role"]] = relationship(
@@ -86,5 +90,13 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
             "mobile_number",
             unique=True,
             postgresql_where="is_deleted = false AND mobile_number IS NOT NULL",
+        ),
+        Index(
+            "ix_users_registered_device_active",
+            "registered_device_id",
+            unique=True,
+            postgresql_where=(
+                "is_deleted = false AND registered_device_id IS NOT NULL"
+            ),
         ),
     )

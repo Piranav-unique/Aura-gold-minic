@@ -30,6 +30,22 @@ class CreatePaymentOrderResponse(BaseModel):
   user_name: str
 
 
+class SyncPaymentRequest(BaseModel):
+  razorpay_order_id: str
+
+
+class SyncPaymentResponse(BaseModel):
+  status: str
+  message: str
+  metal: Optional[str] = None
+  grams_purchased: Optional[Decimal] = None
+  amount_inr: Optional[Decimal] = None
+  gold_savings_grams: Optional[Decimal] = None
+  silver_savings_grams: Optional[Decimal] = None
+  gold_invested_inr: Optional[Decimal] = None
+  silver_invested_inr: Optional[Decimal] = None
+
+
 class VerifyPaymentRequest(BaseModel):
   razorpay_order_id: str
   razorpay_payment_id: str

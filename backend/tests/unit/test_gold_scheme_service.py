@@ -121,6 +121,26 @@ def test_can_sell_when_user_has_gold_holdings():
     assert GoldSchemeService.can_sell_gold(not_selected) is False
 
 
+def test_can_submit_sell_inquiry_while_scheme_active():
+    with_gold_active = _user(
+        gold_scheme_status="active",
+        gold_scheme_target_grams=Decimal("10"),
+        gold_savings_grams=Decimal("4.85"),
+    )
+    completed = _user(
+        gold_scheme_status="completed",
+        gold_scheme_target_grams=Decimal("10"),
+        gold_savings_grams=Decimal("10"),
+    )
+    not_selected = _user(
+        gold_scheme_status="not_selected",
+        gold_savings_grams=Decimal("1"),
+    )
+    assert GoldSchemeService.can_submit_sell_inquiry(with_gold_active) is True
+    assert GoldSchemeService.can_submit_sell_inquiry(completed) is True
+    assert GoldSchemeService.can_submit_sell_inquiry(not_selected) is False
+
+
 def test_can_sell_requires_gold_holdings():
     completed_no_gold = _user(
         gold_scheme_status="completed",

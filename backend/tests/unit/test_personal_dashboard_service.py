@@ -27,6 +27,7 @@ def _user() -> User:
     return User(
         id=uuid.uuid4(),
         email="user@agsgold.com",
+        mobile_number="9876543210",
         first_name="Gold",
         last_name="User",
         is_active=True,
@@ -118,7 +119,7 @@ async def test_personal_dashboard_aggregates_user_data(personal_service):
     result = await personal_service.get_dashboard(user)
 
     assert result.display_name == "Gold User"
-    assert result.email == "user@agsgold.com"
+    assert result.mobile_number == "9876543210"
     assert result.roles == ["employee"]
     assert result.unread_notifications == 2
     assert result.login_statistics.week == 5

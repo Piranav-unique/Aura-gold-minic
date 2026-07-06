@@ -73,6 +73,27 @@ class RazorpayClient:
             raise ValidationException(message)
         return data
 
+    async def fetch_order_payments(self, order_id: str) -> list[dict[str, Any]]:
+        """Return Razorpay payments linked to an order (captured = paid)."""
+        if not self.is_configured:
+            return []
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.BASE_URL}/orders/{order_id}/payments",
+                auth=(self.key_id, self.key_secret),
+            )
+        data = response.json() if response.content else {}
+        if response.status_code >= 400:
+            logger.error(
+                "razorpay_fetch_order_payments_failed",
+                status=response.status_code,
+                body=data,
+                extra={"order_id": order_id},
+            )
+            return []
+        items = data.get("items")
+        return items if isinstance(items, list) else []
+
     def verify_payment_signature(
         self,
         *,

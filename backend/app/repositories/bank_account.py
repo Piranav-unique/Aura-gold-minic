@@ -21,6 +21,16 @@ class UserBankAccountRepository(BaseRepository[UserBankAccount]):
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def get_for_user(
+        self, user_id: UUID, account_id: UUID
+    ) -> UserBankAccount | None:
+        query = select(UserBankAccount).where(
+            UserBankAccount.user_id == user_id,
+            UserBankAccount.id == account_id,
+        )
+        result = await self.db.execute(query)
+        return result.scalars().first()
+
 
 class BankLinkChallengeRepository(BaseRepository[BankLinkChallenge]):
     def __init__(self, db_session: AsyncSession):

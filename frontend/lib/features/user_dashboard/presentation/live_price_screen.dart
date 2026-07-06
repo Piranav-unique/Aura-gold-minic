@@ -66,13 +66,6 @@ class _LivePriceScreenState extends ConsumerState<LivePriceScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(l10n.livePriceTitle),
-        actions: [
-          TextButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_active_outlined, size: 18),
-            label: Text(l10n.setAlert),
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

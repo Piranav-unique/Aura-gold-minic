@@ -31,7 +31,13 @@ class SellRazorpayXPayoutService:
         self.user_repo = user_repo
         self.inquiry_repo = inquiry_repo
 
-    async def _primary_bank(self, user_id: uuid.UUID) -> UserBankAccount:
+    async def _resolve_payout_bank(
+        self, user_id: uuid.UUID, bank_account_id: uuid.UUID | None
+    ) -> UserBankAccount:
+        if bank_account_id:
+            bank = await self.bank_repo.get_for_user(user_id, bank_account_id)
+            if bank:
+                return bank
         accounts = await self.bank_repo.list_for_user(user_id)
         if not accounts:
             raise ValidationException(
@@ -106,7 +112,7 @@ class SellRazorpayXPayoutService:
         user: User,
         net_payable_inr: Decimal,
     ) -> dict:
-        bank = await self._primary_bank(user.id)
+        bank = await self._resolve_payout_bank(user.id, inquiry.bank_account_id)
         contact_id = await self._ensure_contact(user)
         fund_account_id = await self._ensure_fund_account(user, bank, contact_id)
 

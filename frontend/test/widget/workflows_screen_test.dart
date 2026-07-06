@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/features/workflows/domain/workflow.dart';
 import 'package:ags_gold/features/workflows/presentation/providers/workflows_provider.dart';
@@ -13,7 +12,7 @@ import '../mocks/mock_services.dart';
 UserProfile _profileWithPermissions(List<String> permissions) {
   return UserProfile(
     id: 'user-1',
-    email: 'user@test.com',
+    mobileNumber: '9876543210',
     isActive: true,
     isSuperuser: false,
     roles: [
@@ -88,10 +87,7 @@ void main() {
                 limit: 25,
               ),
             ),
-          ),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          )
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

@@ -8,7 +8,7 @@ from app.models.payment_order import PaymentOrder
 from app.models.user import User
 from app.repositories.payment_order import PaymentOrderRepository
 from app.repositories.user import UserRepository
-from app.schemas.payment import CreatePaymentOrderResponse, VerifyPaymentResponse
+from app.schemas.payment import CreatePaymentOrderResponse, SyncPaymentResponse, VerifyPaymentResponse
 from app.services.metal_prices import MetalPriceService
 from app.services.gold_scheme import GoldSchemeService
 from app.services.payment_settlement import (
@@ -165,6 +165,79 @@ class GoldPaymentService:
             await self.user_repo.db.commit()
             raise ValidationException("Payment verification failed.")
 
+        return await self._mark_order_paid(user, order, razorpay_payment_id)
+
+    async def sync_payment(
+        self,
+        user: User,
+        *,
+        razorpay_order_id: str,
+    ) -> SyncPaymentResponse:
+        """Recover payments when the mobile SDK callback is lost after UPI redirect."""
+        order = await self.payment_repo.get_by_razorpay_order_id(razorpay_order_id)
+        if not order or order.user_id != user.id:
+            raise ValidationException("Payment order not found.")
+        if order.status == "paid":
+            fresh_user = await self.user_repo.get(user.id)
+            if fresh_user:
+                user = fresh_user
+            clear_personal_dashboard_cache(str(user.id))
+            return self._build_sync_response(user, order, status="paid")
+
+        if order.status == "failed":
+            return SyncPaymentResponse(
+                status="failed",
+                message="Payment failed. Please start a new purchase.",
+            )
+
+        if RazorpayClient.is_dev_mock_order(razorpay_order_id):
+            return SyncPaymentResponse(
+                status="pending",
+                message="Payment not completed yet.",
+            )
+
+        payments = await self.razorpay.fetch_order_payments(razorpay_order_id)
+        captured = next(
+            (
+                payment
+                for payment in payments
+                if str(payment.get("status", "")).lower() == "captured"
+            ),
+            None,
+        )
+        if not captured:
+            return SyncPaymentResponse(
+                status="pending",
+                message="Payment not completed yet.",
+            )
+
+        payment_id = str(captured.get("id") or "").strip()
+        if not payment_id:
+            return SyncPaymentResponse(
+                status="pending",
+                message="Payment not completed yet.",
+            )
+
+        verify_response = await self._mark_order_paid(user, order, payment_id)
+        return self._build_sync_response(
+            user,
+            order,
+            status="paid",
+            message=verify_response.message,
+        )
+
+    async def _mark_order_paid(
+        self,
+        user: User,
+        order: PaymentOrder,
+        razorpay_payment_id: str,
+    ) -> VerifyPaymentResponse:
+        if order.status == "paid":
+            fresh_user = await self.user_repo.get(user.id)
+            if fresh_user:
+                user = fresh_user
+            return self._build_verify_response(user, order)
+
         if self.digital_inventory_service:
             await self.digital_inventory_service.consume_for_paid_order(
                 metal=order.metal,
@@ -211,6 +284,26 @@ class GoldPaymentService:
             gold_invested_inr=Decimal(str(user.gold_invested_inr or 0)),
             silver_invested_inr=Decimal(str(user.silver_invested_inr or 0)),
             message="Payment successful. Your metal balance has been updated.",
+        )
+
+    def _build_sync_response(
+        self,
+        user: User,
+        order: PaymentOrder,
+        *,
+        status: str,
+        message: str | None = None,
+    ) -> SyncPaymentResponse:
+        return SyncPaymentResponse(
+            status=status,
+            message=message or "Payment successful. Your metal balance has been updated.",
+            metal=order.metal,
+            grams_purchased=Decimal(str(order.grams)),
+            amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+            gold_savings_grams=Decimal(str(user.gold_savings_grams or 0)),
+            silver_savings_grams=Decimal(str(user.silver_savings_grams or 0)),
+            gold_invested_inr=Decimal(str(user.gold_invested_inr or 0)),
+            silver_invested_inr=Decimal(str(user.silver_invested_inr or 0)),
         )
 
     @staticmethod

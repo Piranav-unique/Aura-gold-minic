@@ -58,6 +58,7 @@ class UserSettingsUpdate(BaseModel):
 class ProfileResponse(BaseModel):
     id: uuid.UUID
     email: str
+    mobile_number: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool

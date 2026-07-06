@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Session flag so the KYC reminder pops up at most once per app run.
 class KycPromptShownNotifier extends Notifier<bool> {
@@ -43,6 +44,7 @@ class _KycPromptDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       icon: Container(
@@ -58,29 +60,28 @@ class _KycPromptDialog extends StatelessWidget {
           size: 30,
         ),
       ),
-      title: const Text(
-        'Verify your identity',
+      title: Text(
+        l10n.kycDialogTitle,
         textAlign: TextAlign.center,
-        style: TextStyle(fontWeight: FontWeight.w800),
+        style: const TextStyle(fontWeight: FontWeight.w800),
       ),
-      content: const Text(
-        'Complete your KYC to unlock buying and selling gold & silver. '
-        'It only takes a couple of minutes.',
+      content: Text(
+        l10n.kycDialogMessage,
         textAlign: TextAlign.center,
-        style: TextStyle(height: 1.4),
+        style: const TextStyle(height: 1.4),
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Later'),
+          child: Text(l10n.later),
         ),
         FilledButton(
           onPressed: () {
             Navigator.of(context).pop();
             context.push('/kyc');
           },
-          child: const Text('Verify now'),
+          child: Text(l10n.verifyNow),
         ),
       ],
     );

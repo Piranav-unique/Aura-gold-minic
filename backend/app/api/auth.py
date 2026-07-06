@@ -11,11 +11,13 @@ from app.core.security import create_access_token, create_refresh_token
 from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
+    LoginOtpSendRequest,
     MobileLoginRequest,
     RefreshRequest,
     RegisterRequest,
     SignupOtpSendRequest,
     SignupOtpVerifyRequest,
+    TrustedMobileLoginRequest,
     Token,
     UserResponse,
 )
@@ -59,17 +61,56 @@ async def login(
 
 
 @router.post(
+    "/login/otp/send",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Send login OTP to a registered mobile number",
+)
+async def send_login_otp(
+    payload: LoginOtpSendRequest,
+    otp_service: SignupOtpService = Depends(get_signup_otp_service),
+) -> MessageResponse:
+    await otp_service.send_login_otp(
+        payload.mobile_number, payload.device_id
+    )
+    return MessageResponse(message="OTP sent to your mobile number.")
+
+
+@router.post(
     "/login/mobile",
     response_model=Token,
     status_code=status.HTTP_200_OK,
-    summary="End-user login with registered mobile number",
+    summary="End-user login with mobile OTP",
 )
 async def login_with_mobile(
     payload: MobileLoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
+    otp_service: SignupOtpService = Depends(get_signup_otp_service),
 ) -> Token:
-    user = await auth_service.authenticate_user_by_mobile(payload.mobile_number)
-    return await auth_service.issue_tokens_for_user(user, login_method="mobile")
+    await otp_service.consume_login_otp(payload.mobile_number, payload.otp)
+    user = await auth_service.authenticate_user_by_mobile(
+        payload.mobile_number, payload.device_id
+    )
+    await auth_service.complete_mobile_login(user)
+    return await auth_service.issue_tokens_for_user(user, login_method="mobile_otp")
+
+
+@router.post(
+    "/login/mobile/trusted",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+    summary="First end-user sign-in on registration device (no OTP)",
+)
+async def login_with_trusted_mobile(
+    payload: TrustedMobileLoginRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> Token:
+    user = await auth_service.authenticate_trusted_first_mobile_login(
+        payload.mobile_number, payload.device_id
+    )
+    return await auth_service.issue_tokens_for_user(
+        user, login_method="mobile_trusted"
+    )
 
 
 @router.post(
@@ -122,6 +163,7 @@ async def register(
         name=register_data.name,
         referral_code=register_data.referral_code,
         referral_scheme_grams=register_data.referral_scheme_grams,
+        device_id=register_data.device_id,
     )
 
 

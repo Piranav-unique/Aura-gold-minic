@@ -7,7 +7,6 @@ import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
 import 'package:ags_gold/features/user_dashboard/domain/personal_dashboard.dart';
 import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/user_dashboard_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/kyc_prompt_dialog.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
@@ -19,7 +18,7 @@ import '../test_helpers/auth_dashboard_overrides.dart';
 
 final _userProfile = UserProfile(
   id: '22222222-2222-2222-2222-222222222222',
-  email: 'user@agsgold.com',
+  mobileNumber: '9876543210',
   firstName: 'Gold',
   lastName: 'User',
   isActive: true,
@@ -36,7 +35,7 @@ class _ShownKycPromptNotifier extends KycPromptShownNotifier {
 PersonalDashboard _mockPersonal({KycStatus kycStatus = KycStatus.notStarted}) {
   return PersonalDashboard(
     displayName: 'Gold User',
-    email: 'user@agsgold.com',
+    mobileNumber: '9876543210',
     roles: const ['employee'],
     unreadNotifications: 3,
     refreshedAt: DateTime.utc(2026, 6, 8, 10),
@@ -79,10 +78,7 @@ Future<void> _pumpDashboard(
         ),
         metalPricesProvider.overrideWith(
           (ref) => Stream.value(dashboardTestMetalPrices()),
-        ),
-        unreadNotificationsCountProvider.overrideWithValue(
-          const AsyncValue.data(3),
-        ),
+        )
         if (!showKycPopup)
           kycPromptShownProvider.overrideWith(_ShownKycPromptNotifier.new),
       ],
@@ -130,9 +126,7 @@ void main() {
     expect(find.text('Buy Gold'), findsOneWidget);
     expect(find.text('Sell Gold'), findsOneWidget);
     expect(find.text('KYC required'), findsNothing);
-    expect(find.text('Account'), findsOneWidget);
-    expect(find.text('My Profile'), findsOneWidget);
-    expect(find.text('Identity verified'), findsOneWidget);
+    expect(find.text('Complete KYC'), findsNothing);
     expect(find.text('Complete KYC to trade'), findsNothing);
     // Verified users never see the KYC popup.
     expect(find.text('Verify your identity'), findsNothing);

@@ -140,6 +140,71 @@ async def test_verify_payment_reduces_inventory(test_db: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_sync_payment_marks_captured_razorpay_payment(test_db: AsyncSession):
+    await _set_gold_available(test_db, Decimal("10"))
+    user = await _buy_ready_user(test_db)
+    service = _build_payment_service(test_db)
+
+    order = await service.create_buy_order(user, metal="gold", grams=Decimal("1"))
+
+    live_order_id = f"order_live_{uuid.uuid4().hex[:24]}"
+    payment_order = await test_db.execute(
+        select(PaymentOrder).where(PaymentOrder.razorpay_order_id == order.order_id)
+    )
+    po = payment_order.scalars().first()
+    assert po is not None
+    po.razorpay_order_id = live_order_id
+    await test_db.flush()
+
+    razorpay = service.razorpay
+    razorpay.use_dev_mock = False
+    razorpay.is_configured = True
+    razorpay.fetch_order_payments = AsyncMock(
+        return_value=[{"id": "pay_live_1", "status": "captured"}]
+    )
+
+    result = await service.sync_payment(user, razorpay_order_id=live_order_id)
+
+    assert result.status == "paid"
+    assert result.grams_purchased == Decimal("1")
+
+    payment_order = await test_db.execute(
+        select(PaymentOrder).where(PaymentOrder.razorpay_order_id == live_order_id)
+    )
+    po = payment_order.scalars().first()
+    assert po is not None
+    assert po.status == "paid"
+    assert po.razorpay_payment_id == "pay_live_1"
+
+
+@pytest.mark.asyncio
+async def test_sync_payment_returns_pending_without_capture(test_db: AsyncSession):
+    await _set_gold_available(test_db, Decimal("10"))
+    user = await _buy_ready_user(test_db)
+    service = _build_payment_service(test_db)
+
+    order = await service.create_buy_order(user, metal="gold", grams=Decimal("1"))
+
+    live_order_id = f"order_live_{uuid.uuid4().hex[:24]}"
+    payment_order = await test_db.execute(
+        select(PaymentOrder).where(PaymentOrder.razorpay_order_id == order.order_id)
+    )
+    po = payment_order.scalars().first()
+    assert po is not None
+    po.razorpay_order_id = live_order_id
+    await test_db.flush()
+
+    razorpay = service.razorpay
+    razorpay.use_dev_mock = False
+    razorpay.is_configured = True
+    razorpay.fetch_order_payments = AsyncMock(return_value=[])
+
+    result = await service.sync_payment(user, razorpay_order_id=live_order_id)
+
+    assert result.status == "pending"
+
+
+@pytest.mark.asyncio
 async def test_failed_verify_does_not_reduce_inventory(test_db: AsyncSession):
     await _set_gold_available(test_db, Decimal("10"))
     user = await _buy_ready_user(test_db)

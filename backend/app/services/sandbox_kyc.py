@@ -188,6 +188,11 @@ class SandboxKycClient:
 
         body = self._parse_json(response)
         if response.status_code >= 400:
+            logger.error(
+                "sandbox_auth_failed",
+                status_code=response.status_code,
+                message=body.get("message"),
+            )
             raise ValidationException("KYC provider authentication failed.")
 
         token = (
@@ -196,6 +201,11 @@ class SandboxKycClient:
             else None
         )
         if not token:
+            logger.error(
+                "sandbox_auth_missing_token",
+                status_code=response.status_code,
+                message=body.get("message"),
+            )
             raise ValidationException("KYC provider authentication failed.")
 
         _token_cache = (now, token)

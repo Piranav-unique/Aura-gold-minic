@@ -26,7 +26,7 @@ services:
     container_name: ags-gold-api
     restart: always
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - ENVIRONMENT=development
       - POSTGRES_SERVER=db

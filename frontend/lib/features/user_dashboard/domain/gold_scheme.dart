@@ -24,6 +24,7 @@ class GoldScheme {
   final double savedGrams;
   final double progressPercent;
   final bool canSell;
+  final bool canSellInquiry;
   final String? sellLockedReason;
   final DateTime? startedAt;
 
@@ -33,6 +34,7 @@ class GoldScheme {
     this.savedGrams = 0,
     this.progressPercent = 0,
     this.canSell = false,
+    this.canSellInquiry = false,
     this.sellLockedReason,
     this.startedAt,
   });
@@ -44,6 +46,7 @@ class GoldScheme {
       savedGrams: _parseDecimal(json['saved_grams']),
       progressPercent: _parseDecimal(json['progress_percent']),
       canSell: json['can_sell'] as bool? ?? false,
+      canSellInquiry: json['can_sell_inquiry'] as bool? ?? false,
       sellLockedReason: json['sell_locked_reason'] as String?,
       startedAt: json['started_at'] != null
           ? DateTime.tryParse(json['started_at'] as String)

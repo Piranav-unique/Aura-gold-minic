@@ -7,6 +7,8 @@ from app.schemas.payment import (
   CreatePaymentOrderRequest,
   CreatePaymentOrderResponse,
   PaymentSettlementListResponse,
+  SyncPaymentRequest,
+  SyncPaymentResponse,
   VerifyPaymentRequest,
   VerifyPaymentResponse,
 )
@@ -31,6 +33,23 @@ async def create_razorpay_order(
     metal=body.metal,
     grams=body.grams,
     amount_inr=body.amount_inr,
+  )
+
+
+@router.post(
+  "/razorpay/sync",
+  response_model=SyncPaymentResponse,
+  status_code=status.HTTP_200_OK,
+  summary="Sync Razorpay payment after UPI redirect when the SDK callback is missed",
+)
+async def sync_razorpay_payment(
+  body: SyncPaymentRequest,
+  current_user: User = Depends(get_current_user),
+  payment_service: GoldPaymentService = Depends(get_gold_payment_service),
+) -> SyncPaymentResponse:
+  return await payment_service.sync_payment(
+    current_user,
+    razorpay_order_id=body.razorpay_order_id,
   )
 
 

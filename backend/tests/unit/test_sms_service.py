@@ -37,3 +37,21 @@ def test_ensure_msg91_raises_on_duplicate_otp():
             {"type": "error", "message": "311"}
         )
     assert "duplicate" in str(exc.value).lower() or "10 seconds" in str(exc.value).lower()
+
+
+def test_build_bank_link_otp_message_matches_dlt_template():
+    service = SmsService()
+    message = service.build_bank_link_otp_message("789455")
+    assert message == (
+        "Your OTP 789455 confirms bank account linking on AURUM GOLD & SILVERS. "
+        "Do not share it with anyone."
+    )
+
+
+def test_bank_sms_channels_use_flow_not_otp_api(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.sms.settings.MSG91_BANK_SMS_CHANNELS",
+        "flow,sendhttp",
+    )
+    service = SmsService()
+    assert service._bank_sms_channels() == ["flow", "sendhttp"]

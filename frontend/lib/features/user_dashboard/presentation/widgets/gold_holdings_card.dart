@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:ags_gold/core/logging/app_event_log.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
@@ -78,10 +77,17 @@ class _GoldHoldingsCardState extends ConsumerState<GoldHoldingsCard> {
     final l10n = context.l10n;
     final scheme = widget.goldScheme;
     final canSell = scheme?.canSell ?? false;
-    if (!canSell) {
-      final message = (scheme?.savedGrams ?? 0) <= 0
+    final canSellInquiry = canSubmitGoldSellInquiry(
+      kycStatus: widget.kycStatus,
+      goldGrams: widget.goldGrams,
+      scheme: scheme,
+    );
+    if (!canSell && !canSellInquiry) {
+      final message = widget.goldGrams <= 0
           ? l10n.sellBuyGoldFirst
-          : (scheme?.sellLockedReason ?? l10n.goldSchemeSellLocked);
+          : (scheme == null || scheme.status.isNotSelected)
+              ? l10n.goldSchemeSelectBeforeBuy
+              : l10n.goldSchemeSellLocked;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
@@ -109,9 +115,13 @@ class _GoldHoldingsCardState extends ConsumerState<GoldHoldingsCard> {
     setState(() => _joining = true);
     AppEventLog.action('scheme_join', data: {'grams': grams});
     try {
-      await ref.read(selectGoldSchemeProvider)(grams);
+      final updated = await ref.read(selectGoldSchemeProvider)(grams);
       ref.read(pendingGoldSchemeGramsProvider.notifier).state = null;
       if (!mounted) return;
+      if (updated.status.isCompleted) {
+        await handleSchemeJustCompleted(context, ref, updated);
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.goldSchemeSelected(grams))),
       );
@@ -302,8 +312,9 @@ class _GoldHoldingsCardState extends ConsumerState<GoldHoldingsCard> {
 
   Widget _buildCompact(BuildContext context, GoldScheme scheme) {
     final l10n = context.l10n;
-    final higherTiers = goldSchemeHigherTiers(scheme);
     final isCompleted = scheme.status.isCompleted;
+    final upgradeTiers =
+        isCompleted ? goldSchemeUpgradeOptions(scheme) : const <int>[];
     final target = scheme.targetGrams ?? 0;
     final progress = (scheme.progressPercent / 100).clamp(0.0, 1.0);
 
@@ -359,14 +370,14 @@ class _GoldHoldingsCardState extends ConsumerState<GoldHoldingsCard> {
                 ],
               ),
             ),
-            if (higherTiers.isNotEmpty)
+            if (upgradeTiers.isNotEmpty)
               _ChangePlanButton(
                 onTap: () {
                   if (!_kycReady) {
                     _promptKyc(isBuy: true);
                     return;
                   }
-                  _showChangePlanSheet(higherTiers);
+                  _showChangePlanSheet(upgradeTiers);
                 },
               ),
           ],
@@ -412,13 +423,6 @@ class _HoldingsHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final currency = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 2,
-    );
-    final investedText =
-        l10n.goldInvestedAmount(currency.format(goldInvestedInr));
     final hasLiveRate = liveRate > 0 && goldGrams > 0;
     final displayGrams = hasLiveRate
         ? MarketLinkedHoldings.marketLinkedGrams(
@@ -428,15 +432,6 @@ class _HoldingsHero extends StatelessWidget {
           )
         : goldGrams;
     final gramsText = '${displayGrams.toStringAsFixed(4)} g';
-    final currentValue = hasLiveRate
-        ? MarketLinkedHoldings.currentValueInr(
-            storedGrams: goldGrams,
-            liveRatePerGram: liveRate,
-          )
-        : 0.0;
-    final gainInr = hasLiveRate ? currentValue - goldInvestedInr : 0.0;
-    final gainPct =
-        goldInvestedInr > 0 ? (gainInr / goldInvestedInr) * 100 : 0.0;
 
     final bool schemeJoined = scheme != null &&
         (scheme!.status.isActive || scheme!.status.isCompleted);
@@ -452,13 +447,15 @@ class _HoldingsHero extends StatelessWidget {
     }
 
     const Color onGold = Color(0xFF20180A);
-    final Color gainColor = gainInr >= 0
-        ? const Color(0xFF1E5B34)
-        : const Color(0xFF7A2018);
 
     final bool buyLocked = !kycStatus.isComplete || !schemeJoined;
-    final bool sellLocked =
-        !kycStatus.isComplete || !(scheme?.canSell ?? false);
+    final bool canSellInquiry = canSubmitGoldSellInquiry(
+      kycStatus: kycStatus,
+      goldGrams: goldGrams,
+      scheme: scheme,
+    );
+    final bool canSellAction = (scheme?.canSell ?? false) || canSellInquiry;
+    final bool sellLocked = !kycStatus.isComplete || !canSellAction;
 
     return GoldGradientCard(
       padding: const EdgeInsets.all(18),
@@ -513,35 +510,6 @@ class _HoldingsHero extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-          if (hasLiveRate) ...[
-            const SizedBox(height: 4),
-            Text(
-              l10n.goldCurrentValue(currency.format(currentValue)),
-              style: const TextStyle(
-                color: onGold,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-          if (goldInvestedInr > 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              investedText,
-              style: const TextStyle(color: AppTheme.onGoldMuted, fontSize: 14),
-            ),
-            if (hasLiveRate) ...[
-              const SizedBox(height: 4),
-              Text(
-                '${gainInr >= 0 ? '+' : ''}${currency.format(gainInr)} (${gainPct >= 0 ? '+' : ''}${gainPct.toStringAsFixed(2)}%)',
-                style: TextStyle(
-                  color: gainColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ],
           const SizedBox(height: 20),
           Row(
             children: [

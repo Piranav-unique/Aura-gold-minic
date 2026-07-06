@@ -1,3 +1,4 @@
+import 'package:ags_gold/core/utils/mobile_format.dart';
 import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';
 import 'package:ags_gold/features/dashboard/domain/executive_dashboard.dart';
 import 'package:ags_gold/features/notifications/domain/notification.dart';
@@ -6,7 +7,7 @@ import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 
 class PersonalDashboard {
   final String displayName;
-  final String email;
+  final String? mobileNumber;
   final List<String> roles;
   final int unreadNotifications;
   final DateTime refreshedAt;
@@ -28,7 +29,7 @@ class PersonalDashboard {
 
   const PersonalDashboard({
     required this.displayName,
-    required this.email,
+    this.mobileNumber,
     required this.roles,
     required this.unreadNotifications,
     required this.refreshedAt,
@@ -52,7 +53,7 @@ class PersonalDashboard {
   factory PersonalDashboard.fromJson(Map<String, dynamic> json) {
     return PersonalDashboard(
       displayName: json['display_name'] as String? ?? '',
-      email: json['email'] as String? ?? '',
+      mobileNumber: json['mobile_number'] as String?,
       roles: (json['roles'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
@@ -92,6 +93,8 @@ class PersonalDashboard {
       ),
     );
   }
+
+  String get displayContactLine => formatDisplayMobile(mobileNumber);
 
   String get primaryRoleLabel {
     if (roles.isEmpty) return 'User';

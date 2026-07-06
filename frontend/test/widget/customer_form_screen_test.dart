@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/features/customers/presentation/customer_form_screen.dart';
-import 'package:ags_gold/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -31,10 +30,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          apiClientProvider.overrideWithValue(MockApiClient()),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
-          ),
+          apiClientProvider.overrideWithValue(MockApiClient())
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

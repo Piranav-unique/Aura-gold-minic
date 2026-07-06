@@ -83,7 +83,14 @@ async def test_send_aadhaar_otp_returns_reference(kyc_service, user_repo, sandbo
 
 
 @pytest.mark.asyncio
-async def test_verify_aadhaar_otp_stores_profile(kyc_service, user_repo, sandbox):
+async def test_verify_aadhaar_otp_stores_profile(kyc_service, user_repo, sandbox, monkeypatch):
+    cleared: list[str] = []
+
+    monkeypatch.setattr(
+        "app.services.kyc.clear_personal_dashboard_cache",
+        lambda user_id=None: cleared.append(user_id) if user_id else None,
+    )
+
     user = _user()
     user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
 
@@ -98,6 +105,7 @@ async def test_verify_aadhaar_otp_stores_profile(kyc_service, user_repo, sandbox
     assert result.profile.aadhaar_linked_mobile_masked == "XXXXXX3210"
     assert decrypt_aadhaar(user.kyc_aadhaar_encrypted) == "123456789012"
     user_repo.db.commit.assert_awaited()
+    assert cleared == [str(user.id)]
 
 
 @pytest.mark.asyncio
@@ -196,7 +204,18 @@ async def test_verify_aadhaar_otp_valid_without_mobile_hash(kyc_service, user_re
 
 
 @pytest.mark.asyncio
-async def test_verify_pan_link_marks_verified(kyc_service, user_repo, sandbox):
+async def test_verify_pan_link_marks_verified(kyc_service, user_repo, sandbox, monkeypatch):
+    cleared: list[str] = []
+
+    def _clear(user_id: str | None = None) -> None:
+        if user_id is not None:
+            cleared.append(user_id)
+
+    monkeypatch.setattr(
+        "app.services.kyc.clear_personal_dashboard_cache",
+        _clear,
+    )
+
     user = _user("aadhaar_verified")
     user.kyc_aadhaar_encrypted = encrypt_aadhaar("123456789012")
     user.kyc_aadhaar_last4 = "9012"
@@ -214,6 +233,7 @@ async def test_verify_pan_link_marks_verified(kyc_service, user_repo, sandbox):
     assert result.profile.pan_number_masked == "XXXXXX234F"
     assert user.kyc_aadhaar_encrypted is None
     sandbox.verify_pan_details.assert_awaited_once()
+    assert cleared == [str(user.id)]
 
 
 @pytest.mark.asyncio
