@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ags_gold/config/env_config.dart';
+import 'package:ags_gold/features/auth/domain/app_audience.dart';
+import 'package:ags_gold/features/auth/domain/app_audience_resolver.dart';
 import 'package:ags_gold/features/auth/domain/device_auth_storage.dart';
+import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/services/interfaces/secure_storage.dart';
 import 'package:ags_gold/services/secure_storage_service.dart';
 import 'package:ags_gold/services/api_client.dart';
@@ -16,11 +19,37 @@ enum AuthStatus { initial, authenticated, unauthenticated }
 class AuthNotifier extends AsyncNotifier<AuthStatus> {
   late final ISecureStorage _storage;
 
+  Future<void> _syncAudienceAfterAuth({String? mobileHint}) async {
+    final env = ref.read(envConfigProvider);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.get('/profile/');
+      final profile = UserProfile.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+      final audience = resolveAppAudience(
+        profile: profile,
+        adminMobile: env.adminNumber,
+        mobileHint: mobileHint ?? profile.mobileNumber,
+      );
+      await ref.read(appAudienceProvider.notifier).setAudience(audience);
+    } catch (_) {
+      if (mobileHint == null) return;
+      final audience =
+          normalizeIndianMobile(mobileHint) ==
+              normalizeIndianMobile(env.adminNumber)
+          ? AppAudience.staffAdmin
+          : AppAudience.endUser;
+      await ref.read(appAudienceProvider.notifier).setAudience(audience);
+    }
+  }
+
   @override
   FutureOr<AuthStatus> build() async {
     _storage = ref.watch(secureStorageProvider);
     final hasToken = await _storage.hasAccessToken();
     if (!hasToken) {
+      await ref.read(appAudienceProvider.notifier).clearAudience();
       return AuthStatus.unauthenticated;
     }
 
@@ -28,9 +57,11 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.get('/auth/me');
+      await _syncAudienceAfterAuth();
       return AuthStatus.authenticated;
     } catch (_) {
       await _storage.clearTokens();
+      await ref.read(appAudienceProvider.notifier).clearAudience();
       return AuthStatus.unauthenticated;
     }
   }
@@ -56,6 +87,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         accessToken: responseData['access_token'] as String,
         refreshToken: responseData['refresh_token'] as String,
       );
+      await _syncAudienceAfterAuth(mobileHint: mobileNumber);
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -104,6 +136,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         refreshToken: responseData['refresh_token'] as String,
       );
       await deviceAuth.clearPendingTrustedFirstLogin();
+      await _syncAudienceAfterAuth(mobileHint: mobileNumber);
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -131,6 +164,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         accessToken: responseData['access_token'] as String,
         refreshToken: responseData['refresh_token'] as String,
       );
+      await _syncAudienceAfterAuth(mobileHint: mobileNumber);
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -194,6 +228,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         } catch (_) {}
       }
       await _storage.clearTokens();
+      await ref.read(appAudienceProvider.notifier).clearAudience();
       state = const AsyncValue.data(AuthStatus.unauthenticated);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -202,6 +237,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
 
   Future<void> clearSession() async {
     await _storage.clearTokens();
+    await ref.read(appAudienceProvider.notifier).clearAudience();
     state = const AsyncValue.data(AuthStatus.unauthenticated);
   }
 }

@@ -4,6 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.exceptions import ValidationException
+from app.utils.mobile import normalize_mobile
+
 _IFSC_PATTERN = r"^[A-Z]{4}0[A-Z0-9]{6}$"
 
 
@@ -28,6 +31,12 @@ class BankLinkInitiateRequest(BaseModel):
     bank_name: str = Field(..., min_length=2, max_length=200)
     branch_name: str = Field(..., min_length=2, max_length=200)
     account_type: str = Field(default="savings", pattern=r"^(savings|current)$")
+    bank_registered_mobile: str = Field(
+        ...,
+        min_length=10,
+        max_length=15,
+        description="10-digit mobile number registered with the bank account",
+    )
 
     @field_validator("account_holder_name", "bank_name", "branch_name")
     @classmethod
@@ -51,6 +60,14 @@ class BankLinkInitiateRequest(BaseModel):
         if not re.fullmatch(_IFSC_PATTERN, code):
             raise ValueError("Enter a valid IFSC code.")
         return code
+
+    @field_validator("bank_registered_mobile")
+    @classmethod
+    def validate_bank_registered_mobile(cls, value: str) -> str:
+        try:
+            return normalize_mobile(value)
+        except ValidationException as exc:
+            raise ValueError(str(exc)) from exc
 
 
 class BankLinkVerifyRequest(BaseModel):

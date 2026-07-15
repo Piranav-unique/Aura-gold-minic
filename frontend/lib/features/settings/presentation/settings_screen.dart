@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
+import 'package:ags_gold/features/auth/domain/app_audience.dart';
+import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/features/settings/presentation/providers/settings_provider.dart';
 import 'package:ags_gold/features/profile/presentation/profile_dialogs.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
@@ -22,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final settingsAsync = ref.watch(userSettingsProvider);
     final theme = Theme.of(context);
+    final audience = ref.watch(appAudienceProvider);
 
     return ResponsiveNavigationWrapper(
       title: l10n.settings,
@@ -96,11 +99,23 @@ class SettingsScreen extends ConsumerWidget {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.go('/profile'),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.info_outline),
-                      title: Text(l10n.accountStatus),
-                      subtitle: Text(l10n.accountStatusHint),
-                    ),
+                    if (audience == AppAudience.endUser)
+                      ListTile(
+                        leading: Icon(
+                          Icons.delete_forever_outlined,
+                          color: theme.colorScheme.error,
+                        ),
+                        title: Text(l10n.deleteAccount),
+                        subtitle: Text(l10n.accountStatusHint),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => showDeleteAccountDialog(context, ref),
+                      )
+                    else
+                      ListTile(
+                        leading: const Icon(Icons.info_outline),
+                        title: Text(l10n.accountStatus),
+                        subtitle: Text(l10n.accountStatusHint),
+                      ),
                   ],
                 ),
               ),

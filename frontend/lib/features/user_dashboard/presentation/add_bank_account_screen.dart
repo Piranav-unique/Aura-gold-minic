@@ -8,6 +8,7 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/bank_acc
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_surface_card.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/api_client.dart';
+import 'package:ags_gold/services/service_providers.dart';
 
 class AddBankAccountScreen extends ConsumerStatefulWidget {
   const AddBankAccountScreen({super.key});
@@ -20,24 +21,31 @@ class AddBankAccountScreen extends ConsumerStatefulWidget {
 class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
   final _holderController = TextEditingController();
   final _accountController = TextEditingController();
+  final _bankMobileController = TextEditingController();
+  final _ifscController = TextEditingController();
   final _otpController = TextEditingController();
 
-  String? _bankCode;
   String? _bankLabel;
-  String? _state;
-  String? _district;
   String? _branch;
   String? _ifsc;
   String _accountType = 'savings';
   bool _otpSent = false;
   bool _loading = false;
+  bool _ifscLookupLoading = false;
   String? _error;
   String? _infoMessage;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
     _holderController.dispose();
     _accountController.dispose();
+    _bankMobileController.dispose();
+    _ifscController.dispose();
     _otpController.dispose();
     super.dispose();
   }
@@ -45,17 +53,20 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
   bool get _formComplete =>
       _holderController.text.trim().isNotEmpty &&
       _accountController.text.trim().length >= 9 &&
+      _bankMobileController.text.trim().length == 10 &&
       _ifsc != null &&
-      _ifsc!.isNotEmpty &&
+      _ifsc!.length == 11 &&
       _bankLabel != null &&
-      _branch != null;
+      _bankLabel!.isNotEmpty &&
+      _branch != null &&
+      _branch!.isNotEmpty;
 
   Future<void> _sendBankOtp() async {
     final l10n = context.l10n;
     if (!_formComplete) {
       setState(() {
         _error =
-            'Fill account holder name, account number, and select bank through branch.';
+            'Fill account holder name, account number, bank registered mobile, and a valid IFSC code.';
       });
       return;
     }
@@ -70,6 +81,7 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
       final result = await ref.read(bankLinkProvider)(
         accountHolderName: _holderController.text.trim(),
         accountNumber: _accountController.text.trim(),
+        bankRegisteredMobile: _bankMobileController.text.trim(),
         ifsc: _ifsc!,
         bankName: _bankLabel!,
         branchName: _branch!,
@@ -78,9 +90,14 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
       if (!mounted) return;
       setState(() {
         _otpSent = true;
-        _infoMessage = result.mobileLast4 != null
-            ? l10n.bankLinkOtpSentToMobile(result.mobileLast4!)
-            : l10n.bankLinkOtpSent;
+        final devHint = result.devOtpHint;
+        if (devHint != null && devHint.isNotEmpty) {
+          _infoMessage = 'Dev OTP: $devHint (SMS skipped in dev mode)';
+        } else if (result.mobileLast4 != null) {
+          _infoMessage = l10n.bankLinkOtpSentToMobile(result.mobileLast4!);
+        } else {
+          _infoMessage = l10n.bankLinkOtpSent;
+        }
       });
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -125,6 +142,55 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
     }
   }
 
+  Future<void> _lookupIfsc() async {
+    final code = _ifscController.text.trim().toUpperCase();
+    if (code.length != 11) {
+      setState(() {
+        _ifsc = null;
+        _bankLabel = null;
+        _branch = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _ifscLookupLoading = true;
+      _error = null;
+    });
+
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get(
+        '/bank-accounts/ifsc/${Uri.encodeComponent(code)}',
+      );
+      final data = response.data as Map<String, dynamic>;
+      if (!mounted) return;
+      setState(() {
+        _ifsc = (data['ifsc'] as String? ?? code).toUpperCase();
+        _bankLabel = data['bank'] as String?;
+        _branch = data['branch'] as String?;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _ifsc = null;
+        _bankLabel = null;
+        _branch = null;
+        _error = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _ifsc = null;
+        _bankLabel = null;
+        _branch = null;
+        _error = context.l10n.unableToSendOtp;
+      });
+    } finally {
+      if (mounted) setState(() => _ifscLookupLoading = false);
+    }
+  }
+
   Future<void> _openPicker({
     required String title,
     required List<_PickerOption> options,
@@ -151,20 +217,6 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final banksAsync = ref.watch(ifscBanksProvider);
-    final statesAsync =
-        _bankCode == null ? null : ref.watch(ifscStatesProvider(_bankCode!));
-    final districtsAsync = (_bankCode == null || _state == null)
-        ? null
-        : ref.watch(ifscDistrictsProvider((bank: _bankCode!, state: _state!)));
-    final branchesAsync =
-        (_bankCode == null || _state == null || _district == null)
-            ? null
-            : ref.watch(ifscBranchesProvider((
-                bank: _bankCode!,
-                state: _state!,
-                district: _district!,
-              )));
 
     return ResponsiveNavigationWrapper(
         title: l10n.bankAccounts,
@@ -243,152 +295,97 @@ class _AddBankAccountScreenState extends ConsumerState<AddBankAccountScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 14),
+            _field(
+              label: l10n.bankRegisteredMobile,
+              child: TextField(
+                key: const Key('bankRegisteredMobileField'),
+                controller: _bankMobileController,
+                keyboardType: TextInputType.phone,
+                readOnly: _otpSent,
+                maxLength: 10,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  hintText: l10n.bankRegisteredMobileHint,
+                  counterText: '',
+                  prefixIcon: const Icon(Icons.phone_android_outlined),
+                ),
+              ),
+            ),
             const SizedBox(height: 18),
-            Text(
-              l10n.findIfscCode,
-              style: TextStyle(
-                color: AurumConsumerTheme.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _IfscSelectField(
-              label: l10n.chooseBank,
-              value: _bankLabel,
-              hint: l10n.selectBank,
-              enabled: !_otpSent,
-              loading: banksAsync.isLoading,
-              errorText: banksAsync.hasError
-                  ? 'Could not load banks. Tap to retry.'
-                  : null,
-              onTap: banksAsync.hasError
-                  ? () => ref.invalidate(ifscBanksProvider)
-                  : banksAsync.whenOrNull(
-                      data: (banks) => () {
-                        if (banks.isEmpty) {
-                          setState(() => _error = 'No banks available.');
-                          return;
-                        }
-                        final options = banks.entries
-                            .map((e) => _PickerOption(code: e.key, label: e.value))
-                            .toList()
-                          ..sort((a, b) => a.label.compareTo(b.label));
-                        _openPicker(
-                          title: l10n.chooseBank,
-                          options: options,
-                          searchable: true,
-                          onPick: (item) => setState(() {
-                            _bankCode = item.code;
-                            _bankLabel = item.label;
-                            _state = null;
-                            _district = null;
-                            _branch = null;
-                            _ifsc = null;
-                          }),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 10),
-            _IfscSelectField(
-              label: l10n.searchByState,
-              value: _state,
-              hint: l10n.selectState,
-              enabled: !_otpSent && _bankCode != null,
-              loading: statesAsync?.isLoading ?? false,
-              onTap: statesAsync?.whenOrNull(
-                data: (states) => () {
-                  _openPicker(
-                    title: l10n.searchByState,
-                    options: states
-                        .map((s) => _PickerOption(code: s, label: s))
-                        .toList(),
-                    searchable: true,
-                    onPick: (item) => setState(() {
-                      _state = item.label;
-                      _district = null;
-                      _branch = null;
-                      _ifsc = null;
-                    }),
-                  );
+            _field(
+              label: l10n.ifscCode,
+              child: TextField(
+                key: const Key('bankIfscField'),
+                controller: _ifscController,
+                readOnly: _otpSent,
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 11,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                  _UpperCaseTextFormatter(),
+                ],
+                onChanged: (_) {
+                  setState(() {
+                    _ifsc = null;
+                    _bankLabel = null;
+                    _branch = null;
+                  });
+                  if (_ifscController.text.trim().length == 11) {
+                    _lookupIfsc();
+                  }
                 },
-              ),
-            ),
-            const SizedBox(height: 10),
-            _IfscSelectField(
-              label: l10n.searchByDistrict,
-              value: _district,
-              hint: l10n.selectDistrict,
-              enabled: !_otpSent && _state != null,
-              loading: districtsAsync?.isLoading ?? false,
-              onTap: districtsAsync?.whenOrNull(
-                data: (districts) => () {
-                  _openPicker(
-                    title: l10n.searchByDistrict,
-                    options: districts
-                        .map((d) => _PickerOption(code: d, label: d))
-                        .toList(),
-                    searchable: true,
-                    onPick: (item) => setState(() {
-                      _district = item.label;
-                      _branch = null;
-                      _ifsc = null;
-                    }),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            _IfscSelectField(
-              label: l10n.searchByBranch,
-              value: _branch,
-              hint: l10n.selectBranch,
-              enabled: !_otpSent && _district != null,
-              loading: branchesAsync?.isLoading ?? false,
-              onTap: branchesAsync?.whenOrNull(
-                data: (branches) => () {
-                  _openPicker(
-                    title: l10n.searchByBranch,
-                    options: branches
-                        .map(
-                          (b) => _PickerOption(
-                            code: b.branch,
-                            label: b.branch,
-                            extra: b.ifsc,
+                onSubmitted: (_) => _lookupIfsc(),
+                decoration: InputDecoration(
+                  hintText: 'HDFC0001234',
+                  counterText: '',
+                  prefixIcon: const Icon(Icons.account_balance_outlined),
+                  suffixIcon: _ifscLookupLoading
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         )
-                        .toList(),
-                    searchable: true,
-                    onPick: (item) => setState(() {
-                      _branch = item.label;
-                      _ifsc = item.extra;
-                    }),
-                  );
-                },
+                      : null,
+                ),
               ),
             ),
-            if (_ifsc != null && _ifsc!.isNotEmpty) ...[
+            if (_bankLabel != null && _branch != null) ...[
               const SizedBox(height: 12),
               AurumSurfaceCard(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.verified_outlined,
-                      color: AurumConsumerTheme.chipGold,
-                      size: 20,
+                    Text(
+                      _bankLabel!,
+                      style: TextStyle(
+                        color: AurumConsumerTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
+                    const SizedBox(height: 4),
+                    Text(
+                      _branch!,
+                      style: TextStyle(
+                        color: AurumConsumerTheme.textMuted,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (_ifsc != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
                         '${l10n.ifscCode}: $_ifsc',
                         style: TextStyle(
                           color: AurumConsumerTheme.chipGold,
                           fontWeight: FontWeight.w700,
+                          fontSize: 13,
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -751,6 +748,19 @@ class _IfscSelectField extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return newValue.copyWith(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }

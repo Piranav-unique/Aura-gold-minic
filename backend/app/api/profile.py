@@ -187,6 +187,22 @@ async def update_settings(
     return await profile_service.update_settings(current_user.id, settings_in)
 
 
+@router.delete(
+    "/account",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete current consumer account and personal data",
+)
+async def delete_account(
+    current_user: User = Depends(get_current_user),
+    profile_service: ProfileService = Depends(get_profile_service),
+) -> MessageResponse:
+    await profile_service.delete_own_account(current_user.id)
+    return MessageResponse(
+        message="Your account and personal data have been permanently deleted."
+    )
+
+
 @router.get(
     "/kyc/status",
     response_model=KycStatusResponse,

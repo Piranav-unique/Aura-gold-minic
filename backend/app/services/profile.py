@@ -16,6 +16,7 @@ from app.schemas.profile import (
     UserSettingsUpdate,
 )
 from app.services.audit import AuditService
+from app.services.consumer_account_deletion import delete_consumer_account
 
 
 class ProfileService:
@@ -165,3 +166,11 @@ class ProfileService:
             )
 
         return updated
+
+    async def delete_own_account(self, user_id: uuid.UUID) -> None:
+        user = await self.user_repo.get_with_roles_and_permissions(user_id)
+        if not user:
+            raise ValidationException("User not found")
+
+        await delete_consumer_account(self.user_repo.db, user)
+        await self.user_repo.db.commit()

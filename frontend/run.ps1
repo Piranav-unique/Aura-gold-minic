@@ -8,7 +8,9 @@ param(
     [string]$Device = "",
     [string]$ApiBaseUrl = "",
     [switch]$Cloud,
-    [string]$ApiHost = ""
+    [string]$ApiHost = "",
+    [switch]$Quiet,
+    [switch]$VerboseLogs
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,27 +60,39 @@ Write-Host "Backend:    python -m uvicorn app.main:app --reload --host 0.0.0.0 -
 Write-Host ""
 
 Write-Host "Building and launching (first run may take 2-5 minutes)..."
+if ($VerboseLogs) {
+    Write-Host "Verbose Flutter logs enabled." -ForegroundColor DarkGray
+} elseif (-not $Quiet) {
+    Write-Host "Tip: if no logs appear over Wi-Fi, open another terminal and run: .\view_logs.ps1" -ForegroundColor DarkGray
+}
 Write-Host ""
 
 $flutterArgs = @(
     "run", "-d", $Device,
-    "--dart-define=API_LOGS_ONLY=true"
+    "--dart-define=API_LOGS_ONLY=true",
+    "--dart-define=ADMIN_MOBILE_NUMBER=9943795005"
 )
+if ($VerboseLogs) {
+    $flutterArgs += "--verbose"
+}
 if ($ApiBaseUrl) {
     $flutterArgs += "--dart-define=API_BASE_URL=$ApiBaseUrl"
 }
 
-$progressPattern = 'Launching|Gradle|gradle|assemble|Built |BUILD|Installing|Syncing files|Flutter run key|Waiting for|Debug service|VM Service|Performing hot|Application finished|Lost connection|Could not|Error:|Exception|No supported devices|Failed|error •|\[API\]|\[APP_EVENT\]|Running|Compiling'
-
-& flutter @flutterArgs 2>&1 | ForEach-Object {
-    $line = "$_"
-    if ($line -match $progressPattern) {
-        if ($line -match 'Error:|Exception|Failed|Could not|No supported devices|error •') {
-            Write-Host $line -ForegroundColor Red
-        } else {
-            Write-Host $line
+if ($Quiet) {
+    $progressPattern = 'Launching|Gradle|gradle|assemble|Built |BUILD|Installing|Syncing files|Flutter run key|Waiting for|Debug service|VM Service|Performing hot|Application finished|Lost connection|Could not|Error:|Exception|No supported devices|Failed|error •|\[API\]|\[APP_EVENT\]|I/flutter|Running|Compiling'
+    & flutter @flutterArgs 2>&1 | ForEach-Object {
+        $line = "$_"
+        if ($line -match $progressPattern) {
+            if ($line -match 'Error:|Exception|Failed|Could not|No supported devices|error •') {
+                Write-Host $line -ForegroundColor Red
+            } else {
+                Write-Host $line
+            }
         }
     }
+} else {
+    & flutter @flutterArgs
 }
 
 if ($LASTEXITCODE -ne 0) {

@@ -12,7 +12,7 @@ class AppAudienceNotifier extends Notifier<AppAudience?> {
       _loaded = true;
       _loadPersisted();
     }
-    return null;
+    return AppAudience.endUser;
   }
 
   Future<void> _loadPersisted() async {
@@ -35,7 +35,7 @@ class AppAudienceNotifier extends Notifier<AppAudience?> {
   }
 
   Future<void> clearAudience() async {
-    state = null;
+    state = AppAudience.endUser;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
   }

@@ -373,6 +373,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountHolderName => 'Account holder name';
 
   @override
+  String get bankRegisteredMobile => 'Bank registered mobile';
+
+  @override
+  String get bankRegisteredMobileHint =>
+      'Enter the 10-digit mobile registered with this bank account (not this phone\'s SIM)';
+
+  @override
   String get accountNumber => 'Account number';
 
   @override
@@ -455,14 +462,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveAndSendOtp => 'Save & send OTP';
 
   @override
-  String get bankLinkOtpSent => 'OTP sent to your registered mobile number.';
+  String get bankLinkOtpSent =>
+      'OTP sent to the mobile number registered with your bank.';
 
   @override
   String get bankAccountConnected => 'Bank account linked successfully.';
 
   @override
   String get bankAccountsOtpNote =>
-      'Bank details are verified, then confirmed with a 6-digit OTP sent to your registered mobile number.';
+      'Enter the 6-digit OTP sent to the bank-registered mobile number (not necessarily this phone).';
 
   @override
   String get addBankAccountSheetSubtitle =>
@@ -871,7 +879,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountStatusHint =>
-      'Contact an administrator to deactivate your account.';
+      'Permanently remove your account and personal data from the app.';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'This permanently deletes your account, KYC details, gold records, bank links, and transaction history. This action cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete my account';
+
+  @override
+  String get deleteAccountFailed =>
+      'Could not delete account. Please try again.';
+
+  @override
+  String get deleteAccountSuccess => 'Your account has been deleted.';
 
   @override
   String failedToLoadSettings(String error) {
@@ -1482,6 +1510,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginOtpIncorrect => 'Please check and enter your OTP.';
+
+  @override
+  String get loginNoAccountFound =>
+      'No account found for this mobile number. Please sign up to create an account.';
 
   @override
   String get verified => 'Verified';

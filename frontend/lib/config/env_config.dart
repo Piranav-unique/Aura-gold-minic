@@ -8,15 +8,21 @@ class EnvConfig {
   /// Hosted backend on Railway (used by default on Android / release builds).
   static const String hostedApiBaseUrl =
       'https://aura-gold-minic-production.up.railway.app/api/v1';
+  static const String adminMobileNumber = String.fromEnvironment(
+    'ADMIN_MOBILE_NUMBER',
+    defaultValue: '9943795005',
+  );
 
   final AppEnvironment environment;
   final String baseUrl;
+  final String adminNumber;
   final Duration connectionTimeout;
   final Duration receiveTimeout;
 
   EnvConfig({
     required this.environment,
     required this.baseUrl,
+    required this.adminNumber,
     this.connectionTimeout = const Duration(seconds: 15),
     this.receiveTimeout = const Duration(seconds: 15),
   });
@@ -39,6 +45,7 @@ class EnvConfig {
   static final EnvConfig dev = EnvConfig(
     environment: AppEnvironment.dev,
     baseUrl: _devBaseUrl,
+    adminNumber: adminMobileNumber,
   );
 
   static final EnvConfig prod = EnvConfig(
@@ -47,6 +54,7 @@ class EnvConfig {
       'API_BASE_URL',
       defaultValue: hostedApiBaseUrl,
     ),
+    adminNumber: adminMobileNumber,
   );
 
   static EnvConfig get active {

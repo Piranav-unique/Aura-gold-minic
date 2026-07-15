@@ -106,16 +106,8 @@ class SignupOtpService:
 
         await self.otp_repo.db.commit()
 
-    async def send_signup_otp(self, mobile_number: str) -> None:
+    async def _ensure_registered_active_user(self, mobile_number: str) -> None:
         mobile = normalize_mobile(mobile_number)
-        existing = await self.user_repo.get_by_mobile(mobile)
-        if existing:
-            raise ValidationException("This mobile number is already registered.")
-        await self._send_otp_challenge(mobile)
-
-    async def send_login_otp(self, mobile_number: str, device_id: str) -> None:
-        mobile = normalize_mobile(mobile_number)
-        normalize_device_id(device_id)
         user = await self.user_repo.get_by_mobile(mobile)
         if (
             not user
@@ -124,8 +116,22 @@ class SignupOtpService:
             or user.is_deleted
         ):
             raise ValidationException("No account found for this mobile number.")
-        if user.is_superuser:
-            raise ValidationException("Use email and password to sign in as staff.")
+
+    async def send_signup_otp(self, mobile_number: str) -> None:
+        mobile = normalize_mobile(mobile_number)
+        existing = await self.user_repo.get_by_mobile(mobile)
+        if existing:
+            raise ValidationException("This mobile number is already registered.")
+        await self._send_otp_challenge(mobile)
+
+    async def ensure_registered_for_login(self, mobile_number: str) -> None:
+        """Reject login attempts for mobiles that are not registered end-users."""
+        await self._ensure_registered_active_user(mobile_number)
+
+    async def send_login_otp(self, mobile_number: str, device_id: str) -> None:
+        normalize_device_id(device_id)
+        await self._ensure_registered_active_user(mobile_number)
+        mobile = normalize_mobile(mobile_number)
         await self._send_otp_challenge(mobile)
 
     async def consume_login_otp(self, mobile_number: str, otp: str) -> None:

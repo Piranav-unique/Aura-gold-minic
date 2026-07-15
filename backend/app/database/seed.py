@@ -222,6 +222,7 @@ async def seed_data(session: AsyncSession) -> None:
     import os
 
     admin_email = "superadmin@agsgold.com"
+    admin_mobile = os.getenv("ADMIN_MOBILE_NUMBER", "9943795005").strip()
     admin_password = os.getenv("SUPERADMIN_PASSWORD", "adminpassword")
     hashed_pw = hash_password(admin_password)
 
@@ -239,6 +240,9 @@ async def seed_data(session: AsyncSession) -> None:
             is_superuser=True,
             first_name="Super",
             last_name="Admin",
+            mobile_number=admin_mobile or None,
+            mobile_verified=bool(admin_mobile),
+            has_completed_mobile_login=True,
             kyc_status="verified",
             roles=[],
         )
@@ -249,6 +253,9 @@ async def seed_data(session: AsyncSession) -> None:
         admin_user.hashed_password = hashed_pw
         admin_user.is_active = True
         admin_user.is_superuser = True
+        admin_user.mobile_number = admin_mobile or None
+        admin_user.mobile_verified = bool(admin_mobile)
+        admin_user.has_completed_mobile_login = True
         admin_user.kyc_status = "verified"
         if super_admin_role not in admin_user.roles:
             admin_user.roles.append(super_admin_role)

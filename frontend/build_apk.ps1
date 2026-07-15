@@ -1,23 +1,29 @@
-# Build release APK for installing on another Android phone (same Wi-Fi as backend PC).
+# Build release APK that talks only to the hosted Railway backend (any phone with internet).
 param(
-    # Leave empty to use hosted Railway API baked into the app (see env_config.dart).
-    [string]$ApiBaseUrl = ""
+    [string]$ApiBaseUrl = "https://aura-gold-minic-production.up.railway.app/api/v1"
 )
 
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
 Write-Host "Building release APK..." -ForegroundColor Cyan
-if ($ApiBaseUrl) {
-    Write-Host "API: $ApiBaseUrl" -ForegroundColor DarkGray
-} else {
-    Write-Host "API: Railway hosted (default)" -ForegroundColor DarkGray
+Write-Host "API: $ApiBaseUrl" -ForegroundColor DarkGray
+
+flutter pub get | Out-Null
+$registrant = Join-Path $PSScriptRoot "android\app\src\main\java\io\flutter\plugins\GeneratedPluginRegistrant.java"
+if (Test-Path $registrant) {
+    $content = Get-Content $registrant -Raw
+    $content = $content -replace '(?s)\s*try \{\s*flutterEngine\.getPlugins\(\)\.add\(new dev\.flutter\.plugins\.integration_test\.IntegrationTestPlugin\(\)\);\s*\} catch \(Exception e\) \{\s*Log\.e\(TAG, "Error registering plugin integration_test.*?\);\s*\}', ''
+    Set-Content -Path $registrant -Value $content -NoNewline
 }
 
-$buildArgs = @("build", "apk", "--release", "--dart-define=API_LOGS_ONLY=false")
-if ($ApiBaseUrl) {
-    $buildArgs += "--dart-define=API_BASE_URL=$ApiBaseUrl"
-}
+$buildArgs = @(
+    "build", "apk", "--release",
+    "--dart-define=ENV=prod",
+    "--dart-define=API_BASE_URL=$ApiBaseUrl",
+    "--dart-define=API_LOGS_ONLY=false",
+    "--dart-define=ADMIN_MOBILE_NUMBER=9943795005"
+)
 
 flutter @buildArgs
 

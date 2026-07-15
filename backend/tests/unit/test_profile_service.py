@@ -138,3 +138,27 @@ async def test_change_password_wrong_current(profile_service, mock_user_repo):
                 current_password="wrong", new_password="newpassword1"
             ),
         )
+
+
+@pytest.mark.asyncio
+async def test_delete_own_account_consumer(profile_service, mock_user_repo, monkeypatch):
+    user = _user()
+    mock_user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
+    mock_user_repo.db.commit = AsyncMock()
+    delete_mock = AsyncMock()
+    monkeypatch.setattr(
+        "app.services.profile.delete_consumer_account", delete_mock
+    )
+
+    await profile_service.delete_own_account(user.id)
+
+    delete_mock.assert_awaited_once_with(mock_user_repo.db, user)
+    mock_user_repo.db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_own_account_user_not_found(profile_service, mock_user_repo):
+    mock_user_repo.get_with_roles_and_permissions = AsyncMock(return_value=None)
+
+    with pytest.raises(Exception):
+        await profile_service.delete_own_account(uuid.uuid4())

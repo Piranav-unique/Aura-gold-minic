@@ -6,7 +6,6 @@ import 'package:ags_gold/features/splash/presentation/splash_screen.dart';
 import 'package:ags_gold/features/auth/domain/login_route_args.dart';
 import 'package:ags_gold/features/auth/presentation/login_screen.dart';
 import 'package:ags_gold/features/auth/presentation/signup_screen.dart';
-import 'package:ags_gold/features/auth/presentation/role_selection_screen.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/features/dashboard/presentation/dashboard_screen.dart';
@@ -118,20 +117,20 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final location = state.matchedLocation;
       final isSplash = location == '/';
-      final isWelcome = location == '/welcome';
       final isLogin = location == '/login';
       final isSignup = location == '/signup';
       final isTerms = location == '/terms-and-conditions';
       final isPrivacy = location == '/privacy-policy';
       final isPublicPage = isTerms || isPrivacy;
-      final isAuthFlow = isWelcome || isLogin || isSignup || isPublicPage;
+      final isLegacyWelcome = location == '/welcome';
+      final isAuthFlow = isLegacyWelcome || isLogin || isSignup || isPublicPage;
 
       if (authValue.isLoading) {
         return isSplash ? null : '/';
       }
 
       if (authValue.hasError) {
-        return isSplash ? '/welcome' : null;
+        return isSplash ? '/login' : null;
       }
 
       if (status == AuthStatus.initial) {
@@ -139,7 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (status == AuthStatus.authenticated) {
-        if (isSplash || isWelcome || isLogin || isSignup) {
+        if (isSplash || isLegacyWelcome || isLogin || isSignup) {
           return homeRouteForAudience(audience, kycGate.asData?.value);
         }
         if (audience == AppAudience.endUser && location.startsWith('/dashboard')) {
@@ -189,7 +188,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isSplash) {
-        return '/welcome';
+        return '/login';
+      }
+
+      if (isLegacyWelcome) {
+        return '/login';
       }
 
       if (audience == AppAudience.staffAdmin && isSignup) {
@@ -201,17 +204,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (audience == null) {
-        return '/welcome';
+        return '/login';
       }
 
       return '/login';
     },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
-      GoRoute(
-        path: '/welcome',
-        builder: (context, state) => const RoleSelectionScreen(),
-      ),
+      GoRoute(path: '/welcome', redirect: (context, state) => '/login'),
       GoRoute(
         path: '/login',
         builder: (context, state) {

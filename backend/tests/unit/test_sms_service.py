@@ -48,10 +48,7 @@ def test_build_bank_link_otp_message_matches_dlt_template():
     )
 
 
-def test_bank_sms_channels_use_flow_not_otp_api(monkeypatch):
-    monkeypatch.setattr(
-        "app.services.sms.settings.MSG91_BANK_SMS_CHANNELS",
-        "flow,sendhttp",
-    )
+def test_bank_sms_channels_default_to_otp_sendotp(monkeypatch):
+    monkeypatch.setattr("app.services.sms.settings.MSG91_BANK_SMS_CHANNELS", "")
     service = SmsService()
-    assert service._bank_sms_channels() == ["flow", "sendhttp"]
+    assert service._bank_sms_channels() == ["otp", "sendotp"]

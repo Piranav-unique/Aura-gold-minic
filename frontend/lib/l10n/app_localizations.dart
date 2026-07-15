@@ -728,6 +728,18 @@ abstract class AppLocalizations {
   /// **'Account holder name'**
   String get accountHolderName;
 
+  /// No description provided for @bankRegisteredMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank registered mobile'**
+  String get bankRegisteredMobile;
+
+  /// No description provided for @bankRegisteredMobileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 10-digit mobile registered with this bank account (not this phone\'s SIM)'**
+  String get bankRegisteredMobileHint;
+
   /// No description provided for @accountNumber.
   ///
   /// In en, this message translates to:
@@ -887,7 +899,7 @@ abstract class AppLocalizations {
   /// No description provided for @bankLinkOtpSent.
   ///
   /// In en, this message translates to:
-  /// **'OTP sent to your registered mobile number.'**
+  /// **'OTP sent to the mobile number registered with your bank.'**
   String get bankLinkOtpSent;
 
   /// No description provided for @bankAccountConnected.
@@ -899,7 +911,7 @@ abstract class AppLocalizations {
   /// No description provided for @bankAccountsOtpNote.
   ///
   /// In en, this message translates to:
-  /// **'Bank details are verified, then confirmed with a 6-digit OTP sent to your registered mobile number.'**
+  /// **'Enter the 6-digit OTP sent to the bank-registered mobile number (not necessarily this phone).'**
   String get bankAccountsOtpNote;
 
   /// No description provided for @addBankAccountSheetSubtitle.
@@ -1643,8 +1655,44 @@ abstract class AppLocalizations {
   /// No description provided for @accountStatusHint.
   ///
   /// In en, this message translates to:
-  /// **'Contact an administrator to deactivate your account.'**
+  /// **'Permanently remove your account and personal data from the app.'**
   String get accountStatusHint;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account, KYC details, gold records, bank links, and transaction history. This action cannot be undone.'**
+  String get deleteAccountMessage;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete account. Please try again.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get deleteAccountSuccess;
 
   /// No description provided for @failedToLoadSettings.
   ///
@@ -2737,6 +2785,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please check and enter your OTP.'**
   String get loginOtpIncorrect;
+
+  /// No description provided for @loginNoAccountFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found for this mobile number. Please sign up to create an account.'**
+  String get loginNoAccountFound;
 
   /// No description provided for @verified.
   ///

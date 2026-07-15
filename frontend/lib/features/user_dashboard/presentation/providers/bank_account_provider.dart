@@ -52,6 +52,7 @@ final bankLinkProvider = Provider((ref) {
   return ({
     required String accountHolderName,
     required String accountNumber,
+    required String bankRegisteredMobile,
     required String ifsc,
     required String bankName,
     required String branchName,
@@ -62,6 +63,7 @@ final bankLinkProvider = Provider((ref) {
       data: {
         'account_holder_name': accountHolderName,
         'account_number': accountNumber,
+        'bank_registered_mobile': bankRegisteredMobile,
         'ifsc': ifsc,
         'bank_name': bankName,
         'branch_name': branchName,
@@ -72,6 +74,7 @@ final bankLinkProvider = Provider((ref) {
     return (
       mobileLast4: data['mobile_last4'] as String?,
       message: data['message'] as String? ?? '',
+      devOtpHint: data['dev_otp_hint'] as String?,
     );
   };
 });

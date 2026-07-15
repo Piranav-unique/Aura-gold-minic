@@ -99,10 +99,6 @@ class AuthService:
                 raise AuthenticationException(
                     "No account found for this mobile number."
                 )
-            if user.is_superuser:
-                raise AuthenticationException(
-                    "Use email and password to sign in as staff."
-                )
             await bind_device_for_mobile_login(
                 self.user_repo, user, normalized_device_id
             )
@@ -134,10 +130,6 @@ class AuthService:
             ):
                 raise AuthenticationException(
                     "No account found for this mobile number."
-                )
-            if user.is_superuser:
-                raise AuthenticationException(
-                    "Use email and password to sign in as staff."
                 )
             if user.has_completed_mobile_login:
                 raise AuthenticationException(

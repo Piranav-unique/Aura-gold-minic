@@ -377,6 +377,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get accountHolderName => 'கணக்கு உரிமையாளர் பெயர்';
 
   @override
+  String get bankRegisteredMobile => 'வங்கியில் பதிவு செய்யப்பட்ட மொபைல்';
+
+  @override
+  String get bankRegisteredMobileHint =>
+      'இந்த வங்கி கணக்குடன் பதிவு செய்யப்பட்ட 10 இலக்க மொபைலை உள்ளிடவும் (இந்த போன் SIM அல்ல)';
+
+  @override
   String get accountNumber => 'கணக்கு எண்';
 
   @override
@@ -460,14 +467,14 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get bankLinkOtpSent =>
-      'உங்கள் பதிவு செய்யப்பட்ட மொபைலுக்கு OTP அனுப்பப்பட்டது.';
+      'வங்கியில் பதிவு செய்யப்பட்ட மொபைல் எண்ணுக்கு OTP அனுப்பப்பட்டது.';
 
   @override
   String get bankAccountConnected => 'வங்கி கணக்கு வெற்றிகரமாக இணைக்கப்பட்டது.';
 
   @override
   String get bankAccountsOtpNote =>
-      'வங்கி விவரங்கள் சரிபார்க்கப்பட்டு, பின்னர் உங்கள் பதிவு மொபைலுக்கு 6 இலக்க OTP அனுப்பப்படும்.';
+      'வங்கியில் பதிவு செய்யப்பட்ட மொபைலுக்கு அனுப்பப்பட்ட 6 இலக்க OTP ஐ உள்ளிடவும் (இந்த போன் அல்ல).';
 
   @override
   String get addBankAccountSheetSubtitle =>
@@ -883,7 +890,27 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get accountStatusHint =>
-      'உங்கள் கணக்கை செயலிழக்க நிர்வாகியைத் தொடர்பு கொள்ளுங்கள்.';
+      'உங்கள் கணக்கையும் தனிப்பட்ட தரவையும் பயன்பாட்டிலிருந்து நிரந்தரமாக நீக்கவும்.';
+
+  @override
+  String get deleteAccount => 'கணக்கை நீக்கு';
+
+  @override
+  String get deleteAccountTitle => 'உங்கள் கணக்கை நீக்கவா?';
+
+  @override
+  String get deleteAccountMessage =>
+      'இது உங்கள் கணக்கு, KYC விவரங்கள், தங்க பதிவுகள், வங்கி இணைப்புகள் மற்றும் பரிவர்த்தனை வரலாற்றை நிரந்தரமாக நீக்கும். இந்த செயலை மீளமுடியாது.';
+
+  @override
+  String get deleteAccountConfirm => 'என் கணக்கை நீக்கு';
+
+  @override
+  String get deleteAccountFailed =>
+      'கணக்கை நீக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.';
+
+  @override
+  String get deleteAccountSuccess => 'உங்கள் கணக்கு நீக்கப்பட்டது.';
 
   @override
   String failedToLoadSettings(String error) {
@@ -1503,6 +1530,10 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get loginOtpIncorrect => 'சரிபார்த்து உங்கள் OTP-ஐ உள்ளிடவும்.';
+
+  @override
+  String get loginNoAccountFound =>
+      'இந்த மொபைல் எண்ணுக்கு கணக்கு இல்லை. பதிவு செய்து கணக்கை உருவாக்கவும்.';
 
   @override
   String get verified => 'சரிபார்க்கப்பட்டது';

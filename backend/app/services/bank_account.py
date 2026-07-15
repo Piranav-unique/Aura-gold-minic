@@ -19,8 +19,10 @@ from app.schemas.bank_account import (
     BankLinkInitiateResponse,
 )
 from app.services.ifsc import IfscService
-from app.utils.mobile import normalize_mobile
 from app.services.sms import SmsService
+
+_MSG91_NATIVE_SENTINEL = "msg91-native"
+
 
 def _hash_bank_otp(user_id: UUID, otp: str) -> str:
     payload = f"bank:{user_id}:{otp}".encode()
@@ -48,13 +50,11 @@ class BankAccountService:
         self.sms_service = sms_service
         self.ifsc_service = ifsc_service
 
-    def _require_mobile(self, user: User) -> str:
-        mobile = normalize_mobile(user.mobile_number or "")
-        if not mobile or not user.mobile_verified:
-            raise ValidationException(
-                "Verify your mobile number on signup before linking a bank account."
-            )
-        return mobile
+    def _uses_msg91_native(self) -> bool:
+        return (
+            self.sms_service.is_live
+            and settings.MSG91_BANK_OTP_USE_MSG91_VERIFY
+        )
 
     def _generate_otp(self) -> str:
         length = settings.MSG91_BANK_OTP_LENGTH
@@ -67,7 +67,7 @@ class BankAccountService:
     async def initiate_link(
         self, user: User, body: BankLinkInitiateRequest
     ) -> BankLinkInitiateResponse:
-        mobile = self._require_mobile(user)
+        bank_mobile = body.bank_registered_mobile
 
         existing = await self.bank_repo.list_for_user(user.id)
         if len(existing) >= MAX_BANK_ACCOUNTS_PER_USER:
@@ -80,12 +80,17 @@ class BankAccountService:
         ifsc_branch = str(lookup.get("BRANCH") or body.branch_name).strip()
 
         use_dev_otp = settings.bank_otp_uses_dev_code()
-        otp_to_send = (
-            settings.SIGNUP_OTP_DEV_CODE
-            if use_dev_otp
-            else self._generate_otp()
-        )
-        otp_hash = _hash_bank_otp(user.id, otp_to_send)
+        use_msg91_native = not use_dev_otp and self._uses_msg91_native()
+
+        if use_msg91_native:
+            otp_to_send = None
+            otp_hash = _hash_bank_otp(user.id, _MSG91_NATIVE_SENTINEL)
+        elif use_dev_otp:
+            otp_to_send = settings.SIGNUP_OTP_DEV_CODE
+            otp_hash = _hash_bank_otp(user.id, otp_to_send)
+        else:
+            otp_to_send = self._generate_otp()
+            otp_hash = _hash_bank_otp(user.id, otp_to_send)
 
         expires_at = datetime.now(timezone.utc) + timedelta(
             minutes=settings.SIGNUP_OTP_EXPIRE_MINUTES
@@ -102,6 +107,7 @@ class BankAccountService:
                 "bank_name": ifsc_bank or body.bank_name,
                 "branch_name": ifsc_branch or body.branch_name,
                 "account_type": body.account_type,
+                "otp_mobile": bank_mobile,
                 "otp_hash": otp_hash,
                 "expires_at": expires_at,
                 "attempts": 0,
@@ -111,15 +117,15 @@ class BankAccountService:
         )
 
         try:
-            if not use_dev_otp:
-                await self.sms_service.send_bank_link_otp(mobile, otp_to_send)
-            else:
+            if use_dev_otp:
                 logger.info(
                     "bank_link_otp_dev_mode",
                     user_id=str(user.id),
-                    mobile=mobile,
+                    bank_mobile=bank_mobile,
                     otp=otp_to_send,
                 )
+            else:
+                await self.sms_service.send_bank_link_otp(bank_mobile, otp_to_send)
         except ValidationException:
             await self.challenge_repo.db.rollback()
             raise
@@ -131,14 +137,19 @@ class BankAccountService:
             ) from exc
 
         await self.challenge_repo.db.commit()
-        last4 = mobile[-4:] if len(mobile) >= 4 else None
+        last4 = bank_mobile[-4:] if len(bank_mobile) >= 4 else None
+        dev_hint = (
+            settings.SIGNUP_OTP_DEV_CODE
+            if use_dev_otp and settings.SIGNUP_OTP_DEV_CODE.strip()
+            else None
+        )
         return BankLinkInitiateResponse(
-            message="OTP sent to your registered mobile number.",
+            message="OTP sent to the mobile number registered with your bank.",
             mobile_last4=last4,
+            dev_otp_hint=dev_hint,
         )
 
     async def verify_link(self, user: User, otp: str) -> BankAccountResponse:
-        self._require_mobile(user)
         code = otp.strip()
         if len(code) != settings.MSG91_BANK_OTP_LENGTH:
             raise ValidationException(
@@ -156,8 +167,17 @@ class BankAccountService:
 
         challenge.attempts += 1
 
+        native_hash = _hash_bank_otp(user.id, _MSG91_NATIVE_SENTINEL)
+        is_msg91_native = challenge.otp_hash == native_hash
+
         try:
-            if _hash_bank_otp(user.id, code) != challenge.otp_hash:
+            if is_msg91_native:
+                if not challenge.otp_mobile:
+                    raise ValidationException(
+                        "OTP session is invalid. Request a new OTP."
+                    )
+                await self.sms_service.verify_msg91_otp(challenge.otp_mobile, code)
+            elif _hash_bank_otp(user.id, code) != challenge.otp_hash:
                 await self.challenge_repo.db.commit()
                 raise ValidationException("Invalid OTP. Please try again.")
         except ValidationException:

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
@@ -14,7 +13,6 @@ import 'package:ags_gold/features/profile/presentation/widgets/profile_settings_
 import 'package:ags_gold/features/settings/presentation/providers/settings_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/widgets/kyc_verified_success_view.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
 import 'package:ags_gold/l10n/locale_preference_provider.dart';
@@ -67,11 +65,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
   final UserProfile user;
 
   const _ConsumerProfileBody({required this.user});
-
-  String _memberSinceLine(BuildContext context) {
-    final formatted = DateFormat('MMMM yyyy').format(user.createdAt);
-    return context.l10n.memberSince(formatted);
-  }
 
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -181,19 +174,16 @@ class _ConsumerProfileBody extends ConsumerWidget {
           ProfileHeaderCard(
             displayName: user.displayName,
             contactLine: user.displayContactLine,
-            memberSinceLine: _memberSinceLine(context),
             initials: user.initials,
             showVerifiedBadge: user.isActive || kycComplete,
             kycVerified: kycComplete,
             onVerifyTap: kycComplete ? null : () => context.push('/kyc'),
             onAvatarTap: () => pickAndUploadAvatar(context, ref),
           ),
-          const SizedBox(height: 8),
-          AccountSection(
-            kycVerified: kycComplete,
-            showProfileTile: false,
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          ProfileSectionHeader(title: l10n.accountSection),
+          ProfileAccountShortcuts(kycVerified: kycComplete),
+          const SizedBox(height: 4),
           ProfileSectionHeader(
             title: kycComplete ? l10n.kycVerifiedHeading : l10n.kycVerification,
           ),
@@ -271,7 +261,27 @@ class _ConsumerProfileBody extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => showDeleteAccountDialog(context, ref),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.rose,
+                side: BorderSide(color: AppTheme.rose.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: const Icon(Icons.delete_forever_outlined, size: 20),
+              label: Text(
+                l10n.deleteAccount,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -357,11 +367,6 @@ class _AdminProfileBody extends ConsumerWidget {
 
   const _AdminProfileBody({required this.user});
 
-  String _memberSinceLine(BuildContext context) {
-    final formatted = DateFormat('MMMM yyyy').format(user.createdAt);
-    return context.l10n.memberSince(formatted);
-  }
-
   void _confirmLogout(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     showDialog<void>(
@@ -401,7 +406,6 @@ class _AdminProfileBody extends ConsumerWidget {
         ProfileHeaderCard(
           displayName: user.displayName,
           contactLine: user.displayContactLine,
-          memberSinceLine: _memberSinceLine(context),
           initials: user.initials,
           showVerifiedBadge: user.isActive,
           onAvatarTap: () => pickAndUploadAvatar(context, ref),

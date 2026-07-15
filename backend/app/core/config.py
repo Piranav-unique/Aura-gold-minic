@@ -133,17 +133,18 @@ class Settings(BaseSettings):
     SIGNUP_OTP_USE_MSG91_VERIFY: bool = True
     SIGNUP_OTP_DEV_CODE: str = "123456"
 
-    # Bank link OTP (MSG91 Flow only — Aurum_Bank_Add_OTP, DLT 1207178235534667442).
-    # Do NOT use the v5 /otp API for this template (MSG91 error 400).
+    # Bank link OTP — Aurum_Bank_Add_OTP (MSG91 SendOTP template + DLT 1207178235534667442).
+    # MSG91_BANK_OTP_TEMPLATE_ID = hex ID from SendOTP → Templates (NOT the DLT numeric ID).
     MSG91_BANK_OTP_TEMPLATE_ID: str = "6a4a7eae9fe09e57d9000643"
     MSG91_BANK_DLT_TEMPLATE_ID: str = "1207178235534667442"
     MSG91_BANK_FLOW_ID: str = "6a4a7eae9fe09e57d9000643"
     MSG91_BANK_OTP_LENGTH: int = 6
-    MSG91_BANK_OTP_USE_MSG91_VERIFY: bool = False
-    MSG91_BANK_SMS_CHANNELS: str = "sendhttp,flow"
-    # Bank DLT template Aurum_Bank_Add_OTP is registered on sender CP-AURUS-S (not AURUS).
-    MSG91_BANK_SENDER_ID: str = "CP-AURUS-S"
-    # Local dev: use SIGNUP_OTP_DEV_CODE for bank link (skip MSG91 bank Flow SMS).
+    MSG91_BANK_OTP_USE_MSG91_VERIFY: bool = True
+    MSG91_BANK_OTP_VAR_NAME: str = "OTP"
+    MSG91_BANK_SMS_CHANNELS: str = "otp,sendotp"
+    # Aurum_Bank_Add_OTP (DLT 1207178235534667442) — sender AURUS on MSG91/DLT portal
+    MSG91_BANK_SENDER_ID: str = "AURUS"
+    # Local dev: when true, bank link uses SIGNUP_OTP_DEV_CODE instead of MSG91 SMS
     BANK_OTP_DEV_MODE: bool = True
 
     # Android in-app update (public APK URL + version; bump when publishing a new APK)

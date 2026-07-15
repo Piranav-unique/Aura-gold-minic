@@ -538,3 +538,107 @@ Future<void> pickAndUploadAvatar(BuildContext context, WidgetRef ref) async {
     }
   }
 }
+
+Future<void> showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+  final l10n = context.l10n;
+  final messenger = ScaffoldMessenger.of(context);
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => _DeleteAccountDialog(
+      onDeleted: () async {
+        await ref.read(authNotifierProvider.notifier).clearSession();
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.deleteAccountSuccess)),
+        );
+      },
+    ),
+  );
+}
+
+class _DeleteAccountDialog extends ConsumerStatefulWidget {
+  final Future<void> Function() onDeleted;
+
+  const _DeleteAccountDialog({required this.onDeleted});
+
+  @override
+  ConsumerState<_DeleteAccountDialog> createState() =>
+      _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
+  bool _deleting = false;
+  String? _errorMessage;
+
+  Future<void> _delete() async {
+    setState(() {
+      _deleting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.delete('/profile/account');
+      if (!mounted) return;
+      Navigator.pop(context);
+      await widget.onDeleted();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _deleting = false;
+        _errorMessage = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _deleting = false;
+        _errorMessage = context.l10n.deleteAccountFailed;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return AlertDialog(
+      title: Text(l10n.deleteAccountTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.deleteAccountMessage),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(color: AppTheme.rose, fontSize: 13),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _deleting ? null : () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: _deleting ? null : _delete,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppTheme.rose,
+            foregroundColor: Colors.white,
+          ),
+          child: _deleting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(l10n.deleteAccountConfirm),
+        ),
+      ],
+    );
+  }
+}

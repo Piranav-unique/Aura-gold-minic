@@ -87,6 +87,7 @@ async def login_with_mobile(
     auth_service: AuthService = Depends(get_auth_service),
     otp_service: SignupOtpService = Depends(get_signup_otp_service),
 ) -> Token:
+    await otp_service.ensure_registered_for_login(payload.mobile_number)
     await otp_service.consume_login_otp(payload.mobile_number, payload.otp)
     user = await auth_service.authenticate_user_by_mobile(
         payload.mobile_number, payload.device_id

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ags_gold/config/env_config.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
-import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/domain/device_auth_storage.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
@@ -23,15 +23,12 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
   final _otpController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   bool _isLoading = false;
   bool _isSendingOtp = false;
   bool _otpSent = false;
-  bool _obscurePassword = true;
   String? _errorMessage;
   String? _successMessage;
   String? _otpMessage;
@@ -69,6 +66,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
   }
 
+  String get _normalizedAdminMobile =>
+      _normalizeMobile(EnvConfig.active.adminNumber);
+
+  bool _isAdminMobile(String mobile) => mobile == _normalizedAdminMobile;
+
   bool _isTrustedSignupMobile(String mobile) {
     final trusted = widget.initialMobile ?? _lockedMobile;
     if (trusted == null || trusted.isEmpty) return false;
@@ -79,6 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_pendingTrustedFirstLogin) return false;
     final mobile = _normalizeMobile(_mobileController.text.trim());
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) return false;
+    if (_isAdminMobile(mobile)) return false;
     return _isTrustedSignupMobile(mobile);
   }
 
@@ -101,6 +104,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return message.toLowerCase().contains('no account found');
   }
 
+  String _noAccountErrorMessage() => context.l10n.loginNoAccountFound;
+
   bool _isInvalidOtpError(String message) {
     final lower = message.toLowerCase();
     return lower.contains('invalid otp') ||
@@ -109,6 +114,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   String _loginErrorMessage(ApiException error) {
+    if (_isNoAccountError(error.message)) {
+      return _noAccountErrorMessage();
+    }
     if (_isInvalidOtpError(error.message)) {
       return context.l10n.loginOtpIncorrect;
     }
@@ -125,10 +133,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
     _mobileController.dispose();
     _otpController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -168,7 +174,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (_isNoAccountError(e.message)) {
           await _clearStaleDeviceRegistration();
         }
-        setState(() => _errorMessage = e.message);
+        setState(() {
+          _errorMessage = _isNoAccountError(e.message)
+              ? _noAccountErrorMessage()
+              : e.message;
+        });
       }
     } catch (_) {
       if (mounted) {
@@ -192,34 +202,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _errorMessage = null;
     });
 
-    final audience = ref.read(appAudienceProvider);
-    final isEndUser = audience == AppAudience.endUser;
+    final mobile = _normalizeMobile(_mobileController.text.trim());
+    final isAdminLogin = _isAdminMobile(mobile);
 
     try {
-      if (isEndUser) {
-        final mobile = _normalizeMobile(_mobileController.text.trim());
-        if (_showTrustedFirstLogin) {
-          await ref
-              .read(authNotifierProvider.notifier)
-              .loginWithTrustedMobile(mobile);
-        } else {
-          final otp = _otpController.text.trim();
-          if (otp.length != 6) {
-            setState(() {
-              _isLoading = false;
-              _errorMessage = 'Enter the 6-digit OTP sent to your mobile.';
-            });
-            return;
-          }
-          await ref.read(authNotifierProvider.notifier).loginWithMobile(
-                mobile,
-                otp,
-              );
-        }
+      await ref.read(appAudienceProvider.notifier).setAudience(
+            isAdminLogin ? AppAudience.staffAdmin : AppAudience.endUser,
+          );
+      if (_showTrustedFirstLogin) {
+        await ref.read(authNotifierProvider.notifier).loginWithTrustedMobile(
+              mobile,
+            );
       } else {
-        await ref.read(authNotifierProvider.notifier).login(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
+        final otp = _otpController.text.trim();
+        if (otp.length != 6) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Enter the 6-digit OTP sent to your mobile.';
+          });
+          return;
+        }
+        await ref.read(authNotifierProvider.notifier).loginWithMobile(
+              mobile,
+              otp,
             );
       }
     } on ApiException catch (e) {
@@ -278,18 +283,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    size: 100,
-                    color: AppTheme.primaryGold,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'AGS GOLD',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: 1.5,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.shadow.withValues(alpha: 0.08),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/ags_logo.png',
+                      width: 320,
+                      fit: BoxFit.contain,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -323,9 +337,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildLoginForm() {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final audience = ref.watch(appAudienceProvider);
-    final isEndUser = audience == AppAudience.endUser;
-    final isStaff = audience == AppAudience.staffAdmin;
 
     return Form(
       key: _formKey,
@@ -334,38 +345,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (ResponsiveLayout.isMobile(context)) ...[
-            const Center(
-              child: Icon(
-                Icons.monetization_on,
-                size: 64,
-                color: AppTheme.primaryGold,
-              ),
-            ),
-            const SizedBox(height: 16),
             Center(
-              child: Text(
-                'AGS GOLD',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0,
-                ),
+              child: Image.asset(
+                'assets/images/ags_logo.png',
+                width: 240,
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 32),
           ],
           Text(
-            isStaff ? l10n.staffSignIn : l10n.welcomeBack,
+            l10n.welcomeBack,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            isStaff
-                ? l10n.staffSignInSubtitle
-                : isEndUser
-                ? l10n.endUserSignInSubtitle
-                : l10n.defaultSignInSubtitle,
+            l10n.endUserSignInSubtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
@@ -442,209 +439,128 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          if (isEndUser) ...[
-            if (_showRegisteredMobileHint || _showTrustedFirstLogin) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: 0.35,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+          if (_showRegisteredMobileHint || _showTrustedFirstLogin) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.35,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _showTrustedFirstLogin
-                            ? 'First sign-in for '
-                                '${maskMobileNumber(_registeredMobileForHint ?? _mobileController.text.trim())} '
-                                'on this device — tap Sign In without OTP.'
-                            : 'You signed up on this device with '
-                                '${maskMobileNumber(_registeredMobileForHint!)}. '
-                                'OTP will be sent to the number you enter below.',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
-                ),
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 16),
-            ],
-            Text(
-              l10n.mobileNumber,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    key: const Key('mobileField'),
-                    controller: _mobileController,
-                    keyboardType: TextInputType.phone,
-                    textInputAction: _showTrustedFirstLogin
-                        ? TextInputAction.done
-                        : TextInputAction.next,
-                    onChanged: (_) {
-                      setState(() {
-                        if (_otpSent) {
-                          _otpSent = false;
-                          _otpMessage = null;
-                        }
-                      });
-                    },
-                    onFieldSubmitted: (_) {
-                      if (_showTrustedFirstLogin) {
-                        _handleLogin();
-                      }
-                    },
-                    decoration: InputDecoration(
-                      hintText: l10n.tenDigitMobileLogin,
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return l10n.mobileNumberRequired;
-                      }
-                      final mobile = _normalizeMobile(value.trim());
-                      if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
-                        return l10n.sellGoldInquiryMobileRequired;
-                      }
-                      return null;
-                    },
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
                   ),
-                ),
-                if (!_showTrustedFirstLogin) ...[
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    key: const Key('sendLoginOtpButton'),
-                    style: _inlineFilledButtonStyle,
-                    onPressed: _isSendingOtp ? null : _sendOtp,
-                    child: _isSendingOtp
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(l10n.sendOtp),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _showTrustedFirstLogin
+                          ? 'First sign-in for '
+                              '${maskMobileNumber(_registeredMobileForHint ?? _mobileController.text.trim())} '
+                              'on this device — tap Sign In without OTP.'
+                          : 'You signed up on this device with '
+                              '${maskMobileNumber(_registeredMobileForHint!)}. '
+                              'OTP will be sent to the number you enter below.',
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
                 ],
-              ],
-            ),
-            if (!_showTrustedFirstLogin) ...[
-              const SizedBox(height: 16),
-              Text(
-                l10n.enterOtp,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                key: const Key('loginOtpField'),
-                controller: _otpController,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                maxLength: 6,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onFieldSubmitted: (_) => _handleLogin(),
-                decoration: InputDecoration(
-                  hintText: l10n.otpFromSms,
-                  prefixIcon: const Icon(Icons.sms_outlined),
-                  counterText: '',
-                ),
-                validator: (value) {
-                  if (_showTrustedFirstLogin) return null;
-                  if (value == null || value.trim().length != 6) {
-                    return l10n.enterSixDigitOtp;
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ] else ...[
-            Text(
-              l10n.emailAddress,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
-            TextFormField(
-              key: const Key('emailField'),
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                hintText: l10n.emailHint,
-                prefixIcon: Icon(Icons.mail_outline),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return l10n.emailRequired;
-                }
-                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                if (!emailRegex.hasMatch(value)) {
-                  return l10n.emailInvalid;
-                }
-                return null;
-              },
+            const SizedBox(height: 16),
+          ],
+          Text(
+            l10n.mobileNumber,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l10n.password,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                  ),
-                  child: Text(l10n.forgotPassword),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              key: const Key('passwordField'),
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _handleLogin(),
-              decoration: InputDecoration(
-                hintText: l10n.enterPassword,
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                  onPressed: () {
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  key: const Key('mobileField'),
+                  controller: _mobileController,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: _showTrustedFirstLogin
+                      ? TextInputAction.done
+                      : TextInputAction.next,
+                  onChanged: (_) {
                     setState(() {
-                      _obscurePassword = !_obscurePassword;
+                      if (_otpSent) {
+                        _otpSent = false;
+                        _otpMessage = null;
+                      }
                     });
+                  },
+                  onFieldSubmitted: (_) {
+                    if (_showTrustedFirstLogin) {
+                      _handleLogin();
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: l10n.tenDigitMobileLogin,
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.mobileNumberRequired;
+                    }
+                    final mobile = _normalizeMobile(value.trim());
+                    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(mobile)) {
+                      return l10n.sellGoldInquiryMobileRequired;
+                    }
+                    return null;
                   },
                 ),
               ),
+              if (!_showTrustedFirstLogin) ...[
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: const Key('sendLoginOtpButton'),
+                  style: _inlineFilledButtonStyle,
+                  onPressed: _isSendingOtp ? null : _sendOtp,
+                  child: _isSendingOtp
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.sendOtp),
+                ),
+              ],
+            ],
+          ),
+          if (!_showTrustedFirstLogin) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.enterOtp,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextFormField(
+              key: const Key('loginOtpField'),
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              maxLength: 6,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onFieldSubmitted: (_) => _handleLogin(),
+              decoration: InputDecoration(
+                hintText: l10n.otpFromSms,
+                prefixIcon: const Icon(Icons.sms_outlined),
+                counterText: '',
+              ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return l10n.passwordRequired;
+                if (_showTrustedFirstLogin) return null;
+                if (value == null || value.trim().length != 6) {
+                  return l10n.enterSixDigitOtp;
                 }
                 return null;
               },
@@ -665,7 +581,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   )
                 : Text(l10n.signIn),
           ),
-          if (isEndUser && _lockedMobile == null) ...[
+          if (_lockedMobile == null) ...[
             const SizedBox(height: 16),
             Center(
               child: TextButton(
@@ -675,13 +591,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton(
-              onPressed: () => context.go('/welcome'),
-              child: Text(l10n.backToAccountType),
-            ),
-          ),
         ],
       ),
     );

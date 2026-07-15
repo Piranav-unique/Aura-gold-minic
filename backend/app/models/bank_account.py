@@ -48,6 +48,7 @@ class BankLinkChallenge(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     bank_name: Mapped[str] = mapped_column(String(200), nullable=False)
     branch_name: Mapped[str] = mapped_column(String(200), nullable=False)
     account_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    otp_mobile: Mapped[str | None] = mapped_column(String(15), nullable=True)
     otp_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
