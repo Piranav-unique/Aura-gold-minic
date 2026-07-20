@@ -1961,7 +1961,7 @@ abstract class AppLocalizations {
   /// No description provided for @kycAadhaarOtpInstruction.
   ///
   /// In en, this message translates to:
-  /// **'Enter your 12-digit Aadhaar number. An OTP will be sent to the mobile linked with your Aadhaar — it must match the mobile number you registered with.'**
+  /// **'Enter your 12-digit Aadhaar number. UIDAI will send an SMS OTP to the mobile linked with your Aadhaar (not inside this app). That mobile must match the number you registered with.'**
   String get kycAadhaarOtpInstruction;
 
   /// No description provided for @kycRegisteredMobileHint.
@@ -2057,7 +2057,7 @@ abstract class AppLocalizations {
   /// No description provided for @otpSentToMobile.
   ///
   /// In en, this message translates to:
-  /// **'OTP sent to the mobile linked with Aadhaar{ending}.'**
+  /// **'OTP SMS sent to the Aadhaar-linked mobile{ending}. Check that phone\'s Messages — it will not appear inside this app.'**
   String otpSentToMobile(String ending);
 
   /// No description provided for @otpSentEnding.
@@ -2165,7 +2165,7 @@ abstract class AppLocalizations {
   /// No description provided for @otpSentSnack.
   ///
   /// In en, this message translates to:
-  /// **'OTP sent to your Aadhaar-linked mobile number.'**
+  /// **'OTP SMS sent to your Aadhaar-linked mobile. Check that phone\'s Messages (not this app).'**
   String get otpSentSnack;
 
   /// No description provided for @aadhaarVerifiedSnack.

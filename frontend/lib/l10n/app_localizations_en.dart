@@ -1052,7 +1052,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kycAadhaarOtpInstruction =>
-      'Enter your 12-digit Aadhaar number. An OTP will be sent to the mobile linked with your Aadhaar — it must match the mobile number you registered with.';
+      'Enter your 12-digit Aadhaar number. UIDAI will send an SMS OTP to the mobile linked with your Aadhaar (not inside this app). That mobile must match the number you registered with.';
 
   @override
   String kycRegisteredMobileHint(String mobile) {
@@ -1107,7 +1107,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String otpSentToMobile(String ending) {
-    return 'OTP sent to the mobile linked with Aadhaar$ending.';
+    return 'OTP SMS sent to the Aadhaar-linked mobile$ending. Check that phone\'s Messages — it will not appear inside this app.';
   }
 
   @override
@@ -1167,7 +1167,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backToDashboard => 'Back to dashboard';
 
   @override
-  String get otpSentSnack => 'OTP sent to your Aadhaar-linked mobile number.';
+  String get otpSentSnack =>
+      'OTP SMS sent to your Aadhaar-linked mobile. Check that phone\'s Messages (not this app).';
 
   @override
   String get aadhaarVerifiedSnack => 'Aadhaar verified successfully.';

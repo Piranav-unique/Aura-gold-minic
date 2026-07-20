@@ -483,7 +483,7 @@
   "panFlowLicensedProvider": "Licensed provider",
   "kycStepConfirm": "Confirm",
   "kycStep1VerifyAadhaar": "Step 1: Verify Aadhaar",
-  "kycAadhaarOtpInstruction": "Enter your 12-digit Aadhaar number. An OTP will be sent to the mobile linked with your Aadhaar — it must match the mobile number you registered with.",
+  "kycAadhaarOtpInstruction": "Enter your 12-digit Aadhaar number. UIDAI will send an SMS OTP to the mobile linked with your Aadhaar (not inside this app). That mobile must match the number you registered with.",
   "kycRegisteredMobileHint": "Registered mobile: {mobile}",
   "@kycRegisteredMobileHint": {
     "placeholders": {
@@ -504,7 +504,7 @@
   "aadhaarInvalid": "Enter a valid 12-digit Aadhaar number",
   "sendOtp": "Send OTP",
   "sendingOtp": "Sending OTP...",
-  "otpSentToMobile": "OTP sent to the mobile linked with Aadhaar{ending}.",
+  "otpSentToMobile": "OTP SMS sent to the Aadhaar-linked mobile{ending}. Check that phone's Messages — it will not appear inside this app.",
   "@otpSentToMobile": {
     "placeholders": {
       "ending": {"type": "String"}
@@ -537,7 +537,7 @@
     }
   },
   "backToDashboard": "Back to dashboard",
-  "otpSentSnack": "OTP sent to your Aadhaar-linked mobile number.",
+  "otpSentSnack": "OTP SMS sent to your Aadhaar-linked mobile. Check that phone's Messages (not this app).",
   "aadhaarVerifiedSnack": "Aadhaar verified successfully.",
   "aadhaarVerifiedContinuePan": "Aadhaar verified. Enter your PAN number below to continue.",
   "kycCompleteSnack": "KYC complete. Gold trading is now unlocked.",

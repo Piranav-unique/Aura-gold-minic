@@ -1065,7 +1065,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get kycAadhaarOtpInstruction =>
-      'உங்கள் 12 இலக்க ஆதார் எண்ணை உள்ளிடவும். ஆதாருடன் இணைக்கப்பட்ட மொபைலுக்கு OTP அனுப்பப்படும் — அது நீங்கள் பதிவு செய்த மொபைல் எண்ணுடன் பொருந்த வேண்டும்.';
+      'உங்கள் 12 இலக்க ஆதார் எண்ணை உள்ளிடவும். UIDAI ஆதாருடன் இணைக்கப்பட்ட மொபைலுக்கு SMS OTP அனுப்பும் (இந்த ஆப்பிற்குள் அல்ல). அந்த மொபைல் நீங்கள் பதிவு செய்த எண்ணுடன் பொருந்த வேண்டும்.';
 
   @override
   String kycRegisteredMobileHint(String mobile) {
@@ -1120,7 +1120,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String otpSentToMobile(String ending) {
-    return 'ஆதாருடன் இணைக்கப்பட்ட மொபைலுக்கு OTP அனுப்பப்பட்டது$ending.';
+    return 'ஆதார் இணை மொபைலுக்கு OTP SMS அனுப்பப்பட்டது$ending. அந்த போனின் Messages-ஐ பாருங்கள் — ஆப்பிற்குள் வராது.';
   }
 
   @override
@@ -1180,7 +1180,8 @@ class AppLocalizationsTa extends AppLocalizations {
   String get backToDashboard => 'டாஷ்போர்டுக்குத் திரும்பு';
 
   @override
-  String get otpSentSnack => 'உங்கள் ஆதார் இணை மொபைலுக்கு OTP அனுப்பப்பட்டது.';
+  String get otpSentSnack =>
+      'ஆதார் இணை மொபைலுக்கு OTP SMS அனுப்பப்பட்டது. அந்த போனின் Messages-ஐ பாருங்கள் (இந்த ஆப் அல்ல).';
 
   @override
   String get aadhaarVerifiedSnack => 'ஆதார் வெற்றிகரமாக சரிபார்க்கப்பட்டது.';

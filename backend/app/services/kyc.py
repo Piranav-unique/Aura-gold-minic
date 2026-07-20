@@ -277,7 +277,7 @@ class KycService:
         if not registered:
             raise ValidationException("Registered mobile number is missing.")
 
-        if mobile_hash and share_code is not None:
+        if mobile_hash and share_code is not None and str(share_code).strip() != "":
             computed = compute_aadhaar_mobile_hash(
                 registered, str(share_code).strip(), aadhaar_number
             )
@@ -289,19 +289,49 @@ class KycService:
             return registered
 
         status = str(self._extract_okyc_field(data, "status") or "").upper()
-        if status in {"VALID", "SUCCESS"}:
+        has_identity = any(
+            self._extract_okyc_field(
+                data,
+                key,
+            )
+            is not None
+            for key in (
+                "name",
+                "full_name",
+                "care_of",
+                "dob",
+                "date_of_birth",
+                "gender",
+                "address",
+                "photo",
+                "aadhaar_number",
+                "uid",
+            )
+        )
+        if status in {"VALID", "SUCCESS"} or has_identity:
             # OTP was validated by UIDAI/Sandbox; Aadhaar-linked mobile is proven.
             logger.info(
-                "kyc_aadhaar_mobile_hash_missing_after_valid_otp",
-                extra={"user_id": str(user.id)},
+                "kyc_aadhaar_mobile_accepted_after_otp",
+                user_id=str(user.id),
+                status=status or None,
+                has_identity=has_identity,
+                has_mobile_hash=bool(mobile_hash),
             )
             return registered
 
         if not self.sandbox.is_configured:
             return registered
 
+        logger.warning(
+            "kyc_aadhaar_mobile_unconfirmed",
+            user_id=str(user.id),
+            data_keys=sorted(str(k) for k in data.keys()) if data else [],
+            status=status or None,
+        )
         raise ValidationException(
-            "Unable to confirm the mobile linked with this Aadhaar."
+            "Unable to confirm the mobile linked with this Aadhaar. "
+            "Enter the OTP from the SMS on your Aadhaar-linked mobile "
+            f"(registered app mobile ends with {registered[-4:]})."
         )
 
     @staticmethod
