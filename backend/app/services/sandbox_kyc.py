@@ -102,19 +102,22 @@ class SandboxKycClient:
     async def _post(
         self, path: str, payload: dict[str, Any], *, max_attempts: int = 3
     ) -> dict[str, Any]:
-        token = await self._get_access_token()
-        headers = {
-            "x-api-key": self.api_key,
-            "authorization": token,
-            "x-api-version": self.api_version,
-            "Content-Type": "application/json",
-            "accept": "application/json",
-        }
-        url = f"{self.base_url}{path}"
         last_body: dict[str, Any] = {}
         last_status = 0
+        force_refresh = False
 
         for attempt in range(max_attempts):
+            token = await self._get_access_token(force_refresh=force_refresh)
+            force_refresh = False
+            headers = {
+                "x-api-key": self.api_key,
+                "authorization": token,
+                "x-api-version": self.api_version,
+                "Content-Type": "application/json",
+                "accept": "application/json",
+            }
+            url = f"{self.base_url}{path}"
+
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.post(url, json=payload, headers=headers)
@@ -129,6 +132,18 @@ class SandboxKycClient:
 
             last_body = self._parse_json(response)
             last_status = response.status_code
+
+            if response.status_code in {401, 403} and attempt < max_attempts - 1:
+                logger.warning(
+                    "sandbox_kyc_auth_retry",
+                    path=path,
+                    status_code=response.status_code,
+                    attempt=attempt + 1,
+                )
+                self.clear_token_cache()
+                force_refresh = True
+                await asyncio.sleep(2**attempt)
+                continue
 
             if response.status_code == 503 and attempt < max_attempts - 1:
                 logger.warning(
@@ -164,10 +179,14 @@ class SandboxKycClient:
             )
         return raw or "KYC verification failed. Please check your details and try again."
 
-    async def _get_access_token(self) -> str:
+    async def _get_access_token(self, *, force_refresh: bool = False) -> str:
         global _token_cache
         now = time.monotonic()
-        if _token_cache and (now - _token_cache[0]) < _TOKEN_TTL_SECONDS:
+        if (
+            not force_refresh
+            and _token_cache
+            and (now - _token_cache[0]) < _TOKEN_TTL_SECONDS
+        ):
             return _token_cache[1]
 
         headers = {
@@ -188,28 +207,45 @@ class SandboxKycClient:
 
         body = self._parse_json(response)
         if response.status_code >= 400:
+            provider_message = self._extract_error_message(body)
             logger.error(
                 "sandbox_auth_failed",
                 status_code=response.status_code,
-                message=body.get("message"),
+                message=provider_message,
+                key_prefix=(self.api_key[:12] if self.api_key else ""),
             )
-            raise ValidationException("KYC provider authentication failed.")
+            raise ValidationException(
+                "KYC provider authentication failed. "
+                "Check SANDBOX_API_KEY and SANDBOX_API_SECRET on the server."
+            )
 
-        token = (
-            body.get("data", {}).get("access_token")
-            if isinstance(body.get("data"), dict)
-            else None
-        )
+        token = self._extract_access_token(body)
         if not token:
             logger.error(
                 "sandbox_auth_missing_token",
                 status_code=response.status_code,
+                body_keys=sorted(body.keys()),
                 message=body.get("message"),
             )
             raise ValidationException("KYC provider authentication failed.")
 
         _token_cache = (now, token)
         return token
+
+    @staticmethod
+    def _extract_access_token(body: dict[str, Any]) -> Optional[str]:
+        """Support both nested and top-level Sandbox authenticate responses."""
+        data = body.get("data")
+        if isinstance(data, dict) and data.get("access_token"):
+            return str(data["access_token"])
+        if body.get("access_token"):
+            return str(body["access_token"])
+        return None
+
+    @staticmethod
+    def clear_token_cache() -> None:
+        global _token_cache
+        _token_cache = None
 
     @staticmethod
     def _parse_json(response: httpx.Response) -> dict[str, Any]:
