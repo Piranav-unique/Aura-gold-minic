@@ -7,6 +7,7 @@ import 'package:ags_gold/config/env_config.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/domain/app_audience_resolver.dart';
 import 'package:ags_gold/features/auth/domain/device_auth_storage.dart';
+import 'package:ags_gold/features/auth/domain/kyc_draft_prefs.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/services/interfaces/secure_storage.dart';
 import 'package:ags_gold/services/secure_storage_service.dart';
@@ -87,6 +88,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         accessToken: responseData['access_token'] as String,
         refreshToken: responseData['refresh_token'] as String,
       );
+      _invalidateUserScopedProviders();
       await _syncAudienceAfterAuth(mobileHint: mobileNumber);
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
@@ -136,6 +138,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         refreshToken: responseData['refresh_token'] as String,
       );
       await deviceAuth.clearPendingTrustedFirstLogin();
+      _invalidateUserScopedProviders();
       await _syncAudienceAfterAuth(mobileHint: mobileNumber);
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
@@ -164,6 +167,8 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         accessToken: responseData['access_token'] as String,
         refreshToken: responseData['refresh_token'] as String,
       );
+      await deviceAuth.clearPendingTrustedFirstLogin();
+      _invalidateUserScopedProviders();
       await _syncAudienceAfterAuth(mobileHint: mobileNumber);
       state = const AsyncValue.data(AuthStatus.authenticated);
     } catch (e, st) {
@@ -227,18 +232,41 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
           );
         } catch (_) {}
       }
-      await _storage.clearTokens();
-      await ref.read(appAudienceProvider.notifier).clearAudience();
+      await _wipeLocalUserState();
       state = const AsyncValue.data(AuthStatus.unauthenticated);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      // Still wipe local session so the next login cannot see stale data.
+      try {
+        await _wipeLocalUserState();
+        state = const AsyncValue.data(AuthStatus.unauthenticated);
+      } catch (_) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
   Future<void> clearSession() async {
-    await _storage.clearTokens();
-    await ref.read(appAudienceProvider.notifier).clearAudience();
+    await _wipeLocalUserState();
     state = const AsyncValue.data(AuthStatus.unauthenticated);
+  }
+
+  /// Clears tokens, device-bound mobile, KYC drafts, audience, and cached
+  /// user providers so the next account cannot see the previous user's data.
+  Future<void> _wipeLocalUserState() async {
+    await _storage.clearTokens();
+    final deviceAuth = ref.read(deviceAuthStorageProvider);
+    await deviceAuth.clearRegisteredMobile();
+    await deviceAuth.clearPendingTrustedFirstLogin();
+    await KycDraftPrefs.clear();
+    await ref.read(appAudienceProvider.notifier).clearAudience();
+    _invalidateUserScopedProviders();
+  }
+
+  void _invalidateUserScopedProviders() {
+    ref.invalidate(profileProvider);
+    ref.invalidate(avatarBytesProvider);
+    ref.invalidate(profileActivityProvider);
+    ref.invalidate(auditLogsProvider);
   }
 }
 
@@ -288,6 +316,10 @@ final auditLogsProvider = FutureProvider.autoDispose<List<AuditLog>>((
 });
 
 final profileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/profile/');
   return UserProfile.fromJson(response.data as Map<String, dynamic>);
@@ -306,6 +338,10 @@ final avatarBytesProvider = FutureProvider.autoDispose<Uint8List?>((ref) async {
 final profileActivityProvider = FutureProvider.autoDispose<List<AuditLog>>((
   ref,
 ) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/profile/activity');
   final data = response.data as Map<String, dynamic>;

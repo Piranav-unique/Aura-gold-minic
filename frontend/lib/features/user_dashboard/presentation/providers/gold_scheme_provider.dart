@@ -6,7 +6,15 @@ import 'package:ags_gold/services/service_providers.dart';
 /// Dashboard-only selection before the user taps Buy Gold (not yet saved).
 class PendingGoldSchemeGramsNotifier extends Notifier<int?> {
   @override
-  int? build() => null;
+  int? build() {
+    ref.listen(authNotifierProvider, (previous, next) {
+      final status = next.value;
+      if (status != null && status != AuthStatus.authenticated) {
+        state = null;
+      }
+    });
+    return null;
+  }
 
   @override
   set state(int? value) => super.state = value;

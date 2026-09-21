@@ -43,22 +43,6 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _sectionCard(
                 theme,
-                l10n.securitySettings,
-                Icons.security,
-                Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.password),
-                      title: Text(l10n.changePassword),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => showChangePasswordDialog(context, ref),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              _sectionCard(
-                theme,
                 l10n.languageSettings,
                 Icons.language,
                 DropdownButtonFormField<String>(

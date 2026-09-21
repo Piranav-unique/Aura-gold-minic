@@ -14,6 +14,10 @@ class UserStatementsPage {
 
 final userStatementsProvider =
     FutureProvider.autoDispose<UserStatementsPage>((ref) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.get(
     '/profile/statements',

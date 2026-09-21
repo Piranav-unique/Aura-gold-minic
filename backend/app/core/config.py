@@ -144,8 +144,9 @@ class Settings(BaseSettings):
     MSG91_BANK_SMS_CHANNELS: str = "otp,sendotp"
     # Aurum_Bank_Add_OTP (DLT 1207178235534667442) — sender AURUS on MSG91/DLT portal
     MSG91_BANK_SENDER_ID: str = "AURUS"
-    # Local dev: when true, bank link uses SIGNUP_OTP_DEV_CODE instead of MSG91 SMS
-    BANK_OTP_DEV_MODE: bool = True
+    # Local dev only: when true (and ENVIRONMENT=development), skip real SMS.
+    # Keep false on Railway / production or bank OTP SMS will never send.
+    BANK_OTP_DEV_MODE: bool = False
 
     # Android in-app update (public APK URL + version; bump when publishing a new APK)
     APP_ANDROID_VERSION_NAME: str = ""

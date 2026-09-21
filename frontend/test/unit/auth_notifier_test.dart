@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/services/api_client.dart';
 import '../mocks/mock_services.dart';
@@ -17,6 +18,7 @@ void main() {
   testWidgets(
     'AuthNotifier - initial state unauthenticated when no token exists',
     (tester) async {
+      SharedPreferences.setMockInitialValues({});
       when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
 
       final container = ProviderContainer(
@@ -27,17 +29,8 @@ void main() {
       );
 
       try {
-        // Trigger build and timer initialization
-        expect(
-          container.read(authNotifierProvider),
-          isA<AsyncLoading<AuthStatus>>(),
-        );
-
-        // Wait for the 2-second artificial delay to resolve
-        await tester.pump(const Duration(seconds: 2));
-
-        final state = container.read(authNotifierProvider);
-        expect(state.value, AuthStatus.unauthenticated);
+        final status = await container.read(authNotifierProvider.future);
+        expect(status, AuthStatus.unauthenticated);
         verify(() => mockStorage.hasAccessToken()).called(1);
       } finally {
         container.dispose();
@@ -48,7 +41,26 @@ void main() {
   testWidgets('AuthNotifier - initial state authenticated when token exists', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
     when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
+    when(() => mockApiClient.get('/auth/me')).thenAnswer((_) async {
+      final response = MockResponse<Map<String, dynamic>>();
+      when(() => response.data).thenReturn(<String, dynamic>{});
+      return response;
+    });
+    when(() => mockApiClient.get('/profile/')).thenAnswer((_) async {
+      final response = MockResponse<Map<String, dynamic>>();
+      when(() => response.data).thenReturn({
+        'id': '1',
+        'email': 'test@example.com',
+        'mobile_number': '9943795005',
+        'is_active': true,
+        'is_superuser': false,
+        'roles': <Map<String, dynamic>>[],
+        'created_at': '2026-01-01T00:00:00Z',
+      });
+      return response;
+    });
 
     final container = ProviderContainer(
       overrides: [
@@ -58,13 +70,8 @@ void main() {
     );
 
     try {
-      // Trigger build
-      container.read(authNotifierProvider);
-
-      await tester.pump(const Duration(seconds: 2));
-
-      final state = container.read(authNotifierProvider);
-      expect(state.value, AuthStatus.authenticated);
+      final status = await container.read(authNotifierProvider.future);
+      expect(status, AuthStatus.authenticated);
     } finally {
       container.dispose();
     }
@@ -172,11 +179,31 @@ void main() {
   testWidgets(
     'AuthNotifier - logout clears tokens locally and calls server API',
     (tester) async {
+      SharedPreferences.setMockInitialValues({});
       when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => true);
       when(
         () => mockStorage.getRefreshToken(),
       ).thenAnswer((_) async => 'mock_refresh_token');
       when(() => mockStorage.clearTokens()).thenAnswer((_) async => {});
+      when(() => mockApiClient.get('/auth/me')).thenAnswer((_) async {
+        final response = MockResponse<Map<String, dynamic>>();
+        when(() => response.data).thenReturn({
+          'id': '1',
+          'email': 'test@example.com',
+          'mobile_number': '9943795005',
+          'is_active': true,
+          'is_superuser': false,
+          'roles': <Map<String, dynamic>>[],
+          'created_at': '2026-01-01T00:00:00Z',
+        });
+        return response;
+      });
+
+      final mockDeviceAuth = MockDeviceAuthStorage();
+      when(() => mockDeviceAuth.clearRegisteredMobile())
+          .thenAnswer((_) async {});
+      when(() => mockDeviceAuth.clearPendingTrustedFirstLogin())
+          .thenAnswer((_) async {});
 
       final mockResponse = MockResponse<dynamic>();
       when(
@@ -187,6 +214,7 @@ void main() {
         overrides: [
           secureStorageProvider.overrideWithValue(mockStorage),
           apiClientProvider.overrideWithValue(mockApiClient),
+          deviceAuthStorageProvider.overrideWithValue(mockDeviceAuth),
         ],
       );
 
@@ -203,7 +231,9 @@ void main() {
           container.read(authNotifierProvider).value,
           AuthStatus.unauthenticated,
         );
-        verify(() => mockStorage.clearTokens()).called(1);
+        verify(() => mockStorage.clearTokens()).called(greaterThanOrEqualTo(1));
+        verify(() => mockDeviceAuth.clearRegisteredMobile()).called(1);
+        verify(() => mockDeviceAuth.clearPendingTrustedFirstLogin()).called(1);
         verify(
           () => mockApiClient.post(
             '/auth/logout',

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
+import 'package:ags_gold/features/auth/domain/kyc_draft_prefs.dart';
 import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/pending_trade_provider.dart';
@@ -41,9 +42,9 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
   String? _registeredMobileMasked;
   KycGovernmentProfile? _verifiedProfile;
 
-  static const _kycRefKey = 'kyc_aadhaar_reference_id';
-  static const _kycOtpSentKey = 'kyc_aadhaar_otp_sent';
-  static const _kycAadhaarKey = 'kyc_aadhaar_pending';
+  static const _kycRefKey = KycDraftPrefs.referenceIdKey;
+  static const _kycOtpSentKey = KycDraftPrefs.otpSentKey;
+  static const _kycAadhaarKey = KycDraftPrefs.aadhaarPendingKey;
 
   @override
   void initState() {

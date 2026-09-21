@@ -112,32 +112,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
     );
   }
 
-  Future<void> _showSecuritySheet(BuildContext context, WidgetRef ref) async {
-    final l10n = context.l10n;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.password_outlined),
-                title: Text(l10n.changePassword),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(context);
-                  showChangePasswordDialog(context, ref);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   void _confirmLogout(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     showDialog<void>(
@@ -243,11 +217,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 icon: Icons.card_giftcard_outlined,
                 title: l10n.referAndEarn,
                 onTap: () => context.push('/refer-and-earn'),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.security_outlined,
-                title: l10n.securityAndPermission,
-                onTap: () => _showSecuritySheet(context, ref),
               ),
               ProfileSettingsTile(
                 icon: Icons.gavel_outlined,

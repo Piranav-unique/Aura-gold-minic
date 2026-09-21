@@ -6,6 +6,10 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/personal
 import 'package:ags_gold/services/service_providers.dart';
 
 final kycStatusProvider = FutureProvider.autoDispose<KycStatusDetails>((ref) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.get('/profile/kyc/status');
   return KycStatusDetails.fromJson(response.data as Map<String, dynamic>);

@@ -4,29 +4,36 @@ services:
   db:
     image: public.ecr.aws/docker/library/postgres:15-alpine
     container_name: ags-gold-db
-    restart: always
+
     environment:
       POSTGRES_DB: ags_gold_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
+
     ports:
       - "5435:5432"
+
     volumes:
       - pgdata:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ags_gold_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: ags-gold-api
-    restart: always
+    restart: "no"
+
     ports:
       - "8001:8000"
+
     environment:
       - ENVIRONMENT=development
       - POSTGRES_SERVER=db
@@ -35,21 +42,28 @@ services:
       - POSTGRES_DB=ags_gold_db
       - POSTGRES_PORT=5432
       - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/ags_gold_db
-      # MSG91 + OTP: loaded from env_file (.env) only — avoids stale overrides
+
+      # API keys
       - API_NINJAS_KEY=${API_NINJAS_KEY:-}
       - GOLDAPI_KEY=${GOLDAPI_KEY:-}
       - METALPRICEAPI_KEY=${METALPRICEAPI_KEY:-}
+
+      # Razorpay
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-}
       - RAZORPAY_CURRENCY=${RAZORPAY_CURRENCY:-INR}
       - PAYMENT_DEV_MOCK=${PAYMENT_DEV_MOCK:-true}
+
     env_file:
       - .env
+
     depends_on:
       db:
         condition: service_healthy
+
     volumes:
       - .:/app
+
 
 volumes:
   pgdata:

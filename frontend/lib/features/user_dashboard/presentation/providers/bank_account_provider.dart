@@ -3,6 +3,10 @@ import 'package:ags_gold/features/user_dashboard/domain/bank_account.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 final bankAccountsProvider = FutureProvider.autoDispose<List<BankAccount>>((ref) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final api = ref.watch(apiClientProvider);
   final response = await api.get('/bank-accounts');
   final data = response.data as List<dynamic>;

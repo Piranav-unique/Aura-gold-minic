@@ -25,6 +25,10 @@ final submitSellGoldInquiryProvider = Provider((ref) {
 
 final mySellGoldInquiriesProvider =
     FutureProvider.autoDispose<List<SellGoldInquiry>>((ref) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final apiClient = ref.read(apiClientProvider);
   final response = await apiClient.get('/sell-inquiries/mine');
   final data = response.data as Map<String, dynamic>;

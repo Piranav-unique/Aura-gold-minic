@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
+import 'package:ags_gold/services/service_providers.dart';
 
 class PendingTrade {
   final bool isBuy;
@@ -15,7 +16,15 @@ class PendingTrade {
 
 class PendingTradeNotifier extends Notifier<PendingTrade?> {
   @override
-  PendingTrade? build() => null;
+  PendingTrade? build() {
+    ref.listen(authNotifierProvider, (previous, next) {
+      final status = next.value;
+      if (status != null && status != AuthStatus.authenticated) {
+        state = null;
+      }
+    });
+    return null;
+  }
 
   void set(PendingTrade? trade) => state = trade;
 

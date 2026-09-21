@@ -42,7 +42,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Theme Settings'), findsOneWidget);
-    expect(find.text('Security Settings'), findsOneWidget);
     expect(find.text('Language Settings'), findsOneWidget);
     expect(find.text('Account Settings'), findsOneWidget);
   });

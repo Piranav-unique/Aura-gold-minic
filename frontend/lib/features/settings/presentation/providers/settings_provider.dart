@@ -5,6 +5,10 @@ import 'package:ags_gold/features/settings/domain/user_settings.dart';
 final userSettingsProvider = FutureProvider.autoDispose<UserSettings>((
   ref,
 ) async {
+  final auth = await ref.watch(authNotifierProvider.future);
+  if (auth != AuthStatus.authenticated) {
+    throw StateError('Not authenticated');
+  }
   final apiClient = ref.watch(apiClientProvider);
   final response = await apiClient.get('/profile/settings');
   return UserSettings.fromJson(response.data as Map<String, dynamic>);
