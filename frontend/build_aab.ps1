@@ -1,6 +1,6 @@
 # Build Android App Bundle (.aab) for Google Play — uses hosted Railway API by default.
 param(
-    [string]$ApiBaseUrl = "https://aura-gold-minic-production.up.railway.app/api/v1"
+    [string]$ApiBaseUrl = "https://aura-gold-minic-production-8d90.up.railway.app/api/v1"
 )
 
 $ErrorActionPreference = "Stop"

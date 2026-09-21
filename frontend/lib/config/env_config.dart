@@ -7,7 +7,7 @@ enum AppEnvironment { dev, prod }
 class EnvConfig {
   /// Hosted backend on Railway (used by default on Android / release builds).
   static const String hostedApiBaseUrl =
-      'https://aura-gold-minic-production.up.railway.app/api/v1';
+      'https://aura-gold-minic-production-8d90.up.railway.app/api/v1';
   static const String adminMobileNumber = String.fromEnvironment(
     'ADMIN_MOBILE_NUMBER',
     defaultValue: '9943795005',

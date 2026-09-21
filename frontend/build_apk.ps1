@@ -1,6 +1,6 @@
 # Build release APK that talks only to the hosted Railway backend (any phone with internet).
 param(
-    [string]$ApiBaseUrl = "https://aura-gold-minic-production.up.railway.app/api/v1"
+    [string]$ApiBaseUrl = "https://aura-gold-minic-production-8d90.up.railway.app/api/v1"
 )
 
 $ErrorActionPreference = "Stop"
