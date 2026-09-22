@@ -38,6 +38,7 @@ from app.api.admin_digital_inventory import router as admin_digital_inventory_ro
 from app.api.admin_organization_profile import router as admin_organization_profile_router
 from app.api.organization_profile import router as organization_profile_router
 from app.api.razorpay_webhooks import router as razorpay_webhooks_router
+from app.api.legal import router as legal_router
 from app.database.session import verify_db_connection, async_session_maker
 from app.database import base as db_base  # noqa: F401
 from app.repositories.token_blacklist import TokenBlacklistRepository
@@ -233,3 +234,11 @@ app.include_router(
     prefix=f"{settings.API_V1_STR}/webhooks",
     tags=["webhooks"],
 )
+app.include_router(legal_router)
+app.include_router(legal_router, prefix=settings.API_V1_STR)
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/privacy-policy")

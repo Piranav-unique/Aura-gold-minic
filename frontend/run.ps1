@@ -16,6 +16,21 @@ param(
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+# Auto-detect JAVA_HOME if unset or pointing to a missing path
+if (-not $env:JAVA_HOME -or -not (Test-Path $env:JAVA_HOME)) {
+    $candidate = Get-ChildItem "C:\Program Files\Microsoft" -Filter "jdk-*" -Directory -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+
+    if (-not $candidate -and (Test-Path "C:\Program Files\Android\Android Studio\jbr")) {
+        $candidate = "C:\Program Files\Android\Android Studio\jbr"
+    }
+
+    if ($candidate) {
+        $env:JAVA_HOME = $candidate
+        $env:Path = "$candidate\bin;$env:Path"
+    }
+}
+
 function Get-LanIPv4 {
     $ip = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
         Where-Object {
@@ -47,7 +62,13 @@ if (-not $Cloud) {
         $ApiHost = Get-LanIPv4
     }
     if (-not $ApiBaseUrl) {
-        $ApiBaseUrl = "http://${ApiHost}:8000/api/v1"
+        $port = 8000
+        $p8000Open = Test-NetConnection -ComputerName 127.0.0.1 -Port 8000 -InformationLevel Quiet -WarningAction SilentlyContinue
+        $p8001Open = Test-NetConnection -ComputerName 127.0.0.1 -Port 8001 -InformationLevel Quiet -WarningAction SilentlyContinue
+        if (-not $p8000Open -and $p8001Open) {
+            $port = 8001
+        }
+        $ApiBaseUrl = "http://${ApiHost}:${port}/api/v1"
     }
 }
 

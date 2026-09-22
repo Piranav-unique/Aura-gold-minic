@@ -1,10 +1,26 @@
 # Build Android App Bundle (.aab) for Google Play — uses hosted Railway API by default.
 param(
-    [string]$ApiBaseUrl = "https://aura-gold-minic-production-8d90.up.railway.app/api/v1"
+    [string]$ApiBaseUrl = "https://api.aurumgold.co.in/api/v1"
 )
 
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
+
+# Auto-detect JAVA_HOME if unset or pointing to a missing path
+if (-not $env:JAVA_HOME -or -not (Test-Path $env:JAVA_HOME)) {
+    $candidate = Get-ChildItem "C:\Program Files\Microsoft" -Filter "jdk-*" -Directory -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+
+    if (-not $candidate -and (Test-Path "C:\Program Files\Android\Android Studio\jbr")) {
+        $candidate = "C:\Program Files\Android\Android Studio\jbr"
+    }
+
+    if ($candidate) {
+        $env:JAVA_HOME = $candidate
+        $env:Path = "$candidate\bin;$env:Path"
+        Write-Host "Set JAVA_HOME to: $candidate" -ForegroundColor DarkCyan
+    }
+}
 
 Write-Host "Building app bundle (AAB)..." -ForegroundColor Cyan
 Write-Host "API: $ApiBaseUrl" -ForegroundColor DarkGray
