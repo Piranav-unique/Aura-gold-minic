@@ -204,3 +204,254 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 @router.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
 async def get_privacy_policy():
     return HTMLResponse(content=HTML_TEMPLATE, status_code=200)
+
+
+SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Join AGS Gold - Pure 24K Gold Savings</title>
+  <style>
+    :root {
+      --gold-primary: #D4AF37;
+      --gold-dark: #AA820A;
+      --bg: #0F1115;
+      --card-bg: #1A1D24;
+      --text-white: #FFFFFF;
+      --text-muted: #9BA3AF;
+      --border: #2A2F3D;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 32px 24px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    .logo-badge {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .scheme-pill {
+      display: inline-block;
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--gold-primary);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 6px 16px;
+      border-radius: 30px;
+      margin-bottom: 20px;
+    }
+    .code-box {
+      background: #0B0D11;
+      border: 1px dashed var(--gold-primary);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .code-info {
+      text-align: left;
+    }
+    .code-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .code-value {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--gold-primary);
+    }
+    .copy-btn {
+      background: var(--gold-primary);
+      color: #000000;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .copy-btn:hover {
+      background: #E5C358;
+    }
+    .btn-main {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
+      color: #000000;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+      cursor: pointer;
+    }
+    .btn-secondary {
+      display: block;
+      width: 100%;
+      background: transparent;
+      color: var(--text-white);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+      padding: 14px;
+      border-radius: 12px;
+    }
+    .features {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .feature-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-badge">🏆</div>
+    <h1>You're Invited to AGS Gold</h1>
+    <p class="subtitle">Join India's trusted 24K pure digital gold savings platform.</p>
+
+    <div class="scheme-pill">✨ {{SCHEME_NAME}}</div>
+
+    <div class="code-box">
+      <div class="code-info">
+        <div class="code-label">Referral Code</div>
+        <div class="code-value" id="refCode">{{REFERRAL_CODE}}</div>
+      </div>
+      <button class="copy-btn" onclick="copyCode()">Copy</button>
+    </div>
+
+    <a href="{{DEEP_LINK}}" class="btn-main" id="openAppBtn">🚀 Open in AGS Gold App</a>
+    <a href="https://play.google.com/store/apps/details?id=com.agsgold.ags_gold" class="btn-secondary" target="_blank">📥 Download on Google Play</a>
+
+    <div class="features">
+      <div class="feature-item">
+        <span>🪙</span>
+        <span>24K 99.9% Pure</span>
+      </div>
+      <div class="feature-item">
+        <span>🔒</span>
+        <span>Insured Vault</span>
+      </div>
+      <div class="feature-item">
+        <span>🎁</span>
+        <span>Gold Rewards</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function copyCode() {
+      const code = document.getElementById('refCode').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.innerText = 'Copied!';
+        btn.style.background = '#4CAF50';
+        btn.style.color = '#FFFFFF';
+        setTimeout(() => {
+          btn.innerText = 'Copy';
+          btn.style.background = 'var(--gold-primary)';
+          btn.style.color = '#000000';
+        }, 2000);
+      });
+    }
+
+    window.onload = function() {
+      const deepLink = "{{DEEP_LINK}}";
+      if (deepLink && deepLink.startsWith("agsgold://")) {
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = deepLink;
+        document.body.appendChild(iframe);
+      }
+    };
+  </script>
+</body>
+</html>
+"""
+
+
+@router.get("/signup", response_class=HTMLResponse, include_in_schema=False)
+async def signup_landing_page(
+    ref: str | None = None,
+    scheme: str | None = None,
+):
+    code = (ref or "").strip().upper() or "WELCOME"
+    scheme_str = (scheme or "").strip()
+    if scheme_str == "1":
+        scheme_name = "1 Gram 24K Gold Savings Scheme"
+    elif scheme_str == "5":
+        scheme_name = "5 Grams 24K Gold Savings Scheme"
+    elif scheme_str == "10":
+        scheme_name = "10 Grams 24K Gold Savings Scheme"
+    else:
+        scheme_name = "24K Pure Digital Gold Savings Scheme"
+
+    deep_link = f"agsgold://signup?ref={code}"
+    if scheme_str:
+        deep_link += f"&scheme={scheme_str}"
+
+    html = (
+        SIGNUP_LANDING_TEMPLATE
+        .replace("{{SCHEME_NAME}}", scheme_name)
+        .replace("{{REFERRAL_CODE}}", code)
+        .replace("{{DEEP_LINK}}", deep_link)
+    )
+    return HTMLResponse(content=html, status_code=200)
