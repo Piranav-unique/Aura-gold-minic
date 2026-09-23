@@ -65,7 +65,7 @@ class _ReferBody extends StatelessWidget {
 
   String _inviteLink(int schemeGrams) {
     final code = summary.referralCode.isEmpty ? 'YOURCODE' : summary.referralCode;
-    return 'https://aurumgold.co.in/signup?ref=$code&scheme=$schemeGrams';
+    return 'https://api.aurumgold.co.in/signup?ref=$code&scheme=$schemeGrams';
   }
 
   Future<void> _copyLink(BuildContext context, int schemeGrams) async {
