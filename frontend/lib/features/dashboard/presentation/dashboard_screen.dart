@@ -46,6 +46,11 @@ class DashboardScreen extends ConsumerWidget {
       title: 'Executive Dashboard',
       child: RefreshIndicator(
         onRefresh: () async {
+          if (role == ExecutiveRole.admin) {
+            try {
+              await ref.read(razorpaySyncProvider.notifier).syncNow();
+            } catch (_) {}
+          }
           ref.invalidate(executiveDashboardProvider);
           await ref.read(executiveDashboardProvider.future);
         },
@@ -61,17 +66,13 @@ class DashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Admin uses its own "Command Center" header inside
-                  // AdminExecutiveView; other roles keep the greeting hero.
-                  if (resolvedRole != ExecutiveRole.admin) ...[
-                    DashboardHero(
-                      greeting: _greeting(data.displayName),
-                      subtitle: _subtitle(resolvedRole),
-                      roleLabel: executiveRoleLabel(resolvedRole),
-                      refreshedAt: data.refreshedAt,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                  DashboardHero(
+                    greeting: _greeting(data.displayName),
+                    subtitle: _subtitle(resolvedRole),
+                    roleLabel: executiveRoleLabel(resolvedRole),
+                    refreshedAt: data.refreshedAt,
+                  ),
+                  const SizedBox(height: 24),
                   switch (resolvedRole) {
                     ExecutiveRole.admin => AdminExecutiveView(data: data),
                     ExecutiveRole.manager => ManagerExecutiveView(data: data),
@@ -81,27 +82,47 @@ class DashboardScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Padding(
+          loading: () => const SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.all(24),
-            child: PremiumSkeletonList(itemCount: 6),
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 64),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 24),
+                    PremiumSkeletonList(itemCount: 4),
+                  ],
+                ),
+              ),
+            ),
           ),
-          error: (error, _) => Padding(
+          error: (error, _) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 12),
-                Text('Failed to load dashboard: $error'),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => ref.invalidate(executiveDashboardProvider),
-                  child: const Text('Retry'),
-                ),
-              ],
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 48),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Failed to load dashboard: $error',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => ref.invalidate(executiveDashboardProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

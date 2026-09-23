@@ -212,6 +212,160 @@ class DailyActivityItem {
   }
 }
 
+class AdminPaymentItem {
+  final String id;
+  final String razorpayOrderId;
+  final String? razorpayPaymentId;
+  final String? bankRrn;
+  final String? paymentMethod;
+  final String? customerName;
+  final String? customerMobile;
+  final String? customerEmail;
+  final String metal;
+  final double grams;
+  final double amountInr;
+  final String status;
+  final String? failureReason;
+  final DateTime createdAt;
+  final DateTime? paidAt;
+  final double? gstPercent;
+  final double? metalValueInr;
+  final double? gstAmountInr;
+  final double? razorpayFeeInr;
+  final double? merchantSettlementInr;
+
+  const AdminPaymentItem({
+    required this.id,
+    required this.razorpayOrderId,
+    this.razorpayPaymentId,
+    this.bankRrn,
+    this.paymentMethod,
+    this.customerName,
+    this.customerMobile,
+    this.customerEmail,
+    required this.metal,
+    required this.grams,
+    required this.amountInr,
+    required this.status,
+    this.failureReason,
+    required this.createdAt,
+    this.paidAt,
+    this.gstPercent,
+    this.metalValueInr,
+    this.gstAmountInr,
+    this.razorpayFeeInr,
+    this.merchantSettlementInr,
+  });
+
+  factory AdminPaymentItem.fromJson(Map<String, dynamic> json) {
+    return AdminPaymentItem(
+      id: json['id'] as String? ?? '',
+      razorpayOrderId: json['razorpay_order_id'] as String? ?? '',
+      razorpayPaymentId: json['razorpay_payment_id'] as String?,
+      bankRrn: json['bank_rrn'] as String?,
+      paymentMethod: json['payment_method'] as String?,
+      customerName: json['customer_name'] as String?,
+      customerMobile: json['customer_mobile'] as String?,
+      customerEmail: json['customer_email'] as String?,
+      metal: json['metal'] as String? ?? 'gold',
+      grams: _parseDecimal(json['grams']),
+      amountInr: _parseDecimal(json['amount_inr']),
+      status: json['status'] as String? ?? 'created',
+      failureReason: json['failure_reason'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      paidAt: json['paid_at'] != null
+          ? DateTime.parse(json['paid_at'] as String)
+          : null,
+      gstPercent: json['gst_percent'] != null
+          ? _parseDecimal(json['gst_percent'])
+          : null,
+      metalValueInr: json['metal_value_inr'] != null
+          ? _parseDecimal(json['metal_value_inr'])
+          : null,
+      gstAmountInr: json['gst_amount_inr'] != null
+          ? _parseDecimal(json['gst_amount_inr'])
+          : null,
+      razorpayFeeInr: json['razorpay_fee_inr'] != null
+          ? _parseDecimal(json['razorpay_fee_inr'])
+          : null,
+      merchantSettlementInr: json['merchant_settlement_inr'] != null
+          ? _parseDecimal(json['merchant_settlement_inr'])
+          : null,
+    );
+  }
+}
+
+class AdminPaymentSummary {
+  final double totalCapturedRevenue;
+  final int totalCapturedCount;
+  final int totalPendingCount;
+  final int totalFailedCount;
+  final double todayCapturedRevenue;
+  final int todayCapturedCount;
+  final DateTime? lastSyncedAt;
+
+  const AdminPaymentSummary({
+    required this.totalCapturedRevenue,
+    required this.totalCapturedCount,
+    required this.totalPendingCount,
+    required this.totalFailedCount,
+    required this.todayCapturedRevenue,
+    required this.todayCapturedCount,
+    this.lastSyncedAt,
+  });
+
+  factory AdminPaymentSummary.fromJson(Map<String, dynamic> json) {
+    return AdminPaymentSummary(
+      totalCapturedRevenue: _parseDecimal(json['total_captured_revenue']),
+      totalCapturedCount: json['total_captured_count'] as int? ?? 0,
+      totalPendingCount: json['total_pending_count'] as int? ?? 0,
+      totalFailedCount: json['total_failed_count'] as int? ?? 0,
+      todayCapturedRevenue: _parseDecimal(json['today_captured_revenue']),
+      todayCapturedCount: json['today_captured_count'] as int? ?? 0,
+      lastSyncedAt: json['last_synced_at'] != null
+          ? DateTime.parse(json['last_synced_at'] as String)
+          : null,
+    );
+  }
+}
+
+class CustomerPaymentSummary {
+  final String mobile;
+  final String? name;
+  final String? email;
+  final double totalPaidInr;
+  final int successCount;
+  final double totalGrams;
+  final List<AdminPaymentItem> payments;
+
+  const CustomerPaymentSummary({
+    required this.mobile,
+    this.name,
+    this.email,
+    required this.totalPaidInr,
+    required this.successCount,
+    this.totalGrams = 0.0,
+    this.payments = const [],
+  });
+
+  factory CustomerPaymentSummary.fromJson(Map<String, dynamic> json) {
+    return CustomerPaymentSummary(
+      mobile: json['mobile'] as String? ?? 'Unknown',
+      name: json['name'] as String?,
+      email: json['email'] as String?,
+      totalPaidInr: _parseDecimal(json['total_paid_inr']),
+      successCount: json['success_count'] as int? ?? 0,
+      totalGrams: _parseDecimal(json['total_grams']),
+      payments: (json['payments'] as List<dynamic>?)
+              ?.map((e) => AdminPaymentItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+  }
+}
+
 class ExecutiveDashboard {
   final String role;
   final String displayName;
@@ -229,6 +383,9 @@ class ExecutiveDashboard {
   final List<AssignedTaskSummary> assignedTasks;
   final List<DailyActivityItem> dailyActivities;
   final List<ActivityTrendPoint> activityTrend;
+  final List<AdminPaymentItem> recentPayments;
+  final AdminPaymentSummary? paymentSummary;
+  final List<CustomerPaymentSummary> customerSummaries;
 
   const ExecutiveDashboard({
     required this.role,
@@ -247,7 +404,54 @@ class ExecutiveDashboard {
     this.assignedTasks = const [],
     this.dailyActivities = const [],
     this.activityTrend = const [],
+    this.recentPayments = const [],
+    this.paymentSummary,
+    this.customerSummaries = const [],
   });
+
+  ExecutiveDashboard copyWith({
+    String? role,
+    String? displayName,
+    int? unreadNotifications,
+    DateTime? refreshedAt,
+    List<RevenueTrendPoint>? revenueTrend,
+    double? revenueGrowthPercent,
+    CustomerDashboardMetrics? customerMetrics,
+    AppDashboardMetrics? appMetrics,
+    InventoryMetrics? inventoryMetrics,
+    TransactionMetrics? transactionMetrics,
+    TeamDashboardMetrics? teamMetrics,
+    List<WorkflowApprovalSummary>? pendingApprovals,
+    List<InventoryItem>? inventoryAlerts,
+    List<AssignedTaskSummary>? assignedTasks,
+    List<DailyActivityItem>? dailyActivities,
+    List<ActivityTrendPoint>? activityTrend,
+    List<AdminPaymentItem>? recentPayments,
+    AdminPaymentSummary? paymentSummary,
+    List<CustomerPaymentSummary>? customerSummaries,
+  }) {
+    return ExecutiveDashboard(
+      role: role ?? this.role,
+      displayName: displayName ?? this.displayName,
+      unreadNotifications: unreadNotifications ?? this.unreadNotifications,
+      refreshedAt: refreshedAt ?? this.refreshedAt,
+      revenueTrend: revenueTrend ?? this.revenueTrend,
+      revenueGrowthPercent: revenueGrowthPercent ?? this.revenueGrowthPercent,
+      customerMetrics: customerMetrics ?? this.customerMetrics,
+      appMetrics: appMetrics ?? this.appMetrics,
+      inventoryMetrics: inventoryMetrics ?? this.inventoryMetrics,
+      transactionMetrics: transactionMetrics ?? this.transactionMetrics,
+      teamMetrics: teamMetrics ?? this.teamMetrics,
+      pendingApprovals: pendingApprovals ?? this.pendingApprovals,
+      inventoryAlerts: inventoryAlerts ?? this.inventoryAlerts,
+      assignedTasks: assignedTasks ?? this.assignedTasks,
+      dailyActivities: dailyActivities ?? this.dailyActivities,
+      activityTrend: activityTrend ?? this.activityTrend,
+      recentPayments: recentPayments ?? this.recentPayments,
+      paymentSummary: paymentSummary ?? this.paymentSummary,
+      customerSummaries: customerSummaries ?? this.customerSummaries,
+    );
+  }
 
   factory ExecutiveDashboard.fromJson(Map<String, dynamic> json) {
     return ExecutiveDashboard(
@@ -321,6 +525,26 @@ class ExecutiveDashboard {
           (json['activity_trend'] as List<dynamic>?)
               ?.map(
                 (e) => ActivityTrendPoint.fromJson(e as Map<String, dynamic>),
+              )
+              .toList() ??
+          const [],
+      recentPayments:
+          (json['recent_payments'] as List<dynamic>?)
+              ?.map(
+                (e) => AdminPaymentItem.fromJson(e as Map<String, dynamic>),
+              )
+              .toList() ??
+          const [],
+      paymentSummary: json['payment_summary'] != null
+          ? AdminPaymentSummary.fromJson(
+              json['payment_summary'] as Map<String, dynamic>,
+            )
+          : null,
+      customerSummaries: (json['customer_summaries'] as List<dynamic>?)
+              ?.map(
+                (e) => CustomerPaymentSummary.fromJson(
+                  e as Map<String, dynamic>,
+                ),
               )
               .toList() ??
           const [],

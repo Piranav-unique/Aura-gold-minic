@@ -1,6 +1,7 @@
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/features/profile/presentation/profile_dialogs.dart';
+import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,13 +25,15 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           theme: AppTheme.darkTheme,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
+            body: Consumer(
+              builder: (context, ref, _) {
                 return ElevatedButton(
                   onPressed: () => showEditProfileDialog(
                     context,
-                    ProviderScope.containerOf(context),
+                    ref,
                     profile,
                   ),
                   child: const Text('Open dialog'),
@@ -45,15 +48,15 @@ void main() {
     await tester.tap(find.text('Open dialog'));
     await tester.pumpAndSettle();
 
-    final textField = tester.widget<TextFormField>(
-      find.byType(TextFormField).first,
+    final textField = tester.widget<TextField>(
+      find.byType(TextField).first,
     );
-    final decoration = textField.decoration as InputDecoration;
+    final decoration = textField.decoration;
 
     expect(
-      decoration.fillColor,
+      decoration?.fillColor,
       AppTheme.darkTheme.colorScheme.surfaceContainerHighest,
     );
-    expect(decoration.fillColor, isNot(AppTheme.creamElevated));
+    expect(decoration?.fillColor, isNot(AppTheme.creamElevated));
   });
 }

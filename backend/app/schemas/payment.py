@@ -83,3 +83,62 @@ class PaymentSettlementListResponse(BaseModel):
   total: int
   skip: int
   limit: int
+
+
+class AdminPaymentItem(BaseModel):
+  id: UUID
+  razorpay_order_id: str
+  razorpay_payment_id: Optional[str] = None
+  bank_rrn: Optional[str] = None
+  payment_method: Optional[str] = None
+  customer_name: Optional[str] = None
+  customer_mobile: Optional[str] = None
+  customer_email: Optional[str] = None
+  metal: str
+  grams: Decimal
+  amount_inr: Decimal
+  status: str
+  failure_reason: Optional[str] = None
+  created_at: datetime
+  paid_at: Optional[datetime] = None
+  gst_percent: Optional[Decimal] = None
+  metal_value_inr: Optional[Decimal] = None
+  gst_amount_inr: Optional[Decimal] = None
+  razorpay_fee_inr: Optional[Decimal] = None
+  merchant_settlement_inr: Optional[Decimal] = None
+
+
+class AdminPaymentSummary(BaseModel):
+  total_captured_revenue: Decimal
+  total_captured_count: int
+  total_pending_count: int
+  total_failed_count: int
+  today_captured_revenue: Decimal
+  today_captured_count: int
+  last_synced_at: Optional[datetime] = None
+
+
+class AdminPaymentListResponse(BaseModel):
+  items: List[AdminPaymentItem]
+  summary: AdminPaymentSummary
+  total: int
+  skip: int
+  limit: int
+
+
+class RazorpaySyncAllResponse(BaseModel):
+  synced: bool
+  total_inspected: int
+  updated_orders: int
+  created_orders: int
+  synced_at: datetime
+  summary: AdminPaymentSummary
+
+
+class CustomerPaymentSummary(BaseModel):
+  mobile: str
+  name: Optional[str] = None
+  email: Optional[str] = None
+  total_paid_inr: Decimal
+  success_count: int
+  total_grams: Decimal = Decimal("0")

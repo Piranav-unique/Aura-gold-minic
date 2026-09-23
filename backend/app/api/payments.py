@@ -4,9 +4,11 @@ from app.api.dependencies import get_current_user, get_gold_payment_service
 from app.core.authorization import PermissionChecker
 from app.models.user import User
 from app.schemas.payment import (
+  AdminPaymentListResponse,
   CreatePaymentOrderRequest,
   CreatePaymentOrderResponse,
   PaymentSettlementListResponse,
+  RazorpaySyncAllResponse,
   SyncPaymentRequest,
   SyncPaymentResponse,
   VerifyPaymentRequest,
@@ -84,3 +86,35 @@ async def list_payment_settlements(
   payment_service: GoldPaymentService = Depends(get_gold_payment_service),
 ) -> PaymentSettlementListResponse:
   return await payment_service.list_settlements(skip=skip, limit=limit)
+
+
+@router.post(
+  "/razorpay/sync-all",
+  response_model=RazorpaySyncAllResponse,
+  status_code=status.HTTP_200_OK,
+  summary="Synchronously reconcile all recent Razorpay payments into our DB (admin)",
+)
+async def sync_all_razorpay_payments(
+  current_user: User = Depends(PermissionChecker("dashboard.view")),
+  payment_service: GoldPaymentService = Depends(get_gold_payment_service),
+) -> RazorpaySyncAllResponse:
+  return await payment_service.sync_all_from_razorpay(current_user)
+
+
+@router.get(
+  "/admin/orders",
+  response_model=AdminPaymentListResponse,
+  summary="List detailed payment orders for executive dashboard (admin)",
+)
+async def list_admin_payment_orders(
+  skip: int = Query(0, ge=0),
+  limit: int = Query(50, ge=1, le=100),
+  status: str | None = Query(None),
+  search: str | None = Query(None),
+  current_user: User = Depends(PermissionChecker("dashboard.view")),
+  payment_service: GoldPaymentService = Depends(get_gold_payment_service),
+) -> AdminPaymentListResponse:
+  return await payment_service.list_admin_orders(
+    skip=skip, limit=limit, status=status, search=search
+  )
+

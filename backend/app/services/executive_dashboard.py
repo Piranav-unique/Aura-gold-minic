@@ -10,9 +10,15 @@ from app.models.user import User
 from app.repositories.app_metrics import AppMetricsRepository
 from app.repositories.customer import CustomerRepository
 from app.repositories.digital_metal_inventory import DigitalMetalInventoryRepository
+from app.repositories.payment_order import PaymentOrderRepository
 from app.repositories.report import ReportRepository
 from app.repositories.user import UserRepository
 from app.repositories.workflow import WorkflowRepository
+from app.schemas.payment import (
+    AdminPaymentItem,
+    AdminPaymentSummary,
+    CustomerPaymentSummary,
+)
 from app.schemas.dashboard import (
     AppDashboardMetrics,
     AssignedTaskSummary,
@@ -35,6 +41,11 @@ from app.services.notification import NotificationService
 from app.services.transaction import TransactionService
 
 _executive_cache: dict[str, tuple[float, ExecutiveDashboardResponse]] = {}
+
+
+def clear_executive_dashboard_cache() -> None:
+    """Clear in-memory cache for executive dashboards."""
+    _executive_cache.clear()
 
 
 def resolve_executive_role(user: User) -> ExecutiveRole:
@@ -80,6 +91,7 @@ class ExecutiveDashboardService:
         metal_price_service: MetalPriceService,
         inventory_service: Optional[InventoryService] = None,
         transaction_service: Optional[TransactionService] = None,
+        payment_order_repo: Optional[PaymentOrderRepository] = None,
     ):
         self.audit_service = audit_service
         self.notification_service = notification_service
@@ -92,6 +104,7 @@ class ExecutiveDashboardService:
         self.metal_price_service = metal_price_service
         self.inventory_service = inventory_service
         self.transaction_service = transaction_service
+        self.payment_order_repo = payment_order_repo
 
     async def get_dashboard(self, user: User) -> ExecutiveDashboardResponse:
         role = resolve_executive_role(user)
@@ -234,6 +247,66 @@ class ExecutiveDashboardService:
                 low_stock_items=inv.low_stock_items,
             )
 
+        recent_payments: list[AdminPaymentItem] = []
+        payment_summary: Optional[AdminPaymentSummary] = None
+
+        if self.payment_order_repo and (can_view_wallet or can_view_transactions):
+            try:
+                orders = await self.payment_order_repo.list_orders(limit=25)
+                recent_payments = [
+                    AdminPaymentItem(
+                        id=order.id,
+                        razorpay_order_id=order.razorpay_order_id,
+                        razorpay_payment_id=order.razorpay_payment_id,
+                        bank_rrn=order.bank_rrn,
+                        payment_method=order.payment_method,
+                        customer_name=_display_name(order.user) if order.user else None,
+                        customer_mobile=order.customer_contact
+                        or (order.user.mobile_number if order.user else None),
+                        customer_email=order.user.email if order.user else None,
+                        metal=order.metal,
+                        grams=Decimal(str(order.grams)),
+                        amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+                        status="captured" if order.status == "paid" else order.status,
+                        failure_reason=order.failure_reason,
+                        created_at=order.created_at,
+                        paid_at=order.paid_at,
+                        gst_percent=order.gst_percent,
+                        metal_value_inr=order.metal_value_inr,
+                        gst_amount_inr=order.gst_amount_inr,
+                        razorpay_fee_inr=order.razorpay_fee_inr,
+                        merchant_settlement_inr=order.merchant_settlement_inr,
+                    )
+                    for order in orders
+                ]
+                sum_dict = await self.payment_order_repo.get_orders_summary()
+                sum_dict["last_synced_at"] = refreshed_at
+                payment_summary = AdminPaymentSummary(**sum_dict)
+
+                cust_map: dict[str, dict] = {}
+                for p in recent_payments:
+                    contact = p.customer_mobile or p.customer_email or "Unknown"
+                    if contact not in cust_map:
+                        cust_map[contact] = {
+                            "mobile": contact,
+                            "name": p.customer_name,
+                            "email": p.customer_email,
+                            "total_paid_inr": Decimal("0"),
+                            "success_count": 0,
+                            "total_grams": Decimal("0"),
+                        }
+                    if p.status in ("captured", "paid"):
+                        cust_map[contact]["total_paid_inr"] += p.amount_inr
+                        cust_map[contact]["success_count"] += 1
+                        cust_map[contact]["total_grams"] += p.grams
+
+                customer_summaries = [
+                    CustomerPaymentSummary(**c) for c in cust_map.values()
+                ]
+                customer_summaries.sort(key=lambda x: x.total_paid_inr, reverse=True)
+            except Exception:
+                pass
+
         return ExecutiveDashboardResponse(
             role="admin",
             display_name=_display_name(user),
@@ -246,6 +319,9 @@ class ExecutiveDashboardService:
             inventory_metrics=inventory_metrics,
             transaction_metrics=transaction_metrics,
             activity_trend=activity_trend,
+            recent_payments=recent_payments,
+            payment_summary=payment_summary,
+            customer_summaries=customer_summaries,
         )
 
     async def _build_manager_dashboard(

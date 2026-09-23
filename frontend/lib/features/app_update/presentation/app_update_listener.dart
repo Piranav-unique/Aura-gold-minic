@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/features/app_update/services/app_update_coordinator.dart';
-import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:ags_gold/routes/app_routes.dart';
 
 /// Checks for APK updates on Android startup and shows an in-app prompt.

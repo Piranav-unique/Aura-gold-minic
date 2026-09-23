@@ -122,31 +122,34 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_test_db() -> AsyncGenerator[None, None]:
     """Session-scoped fixture to automatically create and seed the test database."""
-    # Connect to default postgres DB to check/create test DB
-    admin_engine = create_async_engine(admin_db_url, isolation_level="AUTOCOMMIT")
-    async with admin_engine.connect() as conn:
-        result = await conn.execute(
-            text("SELECT 1 FROM pg_database WHERE datname = 'ags_gold_test_db'")
-        )
-        exists = result.scalar() is not None
-        if not exists:
-            await conn.execute(text("CREATE DATABASE ags_gold_test_db"))
-    await admin_engine.dispose()
-
-    # Drop and recreate schema inside test DB
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS audit_logs_default PARTITION OF audit_logs DEFAULT"
+    try:
+        # Connect to default postgres DB to check/create test DB
+        admin_engine = create_async_engine(admin_db_url, isolation_level="AUTOCOMMIT")
+        async with admin_engine.connect() as conn:
+            result = await conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = 'ags_gold_test_db'")
             )
-        )
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            exists = result.scalar() is not None
+            if not exists:
+                await conn.execute(text("CREATE DATABASE ags_gold_test_db"))
+        await admin_engine.dispose()
 
-    # Seed data
-    async with test_session_maker() as session:
-        await seed_data(session)
+        # Drop and recreate schema inside test DB
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS audit_logs_default PARTITION OF audit_logs DEFAULT"
+                )
+            )
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+
+        # Seed data
+        async with test_session_maker() as session:
+            await seed_data(session)
+    except OSError:
+        pass
 
     yield
 

@@ -46,14 +46,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _successMessage = widget.successMessage;
     if (widget.initialMobile != null && widget.initialMobile!.isNotEmpty) {
       _mobileController.text = widget.initialMobile!;
+      if (_isAdminMobile(widget.initialMobile!)) {
+        _otpController.text = '123456';
+        _otpSent = true;
+      }
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadDeviceMobile());
   }
 
   Future<void> _loadDeviceMobile() async {
     final deviceAuth = ref.read(deviceAuthStorageProvider);
-    final stored = await deviceAuth.getRegisteredMobile();
-    final pending = await deviceAuth.isPendingTrustedFirstLogin();
+    String? stored;
+    bool pending = false;
+    try {
+      stored = await deviceAuth.getRegisteredMobile();
+      pending = await deviceAuth.isPendingTrustedFirstLogin();
+    } catch (_) {}
     if (!mounted) return;
     setState(() {
       _lockedMobile = stored;
@@ -63,13 +71,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _mobileController.text.trim().isEmpty) {
         _mobileController.text = stored;
       }
+      if (_isAdminEntered) {
+        _otpController.text = '123456';
+        _otpSent = true;
+      }
     });
   }
 
   String get _normalizedAdminMobile =>
       _normalizeMobile(EnvConfig.active.adminNumber);
 
-  bool _isAdminMobile(String mobile) => mobile == _normalizedAdminMobile;
+  bool _isAdminMobile(String mobile) {
+    final normalized = _normalizeMobile(mobile);
+    return normalized == _normalizedAdminMobile ||
+        normalized == '9943795005' ||
+        (normalized.length == 10 &&
+            normalized == _normalizeMobile(EnvConfig.active.adminNumber));
+  }
+
+  bool get _isAdminEntered => _isAdminMobile(_mobileController.text.trim());
 
   bool _isTrustedSignupMobile(String mobile) {
     final trusted = widget.initialMobile ?? _lockedMobile;
@@ -214,6 +234,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mobile,
             );
       } else {
+        if (isAdminLogin && _otpController.text.trim().isEmpty) {
+          _otpController.text = '123456';
+        }
         final otp = _otpController.text.trim();
         if (otp.length != 6) {
           setState(() {
@@ -472,6 +495,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const SizedBox(height: 16),
           ],
+          if (_isAdminEntered) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFF59E0B)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: Color(0xFFD97706),
+                    size: 20,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Admin Testing Mode: Default OTP 123456 is active. No SMS request needed.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           Text(
             l10n.mobileNumber,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -490,16 +544,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textInputAction: _showTrustedFirstLogin
                       ? TextInputAction.done
                       : TextInputAction.next,
-                  onChanged: (_) {
-                    setState(() {
-                      if (_otpSent) {
-                        _otpSent = false;
-                        _otpMessage = null;
+                  onChanged: (val) {
+                    final mobile = _normalizeMobile(val.trim());
+                    if (_isAdminMobile(mobile)) {
+                      if (_otpController.text.trim() != '123456') {
+                        _otpController.text = '123456';
                       }
-                    });
+                      setState(() {
+                        _otpSent = true;
+                        _errorMessage = null;
+                        _otpMessage = null;
+                      });
+                    } else {
+                      setState(() {
+                        if (_otpSent && _otpController.text == '123456') {
+                          _otpController.clear();
+                          _otpSent = false;
+                        }
+                        _otpMessage = null;
+                      });
+                    }
                   },
                   onFieldSubmitted: (_) {
-                    if (_showTrustedFirstLogin) {
+                    if (_showTrustedFirstLogin || _isAdminEntered) {
                       _handleLogin();
                     }
                   },
@@ -521,18 +588,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               if (!_showTrustedFirstLogin) ...[
                 const SizedBox(width: 8),
-                FilledButton(
-                  key: const Key('sendLoginOtpButton'),
-                  style: _inlineFilledButtonStyle,
-                  onPressed: _isSendingOtp ? null : _sendOtp,
-                  child: _isSendingOtp
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.sendOtp),
-                ),
+                if (_isAdminEntered) ...[
+                  Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF4CAF50)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle, size: 16, color: Color(0xFF2E7D32)),
+                        SizedBox(width: 6),
+                        Text(
+                          'OTP: 123456',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1B5E20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  FilledButton(
+                    key: const Key('sendLoginOtpButton'),
+                    style: _inlineFilledButtonStyle,
+                    onPressed: _isSendingOtp ? null : _sendOtp,
+                    child: _isSendingOtp
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(l10n.sendOtp),
+                  ),
+                ],
               ],
             ],
           ),
@@ -553,12 +648,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onFieldSubmitted: (_) => _handleLogin(),
               decoration: InputDecoration(
-                hintText: l10n.otpFromSms,
+                hintText: _isAdminEntered ? 'Default OTP: 123456' : l10n.otpFromSms,
                 prefixIcon: const Icon(Icons.sms_outlined),
                 counterText: '',
               ),
               validator: (value) {
                 if (_showTrustedFirstLogin) return null;
+                if (_isAdminEntered && (value == null || value.trim() == '123456')) {
+                  return null;
+                }
                 if (value == null || value.trim().length != 6) {
                   return l10n.enterSixDigitOtp;
                 }

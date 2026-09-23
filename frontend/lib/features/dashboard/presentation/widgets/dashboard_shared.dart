@@ -52,33 +52,37 @@ class DashboardHero extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppTheme.primaryGold.withValues(alpha: 0.15)
-                      : Colors.white.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(20),
-                  border: isDark
-                      ? Border.all(
-                          color: AppTheme.primaryGold.withValues(alpha: 0.5),
-                        )
-                      : null,
-                ),
-                child: Text(
-                  roleLabel.toUpperCase(),
-                  style: TextStyle(
-                    color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppTheme.primaryGold.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(20),
+                    border: isDark
+                        ? Border.all(
+                            color: AppTheme.primaryGold.withValues(alpha: 0.5),
+                          )
+                        : null,
+                  ),
+                  child: Text(
+                    roleLabel.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Row(
                 children: [
                   Container(

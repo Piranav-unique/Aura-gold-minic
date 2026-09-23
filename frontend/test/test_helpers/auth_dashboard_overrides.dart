@@ -18,7 +18,15 @@ class _FixedAudienceNotifier extends AppAudienceNotifier {
   final AppAudience audience;
 
   @override
-  AppAudience? build() => audience;
+  AppAudience? build() {
+    state = audience;
+    return audience;
+  }
+
+  @override
+  Future<void> setAudience(AppAudience newAudience) async {
+    state = newAudience;
+  }
 }
 
 class FixedPersonalDashboardNotifier extends PersonalDashboardNotifier {

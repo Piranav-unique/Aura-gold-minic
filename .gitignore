@@ -44,3 +44,4 @@ frontend/android/**/*.jks
 # Uploads / temp
 uploads/
 *.log
+*.apk

@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from app.schemas.audit_log import AuditLogResponse
 from app.schemas.inventory import InventoryItemResponse
 from app.schemas.notification import NotificationResponse
+from app.schemas.payment import AdminPaymentItem, AdminPaymentSummary, CustomerPaymentSummary
 from app.schemas.profile import KycGovernmentProfile
 from app.schemas.gold_scheme import GoldSchemeResponse
 
@@ -210,3 +211,6 @@ class ExecutiveDashboardResponse(BaseModel):
     assigned_tasks: List[AssignedTaskSummary] = []
     daily_activities: List[DailyActivityItem] = []
     activity_trend: List[ActivityTrendPoint] = []
+    recent_payments: List[AdminPaymentItem] = []
+    payment_summary: Optional[AdminPaymentSummary] = None
+    customer_summaries: List[CustomerPaymentSummary] = []
