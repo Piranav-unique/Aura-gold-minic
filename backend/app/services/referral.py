@@ -1,11 +1,12 @@
 import secrets
 import uuid
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from app.core.exceptions import ValidationException
 from app.models.user import User
 from app.repositories.referral_reward import ReferralRewardRepository
 from app.repositories.user import UserRepository
+from app.services.dashboard_cache import clear_personal_dashboard_cache
 from app.schemas.referral import (
     REFERRAL_REWARD_INR,
     ReferralRewardItem,
@@ -65,8 +66,81 @@ class ReferralService:
         await self.user_repo.db.commit()
         await self.user_repo.db.refresh(user)
 
+    async def maybe_credit_referrer_on_purchase(
+        self,
+        referee: User,
+        live_gold_rate: Decimal,
+    ) -> Decimal | None:
+        """Award digital gold to the referrer upon referee's first successful gold purchase."""
+        if not referee.referred_by_user_id:
+            return None
+
+        referrer = await self.user_repo.get_with_roles_and_permissions(
+            referee.referred_by_user_id
+        )
+        if not referrer:
+            return None
+
+        existing = await self.reward_repo.get_for_pair(referrer.id, referee.id)
+        if existing:
+            return None
+
+        # Determine scheme tier (1, 5, or 10 grams)
+        tier: int = 1
+        if (
+            referee.gold_scheme_target_grams is not None
+            and int(referee.gold_scheme_target_grams) in REFERRAL_REWARD_INR
+        ):
+            tier = int(referee.gold_scheme_target_grams)
+        elif (
+            referee.referral_scheme_grams is not None
+            and int(referee.referral_scheme_grams) in REFERRAL_REWARD_INR
+        ):
+            tier = int(referee.referral_scheme_grams)
+
+        reward_inr = REFERRAL_REWARD_INR.get(tier, Decimal("150"))
+
+        # Convert reward INR to 24K pure digital gold grams based on live gold rate
+        gold_reward_grams = Decimal("0")
+        if live_gold_rate > Decimal("0"):
+            gold_reward_grams = (reward_inr / live_gold_rate).quantize(
+                Decimal("0.0001"), rounding=ROUND_HALF_UP
+            )
+
+        await self.reward_repo.create(
+            {
+                "id": uuid.uuid4(),
+                "referrer_id": referrer.id,
+                "referee_id": referee.id,
+                "scheme_grams": Decimal(str(tier)),
+                "reward_inr": reward_inr,
+            },
+            commit=False,
+        )
+
+        referrer.gold_savings_grams = (
+            Decimal(str(referrer.gold_savings_grams or 0)) + gold_reward_grams
+        )
+        referrer.gold_invested_inr = (
+            Decimal(str(referrer.gold_invested_inr or 0)) + reward_inr
+        )
+        referrer.wallet_balance_inr = (
+            Decimal(str(referrer.wallet_balance_inr or 0)) + reward_inr
+        )
+
+        from app.services.gold_scheme import GoldSchemeService
+
+        GoldSchemeService.sync_after_gold_purchase(referrer)
+
+        await self.user_repo.db.commit()
+        clear_personal_dashboard_cache(str(referrer.id))
+        return reward_inr
+
     async def maybe_credit_referrer(
-        self, referee: User, selected_grams: Decimal
+        self,
+        referee: User,
+        selected_grams: Decimal,
+        live_gold_rate: Decimal | None = None,
     ) -> Decimal | None:
         if not referee.referred_by_user_id:
             return None
@@ -93,6 +167,15 @@ class ReferralService:
         if reward_inr is None:
             return None
 
+        rate = (
+            live_gold_rate
+            if live_gold_rate is not None and live_gold_rate > Decimal("0")
+            else Decimal("6000")
+        )
+        gold_reward_grams = (reward_inr / rate).quantize(
+            Decimal("0.0001"), rounding=ROUND_HALF_UP
+        )
+
         await self.reward_repo.create(
             {
                 "id": uuid.uuid4(),
@@ -103,8 +186,22 @@ class ReferralService:
             },
             commit=False,
         )
-        referrer.wallet_balance_inr = Decimal(str(referrer.wallet_balance_inr or 0)) + reward_inr
+        referrer.gold_savings_grams = (
+            Decimal(str(referrer.gold_savings_grams or 0)) + gold_reward_grams
+        )
+        referrer.gold_invested_inr = (
+            Decimal(str(referrer.gold_invested_inr or 0)) + reward_inr
+        )
+        referrer.wallet_balance_inr = (
+            Decimal(str(referrer.wallet_balance_inr or 0)) + reward_inr
+        )
+
+        from app.services.gold_scheme import GoldSchemeService
+
+        GoldSchemeService.sync_after_gold_purchase(referrer)
+
         await self.user_repo.db.commit()
+        clear_personal_dashboard_cache(str(referrer.id))
         return reward_inr
 
     async def get_summary(self, user: User) -> ReferralSummaryResponse:

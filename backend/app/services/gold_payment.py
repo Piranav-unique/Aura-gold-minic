@@ -19,6 +19,7 @@ from app.services.payment_settlement import (
 from app.services.dashboard_cache import clear_personal_dashboard_cache
 from app.services.razorpay_client import RazorpayClient
 from app.services.digital_metal_inventory import DigitalMetalInventoryService
+from app.services.referral import ReferralService
 
 _MIN_GRAMS = Decimal("0.0001")
 
@@ -31,12 +32,14 @@ class GoldPaymentService:
         metal_prices: MetalPriceService,
         razorpay: RazorpayClient,
         digital_inventory_service: DigitalMetalInventoryService | None = None,
+        referral_service: ReferralService | None = None,
     ):
         self.user_repo = user_repo
         self.payment_repo = payment_repo
         self.metal_prices = metal_prices
         self.razorpay = razorpay
         self.digital_inventory_service = digital_inventory_service
+        self.referral_service = referral_service
 
     async def create_buy_order(
         self,
@@ -268,6 +271,15 @@ class GoldPaymentService:
         await self.user_repo.db.refresh(user)
         if self.digital_inventory_service:
             await self.digital_inventory_service.notify_metal_status(order.metal)
+        if order.metal == "gold" and self.referral_service:
+            try:
+                await self.referral_service.maybe_credit_referrer_on_purchase(
+                    referee=user,
+                    live_gold_rate=Decimal(str(order.rate_per_gram)),
+                )
+            except Exception as e:
+                from app.core.logging import logger
+                logger.error(f"Failed to credit referral reward for referee {user.id}: {e}", exc_info=True)
         clear_personal_dashboard_cache(str(user.id))
         return self._build_verify_response(user, order)
 

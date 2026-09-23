@@ -45,8 +45,6 @@ class GoldSchemeService:
         await self.user_repo.db.commit()
         await self.user_repo.db.refresh(user)
         clear_personal_dashboard_cache(str(user.id))
-        if self.referral_service:
-            await self.referral_service.maybe_credit_referrer(user, target_grams)
         return self.build_response(user)
 
     async def upgrade_scheme(

@@ -7,8 +7,8 @@ ReferralSchemeTier = Literal[1, 5, 10]
 
 REFERRAL_REWARD_INR: dict[int, Decimal] = {
     1: Decimal("150"),
-    5: Decimal("450"),
-    10: Decimal("750"),
+    5: Decimal("350"),
+    10: Decimal("550"),
 }
 
 
