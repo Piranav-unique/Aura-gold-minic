@@ -12,8 +12,8 @@ import 'package:ags_gold/l10n/l10n_extension.dart';
 
 const _defaultTiers = <ReferralTier>[
   ReferralTier(schemeGrams: 1, rewardInr: 150),
-  ReferralTier(schemeGrams: 5, rewardInr: 450),
-  ReferralTier(schemeGrams: 10, rewardInr: 750),
+  ReferralTier(schemeGrams: 5, rewardInr: 350),
+  ReferralTier(schemeGrams: 10, rewardInr: 550),
 ];
 
 class ReferAndEarnScreen extends ConsumerWidget {
@@ -69,7 +69,10 @@ class _ReferBody extends StatelessWidget {
   }
 
   Future<void> _copyLink(BuildContext context, int schemeGrams) async {
-    await Clipboard.setData(ClipboardData(text: _inviteLink(schemeGrams)));
+    final code = summary.referralCode.isEmpty ? '' : summary.referralCode;
+    final link = _inviteLink(schemeGrams);
+    final text = 'Join AGS Gold ($schemeGrams g gold savings scheme) with referral code $code: $link';
+    await Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.referralLinkCopied)),
@@ -198,7 +201,33 @@ class _ReferBody extends StatelessWidget {
             color: AurumConsumerTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryGold.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.primaryGold.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.stars_rounded, color: AppTheme.primaryGold, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Rewards are credited as pure 24K digital gold directly into your gold savings wallet when your friend completes their first deposit.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: AurumConsumerTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
         for (final tier in _tiers) ...[
           AurumSurfaceCard(
             padding: const EdgeInsets.all(16),

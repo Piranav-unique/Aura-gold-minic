@@ -619,7 +619,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referAndEarnSubtitle =>
-      'Share a gold savings scheme with friends. When they sign up and choose the same scheme, you earn digital wallet money.';
+      'Share a gold savings scheme with friends. When they join and complete their first deposit, you receive pure 24K digital gold in your wallet.';
 
   @override
   String get digitalWalletBalance => 'Digital wallet balance';
@@ -657,7 +657,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String referralSchemeReward(String amount) {
-    return 'You earn $amount when they join this scheme';
+    return 'Earn $amount in pure digital gold on their first purchase';
   }
 
   @override

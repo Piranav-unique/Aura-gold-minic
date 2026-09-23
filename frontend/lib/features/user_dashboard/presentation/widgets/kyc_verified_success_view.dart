@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';

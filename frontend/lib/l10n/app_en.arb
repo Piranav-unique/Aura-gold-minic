@@ -266,7 +266,7 @@
   "nomineeDetails": "Nominee Details",
   "modifyAutoSavings": "Modify AutoSavings",
   "referAndEarn": "Refer & Earn",
-  "referAndEarnSubtitle": "Share a gold savings scheme with friends. When they sign up and choose the same scheme, you earn digital wallet money.",
+  "referAndEarnSubtitle": "Share a gold savings scheme with friends. When they join and complete their first deposit, you receive pure 24K digital gold in your wallet.",
   "digitalWalletBalance": "Digital wallet balance",
   "totalEarned": "Total earned",
   "successfulReferrals": "Referrals",
@@ -287,7 +287,7 @@
       "grams": { "type": "int" }
     }
   },
-  "referralSchemeReward": "You earn {amount} when they join this scheme",
+  "referralSchemeReward": "Earn {amount} in pure digital gold on their first purchase",
   "@referralSchemeReward": {
     "placeholders": {
       "amount": { "type": "String" }

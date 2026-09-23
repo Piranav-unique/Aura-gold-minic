@@ -624,7 +624,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get referAndEarnSubtitle =>
-      'தங்க சேமிப்பு திட்டத்தை நண்பர்களுடன் பகிருங்கள். அவர்கள் பதிவு செய்து அதே திட்டத்தைத் தேர்ந்தெடுத்தால், டிஜிட்டல் பணப்பையில் வெகுமதி கிடைக்கும்.';
+      'தங்க சேமிப்பு திட்டத்தை நண்பர்களுடன் பகிருங்கள். அவர்கள் இணைந்து முதல் முதலீடு செய்யும்போது, உங்கள் வாலட்டில் தூய 24K டிஜிட்டல் தங்கம் வரவு வைக்கப்படும்.';
 
   @override
   String get digitalWalletBalance => 'டிஜிட்டல் பணப்பை இருப்பு';
@@ -662,7 +662,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String referralSchemeReward(String amount) {
-    return 'இந்த திட்டத்தில் சேர்ந்தால் நீங்கள் $amount பெறுவீர்கள்';
+    return 'முதல் வாங்குதலில் $amount மதிப்புள்ள தூய டிஜிட்டல் தங்கம் பெறுவீர்கள்';
   }
 
   @override

@@ -1187,7 +1187,7 @@ abstract class AppLocalizations {
   /// No description provided for @referAndEarnSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Share a gold savings scheme with friends. When they sign up and choose the same scheme, you earn digital wallet money.'**
+  /// **'Share a gold savings scheme with friends. When they join and complete their first deposit, you receive pure 24K digital gold in your wallet.'**
   String get referAndEarnSubtitle;
 
   /// No description provided for @digitalWalletBalance.
@@ -1253,7 +1253,7 @@ abstract class AppLocalizations {
   /// No description provided for @referralSchemeReward.
   ///
   /// In en, this message translates to:
-  /// **'You earn {amount} when they join this scheme'**
+  /// **'Earn {amount} in pure digital gold on their first purchase'**
   String referralSchemeReward(String amount);
 
   /// No description provided for @recentReferralRewards.

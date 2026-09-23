@@ -28,8 +28,7 @@ class _AppUpdateListenerState extends ConsumerState<AppUpdateListener> {
     _scheduled = true;
 
     final localizedContext = rootNavigatorKey.currentContext;
-    if (localizedContext == null ||
-        AppLocalizations.of(localizedContext) == null) {
+    if (localizedContext == null) {
       return;
     }
 
