@@ -30,9 +30,7 @@ Future<void> showEditProfileDialog(
         profile: profile,
         onSaved: () {
           ref.invalidate(profileProvider);
-          messenger.showSnackBar(
-            SnackBar(content: Text(successMessage)),
-          );
+          messenger.showSnackBar(SnackBar(content: Text(successMessage)));
         },
       ),
     ),
@@ -43,10 +41,7 @@ class _EditProfileSheet extends ConsumerStatefulWidget {
   final UserProfile profile;
   final VoidCallback onSaved;
 
-  const _EditProfileSheet({
-    required this.profile,
-    required this.onSaved,
-  });
+  const _EditProfileSheet({required this.profile, required this.onSaved});
 
   @override
   ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
@@ -190,7 +185,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: l10n.firstName,
                 filled: true,
-                fillColor: AppTheme.creamElevated,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -207,7 +202,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: l10n.lastName,
                 filled: true,
-                fillColor: AppTheme.creamElevated,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
             ),
             const SizedBox(height: 16),
@@ -218,7 +213,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
               decoration: InputDecoration(
                 labelText: l10n.mobileNumber,
                 filled: true,
-                fillColor: AppTheme.creamElevated,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
             ),
             const SizedBox(height: 24),
@@ -267,10 +262,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   }
 }
 
-Future<void> showChangePasswordDialog(
-  BuildContext context,
-  WidgetRef ref,
-) {
+Future<void> showChangePasswordDialog(BuildContext context, WidgetRef ref) {
   final messenger = ScaffoldMessenger.of(context);
   final reloginMessage = context.l10n.passwordChangedRelogin;
   return showModalBottomSheet<void>(
@@ -286,9 +278,7 @@ Future<void> showChangePasswordDialog(
       child: _ChangePasswordSheet(
         onChanged: () async {
           await ref.read(authNotifierProvider.notifier).clearSession();
-          messenger.showSnackBar(
-            SnackBar(content: Text(reloginMessage)),
-          );
+          messenger.showSnackBar(SnackBar(content: Text(reloginMessage)));
         },
       ),
     ),
@@ -407,7 +397,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
               decoration: InputDecoration(
                 labelText: l10n.currentPasswordLabel,
                 filled: true,
-                fillColor: AppTheme.creamElevated,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -424,7 +414,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
               decoration: InputDecoration(
                 labelText: l10n.newPasswordLabel,
                 filled: true,
-                fillColor: AppTheme.creamElevated,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
               validator: (value) {
                 if (value == null || value.length < 8) {
@@ -441,7 +431,7 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
               decoration: InputDecoration(
                 labelText: l10n.confirmPassword,
                 filled: true,
-                fillColor: AppTheme.creamElevated,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
               validator: (value) {
                 if (value != _newController.text) {
@@ -520,21 +510,21 @@ Future<void> pickAndUploadAvatar(BuildContext context, WidgetRef ref) async {
     ref.invalidate(profileProvider);
     ref.invalidate(avatarBytesProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.avatarUpdated)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.avatarUpdated)));
     }
   } on ApiException catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   } catch (_) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.avatarUploadFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.avatarUploadFailed)));
     }
   }
 }
