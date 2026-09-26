@@ -287,6 +287,7 @@ class GoldPaymentService:
                 await self.referral_service.maybe_credit_referrer_on_purchase(
                     referee=user,
                     live_gold_rate=Decimal(str(order.rate_per_gram)),
+                    purchase_amount_inr=gross_inr,
                 )
             except Exception as e:
                 from app.core.logging import logger

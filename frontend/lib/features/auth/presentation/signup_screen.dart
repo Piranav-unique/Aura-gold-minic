@@ -42,6 +42,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _attemptedSubmit = false;
   String? _errorMessage;
   String? _otpMessage;
+  late int _selectedSchemeGrams;
 
   ButtonStyle get _inlineFilledButtonStyle => FilledButton.styleFrom(
         minimumSize: const Size(0, 48),
@@ -51,6 +52,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedSchemeGrams = widget.initialReferralSchemeGrams ?? 1;
     _referralController = TextEditingController(
       text: widget.initialReferralCode?.toUpperCase() ?? '',
     );
@@ -259,7 +261,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             referralCode: _referralController.text.trim().isEmpty
                 ? null
                 : _referralController.text.trim().toUpperCase(),
-            referralSchemeGrams: widget.initialReferralSchemeGrams,
+            referralSchemeGrams: _referralController.text.trim().isNotEmpty ||
+                    widget.initialReferralSchemeGrams != null
+                ? _selectedSchemeGrams
+                : null,
           );
       await ref.read(deviceAuthStorageProvider).saveRegisteredMobile(mobile);
       await ref
@@ -418,12 +423,39 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 decoration: BoxDecoration(
                   color: AppTheme.primaryGold.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  context.l10n.invitedScheme(widget.initialReferralSchemeGrams!),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                  border: Border.all(
+                    color: AppTheme.primaryGold.withValues(alpha: 0.3),
                   ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars_rounded, color: AppTheme.primaryGold),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.l10n.invitedScheme(widget.initialReferralSchemeGrams!),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.initialReferralSchemeGrams == 10
+                                ? 'Deposit min. ₹2,000 to activate the ₹550 gold coupon bonus.'
+                                : (widget.initialReferralSchemeGrams == 5
+                                    ? 'Deposit min. ₹1,000 to activate the ₹350 gold coupon bonus.'
+                                    : 'Deposit min. ₹100 to activate the ₹150 gold coupon bonus.'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -432,12 +464,86 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             child: TextFormField(
               controller: _referralController,
               textCapitalization: TextCapitalization.characters,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: l10n.referralHint,
                 prefixIcon: const Icon(Icons.card_giftcard_outlined),
               ),
             ),
           ),
+          if (_referralController.text.trim().isNotEmpty ||
+              widget.initialReferralSchemeGrams != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Select Scheme Tier for Referral Reward',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('1g (Min. ₹100)'),
+                  selected: _selectedSchemeGrams == 1,
+                  onSelected: (_) => setState(() => _selectedSchemeGrams = 1),
+                  selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedSchemeGrams == 1 ? FontWeight.w700 : FontWeight.w500,
+                    color: _selectedSchemeGrams == 1 ? AppTheme.primaryGold : null,
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('5g (Min. ₹1,000)'),
+                  selected: _selectedSchemeGrams == 5,
+                  onSelected: (_) => setState(() => _selectedSchemeGrams = 5),
+                  selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedSchemeGrams == 5 ? FontWeight.w700 : FontWeight.w500,
+                    color: _selectedSchemeGrams == 5 ? AppTheme.primaryGold : null,
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('10g (Min. ₹2,000)'),
+                  selected: _selectedSchemeGrams == 10,
+                  onSelected: (_) => setState(() => _selectedSchemeGrams = 10),
+                  selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedSchemeGrams == 10 ? FontWeight.w700 : FontWeight.w500,
+                    color: _selectedSchemeGrams == 10 ? AppTheme.primaryGold : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E5B34).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFF1E5B34).withValues(alpha: 0.2),
+                ),
+              ),
+              child: Text(
+                _selectedSchemeGrams == 10
+                    ? 'Referrer unlocks ₹550 gold coupon after referee deposits min. ₹2,000.'
+                    : (_selectedSchemeGrams == 5
+                        ? 'Referrer unlocks ₹350 gold coupon after referee deposits min. ₹1,000.'
+                        : 'Referrer unlocks ₹150 gold coupon after referee deposits min. ₹100.'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF1E5B34),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           _labeledField(
             label: l10n.fullName,

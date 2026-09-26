@@ -1,16 +1,23 @@
 class ReferralTier {
   final int schemeGrams;
   final double rewardInr;
+  final double minPurchaseInr;
 
   const ReferralTier({
     required this.schemeGrams,
     required this.rewardInr,
+    this.minPurchaseInr = 100,
   });
 
   factory ReferralTier.fromJson(Map<String, dynamic> json) {
+    final grams = _parseInt(json['scheme_grams']);
+    final defaultMin = grams == 10 ? 2000.0 : (grams == 5 ? 1000.0 : 100.0);
     return ReferralTier(
-      schemeGrams: _parseInt(json['scheme_grams']),
+      schemeGrams: grams,
       rewardInr: _parse(json['reward_inr']),
+      minPurchaseInr: json['min_purchase_inr'] != null
+          ? _parse(json['min_purchase_inr'])
+          : defaultMin,
     );
   }
 }

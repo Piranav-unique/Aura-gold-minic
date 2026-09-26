@@ -8,6 +8,7 @@ from app.repositories.referral_reward import ReferralRewardRepository
 from app.repositories.user import UserRepository
 from app.services.dashboard_cache import clear_personal_dashboard_cache
 from app.schemas.referral import (
+    REFERRAL_MIN_PURCHASE_INR,
     REFERRAL_REWARD_INR,
     ReferralRewardItem,
     ReferralSummaryResponse,
@@ -70,8 +71,9 @@ class ReferralService:
         self,
         referee: User,
         live_gold_rate: Decimal,
+        purchase_amount_inr: Decimal | None = None,
     ) -> Decimal | None:
-        """Award digital gold to the referrer upon referee's first successful gold purchase."""
+        """Award digital gold to the referrer upon referee's successful gold purchase meeting the scheme threshold."""
         if not referee.referred_by_user_id:
             return None
 
@@ -86,17 +88,30 @@ class ReferralService:
             return None
 
         # Determine scheme tier (1, 5, or 10 grams)
+        # Prioritize the scheme tier referred to the user (referral_scheme_grams)
         tier: int = 1
         if (
-            referee.gold_scheme_target_grams is not None
-            and int(referee.gold_scheme_target_grams) in REFERRAL_REWARD_INR
-        ):
-            tier = int(referee.gold_scheme_target_grams)
-        elif (
             referee.referral_scheme_grams is not None
             and int(referee.referral_scheme_grams) in REFERRAL_REWARD_INR
         ):
             tier = int(referee.referral_scheme_grams)
+        elif (
+            referee.gold_scheme_target_grams is not None
+            and int(referee.gold_scheme_target_grams) in REFERRAL_REWARD_INR
+        ):
+            tier = int(referee.gold_scheme_target_grams)
+
+        # Minimum purchase threshold required to apply the coupon reward
+        # 1g: min ₹100; 5g: min ₹1000; 10g: min ₹2000
+        min_purchase = REFERRAL_MIN_PURCHASE_INR.get(tier, Decimal("100"))
+
+        effective_paid = purchase_amount_inr
+        if effective_paid is None or effective_paid < min_purchase:
+            cumulative_invested = Decimal(str(referee.gold_invested_inr or 0))
+            effective_paid = max(effective_paid or Decimal("0"), cumulative_invested)
+
+        if effective_paid < min_purchase:
+            return None
 
         reward_inr = REFERRAL_REWARD_INR.get(tier, Decimal("150"))
 
@@ -141,6 +156,7 @@ class ReferralService:
         referee: User,
         selected_grams: Decimal,
         live_gold_rate: Decimal | None = None,
+        purchase_amount_inr: Decimal | None = None,
     ) -> Decimal | None:
         if not referee.referred_by_user_id:
             return None
@@ -163,8 +179,18 @@ class ReferralService:
         if selected_grams != expected:
             return None
 
-        reward_inr = REFERRAL_REWARD_INR.get(int(expected))
+        tier = int(expected)
+        reward_inr = REFERRAL_REWARD_INR.get(tier)
         if reward_inr is None:
+            return None
+
+        min_purchase = REFERRAL_MIN_PURCHASE_INR.get(tier, Decimal("100"))
+        effective_payment = (
+            purchase_amount_inr
+            if purchase_amount_inr is not None
+            else Decimal(str(referee.gold_invested_inr or 0))
+        )
+        if effective_payment < min_purchase:
             return None
 
         rate = (
@@ -223,7 +249,11 @@ class ReferralService:
             )
 
         tiers = [
-            ReferralTierInfo(scheme_grams=grams, reward_inr=amount)
+            ReferralTierInfo(
+                scheme_grams=grams,
+                reward_inr=amount,
+                min_purchase_inr=REFERRAL_MIN_PURCHASE_INR.get(grams, Decimal("100")),
+            )
             for grams, amount in sorted(REFERRAL_REWARD_INR.items())
         ]
 

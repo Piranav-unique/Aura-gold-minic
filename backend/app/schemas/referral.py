@@ -11,10 +11,17 @@ REFERRAL_REWARD_INR: dict[int, Decimal] = {
     10: Decimal("550"),
 }
 
+REFERRAL_MIN_PURCHASE_INR: dict[int, Decimal] = {
+    1: Decimal("100"),
+    5: Decimal("1000"),
+    10: Decimal("2000"),
+}
+
 
 class ReferralTierInfo(BaseModel):
     scheme_grams: int
     reward_inr: Decimal
+    min_purchase_inr: Decimal = Decimal("100")
 
 
 class ReferralRewardItem(BaseModel):
