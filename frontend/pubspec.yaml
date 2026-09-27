@@ -1,7 +1,7 @@
 name: ags_gold
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.7+8
+version: 0.1.8+9
 
 environment:
   sdk: ^3.12.1
@@ -21,6 +21,7 @@ dependencies:
   razorpay_flutter: ^1.4.0
   package_info_plus: ^8.3.0
   ota_update: ^7.0.2
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:

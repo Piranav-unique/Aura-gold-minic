@@ -68,7 +68,7 @@ void main() {
                 limit: 25,
               ),
             ),
-          )
+          ),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -106,7 +106,7 @@ void main() {
             const AsyncValue.data(
               PaginatedCustomers(items: [], total: 0, skip: 0, limit: 25),
             ),
-          )
+          ),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

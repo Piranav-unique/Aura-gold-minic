@@ -13,6 +13,7 @@ from app.core.exceptions import (
 from app.middleware.logging_middleware import RequestLoggingMiddleware
 from app.middleware.audit_middleware import AuditRequestContextMiddleware
 from app.middleware.rate_limit_middleware import RateLimitMiddleware
+from app.middleware.security_headers_middleware import SecurityHeadersMiddleware
 from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.rbac import router as rbac_router
@@ -126,7 +127,8 @@ if cors_origins or allow_origin_regex:
         allow_headers=["*"],
     )
 
-# Logging & Request Context Middleware
+# Security, Rate Limiting & Request Context Middleware
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(AuditRequestContextMiddleware)

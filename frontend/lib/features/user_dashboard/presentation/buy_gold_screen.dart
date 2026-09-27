@@ -10,13 +10,21 @@ MetalType metalFromQuery(GoRouterState state) {
   return raw == 'silver' ? MetalType.silver : MetalType.gold;
 }
 
+double? initialAmountFromQuery(GoRouterState state) {
+  final raw = state.uri.queryParameters['amount'];
+  if (raw != null) return double.tryParse(raw);
+  return null;
+}
+
 class BuyGoldScreen extends StatelessWidget {
   const BuyGoldScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final metal = metalFromQuery(GoRouterState.of(context));
+    final state = GoRouterState.of(context);
+    final metal = metalFromQuery(state);
+    final initialAmount = initialAmountFromQuery(state);
     final isSilver = metal == MetalType.silver;
     final title = isSilver ? l10n.buySilver : l10n.buyGold;
 
@@ -24,7 +32,11 @@ class BuyGoldScreen extends StatelessWidget {
       title: title,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: TradeAmountForm(isBuy: true, metal: metal),
+        child: TradeAmountForm(
+          isBuy: true,
+          metal: metal,
+          initialAmount: initialAmount,
+        ),
       ),
     );
   }

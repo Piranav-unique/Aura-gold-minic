@@ -283,6 +283,12 @@ async def list_my_statements(
     transaction_type: Optional[str] = Query(
         None, description="Filter: BUY, SELL, REFERRAL, or SAVINGS"
     ),
+    status: Optional[str] = Query(
+        None, description="Filter: paid, created, pending, failed, completed"
+    ),
+    metal: Optional[str] = Query(
+        None, description="Filter: gold, silver"
+    ),
     current_user: User = Depends(get_current_user),
     wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
 ) -> WalletTransactionListResponse:
@@ -291,4 +297,6 @@ async def list_my_statements(
         skip=skip,
         limit=limit,
         transaction_type=transaction_type,
+        metal=metal,
+        status=status,
     )

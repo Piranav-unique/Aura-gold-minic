@@ -22,6 +22,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         }
     )
 
+    OTP_SEND_PATHS = frozenset(
+        {
+            f"{settings.API_V1_STR}/auth/signup/otp/send",
+            f"{settings.API_V1_STR}/auth/login/otp/send",
+            f"{settings.API_V1_STR}/bank-accounts/link/initiate",
+        }
+    )
+
+    AUTH_ATTEMPT_PATHS = frozenset(
+        {
+            f"{settings.API_V1_STR}/auth/login/mobile",
+            f"{settings.API_V1_STR}/auth/signup/otp/verify",
+            f"{settings.API_V1_STR}/bank-accounts/link/verify",
+        }
+    )
+
     def __init__(self, app, login_path: str | None = None):
         super().__init__(app)
         self.login_path = login_path or f"{settings.API_V1_STR}/auth/login"
@@ -44,9 +60,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         _rate_limit_store[key].append(now)
         return False
 
-    def _rate_limit_response(self) -> JSONResponse:
+    def _rate_limit_response(self, retry_after: int = 60) -> JSONResponse:
         return JSONResponse(
             status_code=429,
+            headers={"Retry-After": str(retry_after)},
             content={
                 "error": {
                     "message": "Too many requests. Please try again later.",
@@ -61,24 +78,43 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_ip = self._client_ip(request)
+        path = request.url.path
 
-        if request.url.path == self.login_path:
+        if path == self.login_path:
             if self._is_rate_limited(
                 client_ip,
                 settings.RATE_LIMIT_LOGIN_MAX,
                 settings.RATE_LIMIT_LOGIN_WINDOW_SECONDS,
                 "login",
             ):
-                return self._rate_limit_response()
+                return self._rate_limit_response(settings.RATE_LIMIT_LOGIN_WINDOW_SECONDS)
 
-        if request.url.path in self.PROFILE_PATHS:
+        elif path in self.OTP_SEND_PATHS:
+            if self._is_rate_limited(
+                client_ip,
+                settings.RATE_LIMIT_OTP_SEND_MAX,
+                settings.RATE_LIMIT_OTP_SEND_WINDOW_SECONDS,
+                "otp_send",
+            ):
+                return self._rate_limit_response(settings.RATE_LIMIT_OTP_SEND_WINDOW_SECONDS)
+
+        elif path in self.AUTH_ATTEMPT_PATHS:
+            if self._is_rate_limited(
+                client_ip,
+                settings.RATE_LIMIT_AUTH_ATTEMPT_MAX,
+                settings.RATE_LIMIT_AUTH_ATTEMPT_WINDOW_SECONDS,
+                "auth_attempt",
+            ):
+                return self._rate_limit_response(settings.RATE_LIMIT_AUTH_ATTEMPT_WINDOW_SECONDS)
+
+        elif path in self.PROFILE_PATHS:
             if self._is_rate_limited(
                 client_ip,
                 settings.RATE_LIMIT_PROFILE_MAX,
                 settings.RATE_LIMIT_PROFILE_WINDOW_SECONDS,
                 "profile",
             ):
-                return self._rate_limit_response()
+                return self._rate_limit_response(settings.RATE_LIMIT_PROFILE_WINDOW_SECONDS)
 
         return await call_next(request)
 

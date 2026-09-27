@@ -7,6 +7,7 @@ import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:ags_gold/config/env_config.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/app_exit_guard.dart';
+import 'package:ags_gold/core/widgets/biometric_guard.dart';
 import 'package:ags_gold/features/app_update/presentation/app_update_listener.dart';
 import 'package:ags_gold/routes/app_routes.dart';
 import 'package:ags_gold/services/service_providers.dart';
@@ -39,8 +40,10 @@ class AGSGoldApp extends ConsumerWidget {
 
     return MaterialApp.router(
       builder: (context, child) => AppExitGuard(
-        child: AppUpdateListener(
-          child: child ?? const SizedBox.shrink(),
+        child: BiometricGuard(
+          child: AppUpdateListener(
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
       ),
       title: 'AGS Gold',

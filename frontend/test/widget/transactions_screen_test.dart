@@ -66,7 +66,7 @@ void main() {
                 limit: 25,
               ),
             ),
-          )
+          ),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

@@ -629,12 +629,10 @@ class _BankLinkStepIndicator extends StatelessWidget {
 class _PickerOption {
   final String code;
   final String label;
-  final String? extra;
 
   const _PickerOption({
     required this.code,
     required this.label,
-    this.extra,
   });
 }
 
@@ -653,7 +651,9 @@ class _IfscSelectField extends StatelessWidget {
     required this.value,
     required this.hint,
     required this.enabled,
+    // ignore: unused_element_parameter
     this.loading = false,
+    // ignore: unused_element_parameter
     this.errorText,
     this.onTap,
     this.leading,
@@ -831,9 +831,6 @@ class _SearchablePickerSheetState extends State<_SearchablePickerSheet> {
                   final item = filtered[index];
                   return ListTile(
                     title: Text(item.label),
-                    subtitle: item.extra != null && item.extra!.isNotEmpty
-                        ? Text(item.extra!)
-                        : null,
                     onTap: () => Navigator.pop(context, item),
                   );
                 },

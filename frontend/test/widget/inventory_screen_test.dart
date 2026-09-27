@@ -79,7 +79,7 @@ void main() {
                 lowStockCount: 0,
               ),
             ),
-          )
+          ),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),

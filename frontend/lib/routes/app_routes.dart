@@ -23,6 +23,7 @@ import 'package:ags_gold/features/user_dashboard/presentation/portfolio_screen.d
 import 'package:ags_gold/features/user_dashboard/presentation/user_transactions_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/bank_accounts_screen.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/add_bank_account_screen.dart';
+import 'package:ags_gold/features/notifications/presentation/notifications_screen.dart';
 import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
 import 'package:ags_gold/features/legal/presentation/privacy_policy_screen.dart';
 import 'package:ags_gold/features/admin/presentation/metal_inventory_screen.dart';
@@ -155,6 +156,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             '/bank-accounts',
             '/refer-and-earn',
             '/live-price',
+            '/notifications',
             '/kyc',
           ];
           if (endUserRoutes.any(
@@ -244,6 +246,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/user-dashboard',
         builder: (context, state) => const UserDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/live-price',

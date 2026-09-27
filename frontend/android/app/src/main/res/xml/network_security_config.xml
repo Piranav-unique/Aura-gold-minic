@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <!--
-      Development: allow HTTP to localhost, emulator, and LAN IPs.
-      Production builds should use HTTPS via API_BASE_URL.
+      Development: allow HTTP only to localhost and Android emulator (10.0.2.2).
+      Production builds strictly enforce HTTPS for all domains (e.g. api.aurumgold.co.in).
     -->
-    <base-config cleartextTrafficPermitted="true">
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

@@ -19,11 +19,13 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 class TradeAmountForm extends ConsumerStatefulWidget {
   final bool isBuy;
   final MetalType metal;
+  final double? initialAmount;
 
   const TradeAmountForm({
     super.key,
     required this.isBuy,
     required this.metal,
+    this.initialAmount,
   });
 
   @override
@@ -45,6 +47,9 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _amountController.text = widget.initialAmount!.toStringAsFixed(0);
+    }
   }
 
   @override
@@ -384,6 +389,14 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
     final rateLabel = widget.isBuy
         ? l10n.buyRatePerGram(currency.format(rate))
         : l10n.sellRatePerGram(currency.format(rate));
+
+    if (_amountController.text.isNotEmpty && _gramsController.text.isEmpty && rate > 0 && !_syncing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _gramsController.text.isEmpty) {
+          _syncFromAmount(rate);
+        }
+      });
+    }
 
     return Stack(
       children: [

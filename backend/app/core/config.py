@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_LOGIN_WINDOW_SECONDS: int = 60
     RATE_LIMIT_PROFILE_MAX: int = 10
     RATE_LIMIT_PROFILE_WINDOW_SECONDS: int = 300
+    RATE_LIMIT_OTP_SEND_MAX: int = 5
+    RATE_LIMIT_OTP_SEND_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_AUTH_ATTEMPT_MAX: int = 10
+    RATE_LIMIT_AUTH_ATTEMPT_WINDOW_SECONDS: int = 60
 
     TRUSTED_PROXY: bool = False
     AVATAR_MAX_BYTES: int = 262_144  # 256 KB
@@ -217,8 +221,13 @@ class Settings(BaseSettings):
 
         # Enforce production security constraints
         if self.ENVIRONMENT == "production":
-            if self.SECRET_KEY == "secret-key-change-me":
-                raise ValueError("SECRET_KEY must be overridden in production mode!")
+            if (
+                self.SECRET_KEY in ("secret-key-change-me", "changeme", "secret")
+                or "change-me" in self.SECRET_KEY.lower()
+            ):
+                raise ValueError("SECRET_KEY must be overridden with a secure secret in production mode!")
+            if len(self.SECRET_KEY) < 32:
+                raise ValueError("SECRET_KEY must be at least 32 characters long in production mode!")
             if (
                 not self.DATABASE_URL
                 and self.POSTGRES_PASSWORD == "password123"

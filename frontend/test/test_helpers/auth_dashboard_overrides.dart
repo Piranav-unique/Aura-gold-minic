@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/features/dashboard/domain/dashboard_stats.dart';

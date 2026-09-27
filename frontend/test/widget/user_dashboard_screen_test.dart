@@ -78,7 +78,7 @@ Future<void> _pumpDashboard(
         ),
         metalPricesProvider.overrideWith(
           (ref) => Stream.value(dashboardTestMetalPrices()),
-        )
+        ),
         if (!showKycPopup)
           kycPromptShownProvider.overrideWith(_ShownKycPromptNotifier.new),
       ],
@@ -108,9 +108,9 @@ void main() {
     // No KYC banner/prompt should be rendered inline on the home page.
     expect(find.text('Complete KYC to trade'), findsNothing);
     expect(find.text('Verify your identity'), findsNothing);
-    expect(find.text('0.0000 g'), findsOneWidget);
-    expect(find.text('Buy Gold'), findsOneWidget);
-    expect(find.text('Sell Gold'), findsOneWidget);
+    expect(find.text('0 g'), findsWidgets);
+    expect(find.text('BUY GOLD'), findsOneWidget);
+    expect(find.text('SELL GOLD'), findsOneWidget);
     expect(find.text('My Profile'), findsNothing);
   });
 
@@ -122,9 +122,9 @@ void main() {
       dashboard: _mockPersonal(kycStatus: KycStatus.verified),
     );
 
-    expect(find.text('Gold holdings'), findsOneWidget);
-    expect(find.text('Buy Gold'), findsOneWidget);
-    expect(find.text('Sell Gold'), findsOneWidget);
+    expect(find.text('Gold Owned'), findsOneWidget);
+    expect(find.text('BUY GOLD'), findsOneWidget);
+    expect(find.text('SELL GOLD'), findsOneWidget);
     expect(find.text('KYC required'), findsNothing);
     expect(find.text('Complete KYC'), findsNothing);
     expect(find.text('Complete KYC to trade'), findsNothing);

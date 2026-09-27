@@ -108,7 +108,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          apiClientProvider.overrideWithValue(mockApi)
+          apiClientProvider.overrideWithValue(mockApi),
           profileProvider.overrideWithValue(
             AsyncValue.data(
               UserProfile(

@@ -11,6 +11,7 @@ import '../mocks/mock_services.dart';
 EnvConfig _testConfig() => EnvConfig(
   environment: AppEnvironment.dev,
   baseUrl: 'http://localhost:8000',
+  adminNumber: '9943795005',
   connectionTimeout: const Duration(seconds: 5),
   receiveTimeout: const Duration(seconds: 5),
 );

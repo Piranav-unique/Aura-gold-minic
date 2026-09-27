@@ -15,6 +15,8 @@ import 'package:ags_gold/features/app_update/services/app_update_coordinator.dar
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/services/biometric_auth_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -61,6 +63,12 @@ class SettingsScreen extends ConsumerWidget {
                     }
                   },
                 ),
+              ),
+              _sectionCard(
+                theme,
+                'Security & App Lock',
+                Icons.security_outlined,
+                const _BiometricSecuritySection(),
               ),
               const SizedBox(height: 16),
               if (!kIsWeb && Platform.isAndroid)
@@ -196,6 +204,44 @@ class _AppUpdateSectionState extends ConsumerState<_AppUpdateSection> {
             ),
           ],
         );
+      },
+    );
+  }
+}
+
+class _BiometricSecuritySection extends ConsumerWidget {
+  const _BiometricSecuritySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final biometricEnabled = ref.watch(biometricLockEnabledProvider);
+    final theme = Theme.of(context);
+
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      title: const Text(
+        'Biometric & Screen Lock',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        'Require fingerprint, face unlock, or device PIN to protect your wallet and account access.',
+        style: TextStyle(
+          fontSize: 12,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+        ),
+      ),
+      secondary: const Icon(Icons.fingerprint_rounded, color: AppTheme.primaryGold),
+      value: biometricEnabled,
+      onChanged: (val) async {
+        final success =
+            await ref.read(biometricLockEnabledProvider.notifier).toggle(val);
+        if (!success && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Biometric verification failed or was cancelled.'),
+            ),
+          );
+        }
       },
     );
   }

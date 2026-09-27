@@ -64,7 +64,7 @@ void main() {
           apiClientProvider.overrideWithValue(MockApiClient()),
           customerDetailProvider(
             customerId,
-          ).overrideWithValue(AsyncValue.data(sampleCustomer))
+          ).overrideWithValue(AsyncValue.data(sampleCustomer)),
           profileProvider.overrideWithValue(AsyncValue.data(_adminProfile)),
         ],
         child: MaterialApp.router(routerConfig: router),
