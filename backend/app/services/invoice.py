@@ -1,11 +1,18 @@
 import io
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.lib.utils import ImageReader
+from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+# Resolve logo path relative to this file
+_ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+_LOGO_PATH = _ASSETS_DIR / "ags_logo.png"
+
 
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
@@ -64,18 +71,13 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
         c.setFillColor(GOLD_BAND)
         c.rect(0, PAGE_H - TOP_BAND_H - TOP_STRIPE_H, PAGE_W, TOP_STRIPE_H, fill=1, stroke=0)
 
-        # Company name — top-left inside band
+        # "TAX INVOICE" label — centred inside band (right side)
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 16)
-        c.drawString(36, PAGE_H - 38, "AGS")
-        c.setFont("Helvetica", 9)
-        c.drawString(36, PAGE_H - 52, "AURUM GOLD & SILVER")
-
-        # "TAX INVOICE" label — top-right inside band
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont("Helvetica-Bold", 11)
         c.drawRightString(PAGE_W - 36, PAGE_H - 36, "TAX INVOICE")
         c.setFont("Helvetica", 8)
         c.drawRightString(PAGE_W - 36, PAGE_H - 50, "Official Purchase Receipt")
+
 
         # Watermark: light AGS centred on page
         c.setFillColor(colors.Color(0.48, 0.12, 0.16, alpha=0.06))
@@ -110,7 +112,7 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
         pagesize=A4,
         leftMargin=40,
         rightMargin=40,
-        topMargin=TOP_BAND_H + TOP_STRIPE_H + 18,
+        topMargin=TOP_BAND_H + TOP_STRIPE_H + 12,
         bottomMargin=BOT_BAND_H + BOT_STRIPE_H + 14,
     )
 
@@ -165,7 +167,35 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
     # ── Story ─────────────────────────────────────────────────────────────
     story = []
 
+    # 0. Logo + Company Name header (matching letterhead layout)
+    logo_row_items = []
+    if _LOGO_PATH.exists():
+        logo_img = Image(str(_LOGO_PATH), width=70, height=70)
+        logo_row_items.append(logo_img)
+    else:
+        logo_row_items.append(Paragraph("<b>AGS</b>", _s("FallbackLogo", fontName="Helvetica-Bold",
+                                         fontSize=28, leading=32, textColor=MAROON, alignment=1)))
+
+    logo_table = Table([logo_row_items], colWidths=[515])
+    logo_table.setStyle(TableStyle([
+        ("ALIGN",   (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",  (0, 0), (-1, -1), "MIDDLE"),
+        ("PADDING", (0, 0), (-1, -1), 0),
+    ]))
+    story.append(logo_table)
+    story.append(Spacer(1, 4))
+
+    company_name_p = Paragraph(
+        "<b>AURUM GOLD &amp; SILVER</b>",
+        _s("CompanyName", fontName="Helvetica-Bold", fontSize=13, leading=16,
+           textColor=MAROON, alignment=1),
+    )
+    story.append(company_name_p)
+    story.append(Spacer(1, 12))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=GOLD_BAND, spaceAfter=12))
+
     # 1. Invoice reference strip
+
     hdr_data = [[
         Paragraph(
             f"<b>Invoice No:</b> {invoice_number}<br/>"
