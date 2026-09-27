@@ -653,4 +653,88 @@ class GoldPaymentService:
             "recipient": recipient_email,
         }
 
+    async def handle_payment_webhook(
+        self,
+        *,
+        event: str,
+        payload: dict,
+    ) -> bool:
+        """Handle Razorpay payment webhooks (e.g. payment.captured, order.paid)."""
+        payment_entity = payload.get("payment", {}).get("entity", {})
+        order_entity = payload.get("order", {}).get("entity", {})
+
+        order_id = payment_entity.get("order_id") or order_entity.get("id")
+        payment_id = payment_entity.get("id")
+        raw_status = str(payment_entity.get("status") or order_entity.get("status") or "").lower()
+
+        if not order_id and not payment_id:
+            return False
+
+        order = None
+        if order_id:
+            order = await self.payment_repo.get_by_razorpay_order_id(order_id)
+        if not order and payment_id:
+            order = await self.payment_repo.get_by_razorpay_payment_id(payment_id)
+
+        if not order:
+            from app.core.logging import logger
+            logger.warning(
+                "payment_webhook_order_not_found",
+                order_id=order_id,
+                payment_id=payment_id,
+                event=event,
+            )
+            return False
+
+        if order.status == "paid":
+            return True
+
+        user = getattr(order, "user", None) or await self.user_repo.get(order.user_id)
+        if not user:
+            from app.core.logging import logger
+            logger.error("payment_webhook_user_not_found", user_id=str(order.user_id))
+            return False
+
+        if event in {"payment.captured", "order.paid"} or raw_status in {"captured", "paid"}:
+            acquirer = payment_entity.get("acquirer_data") or {}
+            rrn = (
+                acquirer.get("rrn")
+                or acquirer.get("upi_transaction_id")
+                or acquirer.get("bank_transaction_id")
+            )
+            method = payment_entity.get("method")
+            contact = payment_entity.get("contact")
+
+            await self._mark_order_paid(
+                user,
+                order,
+                payment_id or f"webhook_{order_id}",
+                bank_rrn=str(rrn) if rrn else None,
+                payment_method=str(method) if method else None,
+                customer_contact=str(contact) if contact else None,
+            )
+            from app.core.logging import logger
+            logger.info(
+                "payment_webhook_order_marked_paid",
+                order_id=str(order.id),
+                razorpay_order_id=order_id,
+                payment_id=payment_id,
+            )
+            return True
+
+        if event == "payment.failed" or raw_status == "failed":
+            error_reason = (
+                payment_entity.get("error_description")
+                or payment_entity.get("error_reason")
+                or payment_entity.get("error_code")
+                or "Payment failed"
+            )
+            order.status = "failed"
+            order.failure_reason = str(error_reason)
+            await self.user_repo.db.commit()
+            return True
+
+        return False
+
+
 

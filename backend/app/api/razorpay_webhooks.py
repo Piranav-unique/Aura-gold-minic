@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi.responses import JSONResponse
 
-from app.api.dependencies import get_gold_sell_inquiry_service
+from app.api.dependencies import get_gold_payment_service, get_gold_sell_inquiry_service
 from app.core.config import settings
 from app.core.logging import logger
+from app.services.gold_payment import GoldPaymentService
 from app.services.gold_sell_inquiry import GoldSellInquiryService
 from app.services.razorpayx_client import RazorpayXClient
 
@@ -13,13 +14,14 @@ router = APIRouter()
 @router.post(
     "/razorpay",
     status_code=status.HTTP_200_OK,
-    summary="Razorpay / RazorpayX webhook (payout status)",
+    summary="Razorpay / RazorpayX webhook (payments & payout status)",
     include_in_schema=False,
 )
 async def razorpay_webhook(
     request: Request,
     x_razorpay_signature: str | None = Header(default=None),
-    service: GoldSellInquiryService = Depends(get_gold_sell_inquiry_service),
+    payout_service: GoldSellInquiryService = Depends(get_gold_sell_inquiry_service),
+    payment_service: GoldPaymentService = Depends(get_gold_payment_service),
 ):
     body = await request.body()
 
@@ -33,9 +35,18 @@ async def razorpay_webhook(
             )
 
     payload = await request.json()
-    event = payload.get("event", "")
-    entity = payload.get("payload", {}).get("payout", {}).get("entity", {})
+    event = str(payload.get("event", ""))
 
+    # 1. Handle incoming customer gold/silver purchase payment webhooks
+    if event.startswith("payment.") or event.startswith("order."):
+        handled = await payment_service.handle_payment_webhook(
+            event=event,
+            payload=payload.get("payload", {}),
+        )
+        return {"status": "ok" if handled else "ignored"}
+
+    # 2. Handle admin gold sell payout webhooks
+    entity = payload.get("payload", {}).get("payout", {}).get("entity", {})
     if not entity and "payout" in payload.get("payload", {}):
         entity = payload["payload"]["payout"].get("entity", entity)
 
@@ -45,11 +56,8 @@ async def razorpay_webhook(
     if entity.get("status_details"):
         failure_reason = entity["status_details"].get("description")
 
-    if not payout_id:
-        return {"status": "ignored"}
-
-    if event.startswith("payout.") or payout_status:
-        inquiry = await service.handle_payout_webhook(
+    if payout_id and (event.startswith("payout.") or payout_status):
+        inquiry = await payout_service.handle_payout_webhook(
             payout_id=payout_id,
             status=payout_status,
             failure_reason=failure_reason,
@@ -59,3 +67,4 @@ async def razorpay_webhook(
         return {"status": "not_found"}
 
     return {"status": "ignored"}
+
