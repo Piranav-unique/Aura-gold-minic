@@ -214,7 +214,8 @@ class _BiometricSecuritySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final biometricEnabled = ref.watch(biometricLockEnabledProvider);
+    final biometricEnabled =
+        ref.watch(biometricLockEnabledProvider).value ?? false;
     final theme = Theme.of(context);
 
     return SwitchListTile.adaptive(

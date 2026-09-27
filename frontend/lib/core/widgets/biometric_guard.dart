@@ -18,14 +18,12 @@ class _BiometricGuardState extends ConsumerState<BiometricGuard>
   bool _isUnlocked = false;
   bool _isAuthenticating = false;
   DateTime? _pausedAt;
+  AuthStatus? _lastAuthStatus;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAndAuthenticate();
-    });
   }
 
   @override
@@ -36,63 +34,95 @@ class _BiometricGuardState extends ConsumerState<BiometricGuard>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // If the biometric dialog itself caused the lifecycle transition, ignore it
+    if (_isAuthenticating) return;
+
     if (state == AppLifecycleState.paused) {
       _pausedAt = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       final paused = _pausedAt;
+      _pausedAt = null;
       if (paused != null) {
         final elapsed = DateTime.now().difference(paused);
-        // Lock after 45 seconds in the background
-        if (elapsed.inSeconds > 45) {
-          setState(() {
-            _isUnlocked = false;
-          });
-          _checkAndAuthenticate();
+        // Lock if backgrounded for more than 2 seconds (e.g. switched apps or screen locked)
+        if (elapsed.inSeconds >= 2) {
+          final isEnabled = ref.read(biometricLockEnabledProvider).value ?? false;
+          final isAuthenticated =
+              ref.read(authNotifierProvider).value == AuthStatus.authenticated;
+          if (isEnabled && isAuthenticated) {
+            setState(() {
+              _isUnlocked = false;
+            });
+            _triggerAuthentication();
+          }
         }
       }
     }
   }
 
-  Future<void> _checkAndAuthenticate() async {
-    final authState = ref.read(authNotifierProvider).value;
-    final isBiometricEnabled = ref.read(biometricLockEnabledProvider);
-
-    if (authState != AuthStatus.authenticated || !isBiometricEnabled) {
-      if (!_isUnlocked) {
-        setState(() {
-          _isUnlocked = true;
-        });
-      }
-      return;
-    }
-
-    if (_isUnlocked || _isAuthenticating) return;
+  Future<void> _triggerAuthentication() async {
+    if (_isAuthenticating || _isUnlocked) return;
 
     _isAuthenticating = true;
-    final service = ref.read(biometricServiceProvider);
-    final success = await service.authenticate(
-      localizedReason: 'Scan fingerprint or Face ID to unlock AGS Gold',
-    );
-    _isAuthenticating = false;
-
-    if (mounted) {
-      setState(() {
-        _isUnlocked = success;
-      });
+    try {
+      final service = ref.read(biometricServiceProvider);
+      final success = await service.authenticate(
+        localizedReason: 'Scan fingerprint, face, or enter PIN to unlock AGS Gold',
+      );
+      if (mounted) {
+        setState(() {
+          _isUnlocked = success;
+        });
+      }
+    } finally {
+      _isAuthenticating = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider).value;
-    final isBiometricEnabled = ref.watch(biometricLockEnabledProvider);
+    final authAsync = ref.watch(authNotifierProvider);
+    final biometricAsync = ref.watch(biometricLockEnabledProvider);
 
-    // If not authenticated or biometric lock is disabled, render child directly
-    if (authState != AuthStatus.authenticated || !isBiometricEnabled || _isUnlocked) {
+    // Track authentication state changes (e.g. user just logged in or logged out)
+    final currentAuthStatus = authAsync.value;
+    if (_lastAuthStatus != currentAuthStatus) {
+      if (_lastAuthStatus == AuthStatus.unauthenticated &&
+          currentAuthStatus == AuthStatus.authenticated) {
+        // User just logged in via OTP/password — session is freshly authenticated
+        _isUnlocked = true;
+      } else if (currentAuthStatus != AuthStatus.authenticated) {
+        _isUnlocked = true;
+      }
+      _lastAuthStatus = currentAuthStatus;
+    }
+
+    // While determining initial auth state or biometric preference, render child directly
+    if (authAsync.isLoading || biometricAsync.isLoading) {
       return widget.child;
     }
 
-    // Otherwise show the secure biometric lock screen
+    final isAuthenticated = currentAuthStatus == AuthStatus.authenticated;
+    final isBiometricEnabled = biometricAsync.value ?? false;
+
+    // If user is not logged in or biometric lock is disabled, render child directly
+    if (!isAuthenticated || !isBiometricEnabled) {
+      return widget.child;
+    }
+
+    // If already unlocked, render child
+    if (_isUnlocked) {
+      return widget.child;
+    }
+
+    // Auto-prompt on frame render if not already authenticating
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isAuthenticating && !_isUnlocked && mounted) {
+        _triggerAuthentication();
+      }
+    });
+
+    // Show the styled lock screen
     return Scaffold(
       backgroundColor: AppTheme.ctaBlack,
       body: SafeArea(
@@ -146,7 +176,7 @@ class _BiometricGuardState extends ConsumerState<BiometricGuard>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _checkAndAuthenticate,
+                  onPressed: _triggerAuthentication,
                   icon: const Icon(Icons.lock_open_rounded, size: 20),
                   label: const Text(
                     'Unlock App',

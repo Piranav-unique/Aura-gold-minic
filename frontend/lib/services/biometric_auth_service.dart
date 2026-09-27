@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
@@ -10,35 +11,28 @@ final biometricServiceProvider = Provider<BiometricAuthService>((ref) {
 });
 
 final biometricLockEnabledProvider =
-    NotifierProvider<BiometricLockNotifier, bool>(() {
+    AsyncNotifierProvider<BiometricLockNotifier, bool>(() {
   return BiometricLockNotifier();
 });
 
-class BiometricLockNotifier extends Notifier<bool> {
+class BiometricLockNotifier extends AsyncNotifier<bool> {
   @override
-  bool build() {
-    _loadState();
-    return false;
-  }
-
-  Future<void> _loadState() async {
-    final enabled =
-        await ref.read(biometricServiceProvider).isBiometricEnabled();
-    state = enabled;
+  Future<bool> build() async {
+    return ref.read(biometricServiceProvider).isBiometricEnabled();
   }
 
   Future<bool> toggle(bool enable) async {
     if (enable) {
       final success = await ref.read(biometricServiceProvider).authenticate(
             localizedReason:
-                'Scan your fingerprint or face to enable biometric lock',
+                'Scan your fingerprint, face, or enter device PIN to enable lock',
           );
       if (!success) {
         return false;
       }
     }
     await ref.read(biometricServiceProvider).setBiometricEnabled(enable);
-    state = enable;
+    state = AsyncData(enable);
     return true;
   }
 }
@@ -55,7 +49,7 @@ class BiometricAuthService {
       final canCheck = await _auth.canCheckBiometrics;
       return isSupported || canCheck;
     } on PlatformException {
-      return false;
+      return true; // Let authenticate() handle device verification
     } catch (_) {
       return false;
     }
@@ -93,11 +87,14 @@ class BiometricAuthService {
       return await _auth.authenticate(
         localizedReason: localizedReason,
         biometricOnly: false,
-        sensitiveTransaction: true,
+        sensitiveTransaction: false,
+        persistAcrossBackgrounding: true,
       );
-    } on PlatformException {
+    } on PlatformException catch (e) {
+      debugPrint('Biometric authentication error: $e');
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Biometric authentication unexpected error: $e');
       return false;
     }
   }
