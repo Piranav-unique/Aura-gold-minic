@@ -1,7 +1,6 @@
 import io
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -12,7 +11,7 @@ from app.models.payment_order import PaymentOrder
 from app.models.user import User
 
 
-def _format_inr(val: Decimal | float | int | None) -> str:
+def _format_inr(val) -> str:
     if val is None:
         return "0.00"
     try:
@@ -29,146 +28,123 @@ def _user_display_name(user: User) -> str:
     if full:
         return full
     name = getattr(user, "name", "") or ""
-    if name:
-        return name
-    return "Customer"
+    return name if name else "Customer"
 
 
 def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
-    """Generate a clean, official A4 PDF Tax Invoice / Payment Receipt for a metal purchase."""
+    """Generate an A4 PDF Tax Invoice styled to match the AGS Gold & Silver letterhead."""
     buffer = io.BytesIO()
+
+    PAGE_W, PAGE_H = A4  # 595.27 x 841.89 pt
+
+    # ── Brand colours ────────────────────────────────────────────────────
+    MAROON      = colors.HexColor("#7A1E2A")   # dark wine-red band
+    GOLD_BAND   = colors.HexColor("#C8A000")   # gold stripe
+    GOLD_ACCENT = colors.HexColor("#B8860B")   # totals / highlights
+    DARK        = colors.HexColor("#1A1D24")   # body text
+    MUTED       = colors.HexColor("#6C757D")   # sub-labels
+    LIGHT_BG    = colors.HexColor("#FDF8F0")   # table row bg
+    BORDER      = colors.HexColor("#E5D8C0")   # table borders
+
+    # ── Band heights ─────────────────────────────────────────────────────
+    TOP_BAND_H   = 58
+    TOP_STRIPE_H = 12
+    BOT_BAND_H   = 52
+    BOT_STRIPE_H = 12
+
+    # ── Per-page letterhead ───────────────────────────────────────────────
+    def draw_letterhead(c, doc):
+        c.saveState()
+
+        # Top maroon band
+        c.setFillColor(MAROON)
+        c.rect(0, PAGE_H - TOP_BAND_H, PAGE_W, TOP_BAND_H, fill=1, stroke=0)
+
+        # Top gold stripe
+        c.setFillColor(GOLD_BAND)
+        c.rect(0, PAGE_H - TOP_BAND_H - TOP_STRIPE_H, PAGE_W, TOP_STRIPE_H, fill=1, stroke=0)
+
+        # Company name — top-left inside band
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(36, PAGE_H - 38, "AGS")
+        c.setFont("Helvetica", 9)
+        c.drawString(36, PAGE_H - 52, "AURUM GOLD & SILVER")
+
+        # "TAX INVOICE" label — top-right inside band
+        c.setFont("Helvetica-Bold", 10)
+        c.drawRightString(PAGE_W - 36, PAGE_H - 36, "TAX INVOICE")
+        c.setFont("Helvetica", 8)
+        c.drawRightString(PAGE_W - 36, PAGE_H - 50, "Official Purchase Receipt")
+
+        # Watermark: light AGS centred on page
+        c.setFillColor(colors.Color(0.48, 0.12, 0.16, alpha=0.06))
+        c.setFont("Helvetica-Bold", 110)
+        c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 55, "AGS")
+
+        # Bottom gold stripe
+        c.setFillColor(GOLD_BAND)
+        c.rect(0, BOT_BAND_H, PAGE_W, BOT_STRIPE_H, fill=1, stroke=0)
+
+        # Bottom maroon band
+        c.setFillColor(MAROON)
+        c.rect(0, 0, PAGE_W, BOT_BAND_H, fill=1, stroke=0)
+
+        # Contact details inside bottom band — right-aligned
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica", 7.5)
+        c.drawRightString(PAGE_W - 36, BOT_BAND_H - 16, "Tel: 99437 95005")
+        c.drawRightString(PAGE_W - 36, BOT_BAND_H - 28, "Email: aurumgoldsilver@gmail.com")
+        c.drawRightString(PAGE_W - 36, BOT_BAND_H - 40, "82B, South Masi Street, Madurai - 625 001")
+
+        # Computer-generated note — bottom-left
+        c.setFont("Helvetica", 7)
+        c.drawString(36, BOT_BAND_H - 22, "This is a computer-generated invoice.")
+        c.drawString(36, BOT_BAND_H - 34, "No signature required.")
+
+        c.restoreState()
+
+    # ── Document ──────────────────────────────────────────────────────────
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=36,
-        rightMargin=36,
-        topMargin=36,
-        bottomMargin=36,
+        leftMargin=40,
+        rightMargin=40,
+        topMargin=TOP_BAND_H + TOP_STRIPE_H + 18,
+        bottomMargin=BOT_BAND_H + BOT_STRIPE_H + 14,
     )
 
     styles = getSampleStyleSheet()
 
-    # Custom styles
-    gold_color = colors.HexColor("#B8860B")
-    dark_color = colors.HexColor("#1A1D24")
-    gray_bg = colors.HexColor("#F8F9FA")
-    text_muted = colors.HexColor("#6C757D")
+    def _s(name, **kw):
+        return ParagraphStyle(name, parent=styles["Normal"], **kw)
 
-    title_style = ParagraphStyle(
-        "InvoiceTitle",
-        parent=styles["Heading1"],
-        fontName="Helvetica-Bold",
-        fontSize=18,
-        leading=22,
-        textColor=gold_color,
-    )
-    subtitle_style = ParagraphStyle(
-        "InvoiceSubtitle",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=9,
-        leading=12,
-        textColor=text_muted,
-    )
-    section_title = ParagraphStyle(
-        "SectionTitle",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=10,
-        leading=13,
-        textColor=dark_color,
-    )
-    body_style = ParagraphStyle(
-        "InvoiceBody",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=9,
-        leading=12,
-        textColor=dark_color,
-    )
-    table_header = ParagraphStyle(
-        "TableHeader",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=9,
-        leading=11,
-        textColor=colors.white,
-    )
-    table_cell = ParagraphStyle(
-        "TableCell",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=8.5,
-        leading=11,
-        textColor=dark_color,
-    )
-    table_cell_bold = ParagraphStyle(
-        "TableCellBold",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=8.5,
-        leading=11,
-        textColor=dark_color,
-    )
+    body_style    = _s("Body",    fontName="Helvetica",      fontSize=8.5, leading=11, textColor=DARK)
+    label_style   = _s("Label",   fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=DARK)
+    th_style      = _s("TH",      fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=colors.white)
+    td_style      = _s("TD",      fontName="Helvetica",      fontSize=8.5, leading=11, textColor=DARK)
+    td_bold       = _s("TDBold",  fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=DARK)
+    total_style   = _s("Total",   fontName="Helvetica-Bold", fontSize=11,  leading=14, textColor=GOLD_ACCENT)
 
-    story = []
-
-    # 1. Header: Brand & Document Info
-    inv_id = str(order.id).replace("-", "")[:8].upper()
+    # ── Data ─────────────────────────────────────────────────────────────
+    inv_id         = str(order.id).replace("-", "")[:8].upper()
     invoice_number = f"INV-AGS-{inv_id}"
-    paid_dt = order.paid_at or order.created_at or datetime.now(timezone.utc)
-    date_str = paid_dt.strftime("%d %b %Y, %I:%M %p UTC")
+    paid_dt        = order.paid_at or order.created_at or datetime.now(timezone.utc)
+    date_str       = paid_dt.strftime("%d %b %Y, %I:%M %p")
 
-    header_table_data = [
-        [
-            Paragraph("<b>AURUM GOLD & SILVERS</b><br/><font size='8' color='#6C757D'>AGS Gold • Pure 24K Savings<br/>Coimbatore, Tamil Nadu, India<br/>Support: info@aurumgold.co.in | +91 99437 95005</font>", body_style),
-            Paragraph(f"<font color='#B8860B'><b>TAX INVOICE / RECEIPT</b></font><br/><font size='8'><b>Invoice No:</b> {invoice_number}<br/><b>Date:</b> {date_str}<br/><b>Order Ref:</b> {order.razorpay_order_id}</font>", body_style),
-        ]
-    ]
-    header_table = Table(header_table_data, colWidths=[310, 210])
-    header_table.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-    ]))
-    story.append(header_table)
-    story.append(Spacer(1, 14))
-
-    story.append(HRFlowable(width="100%", thickness=1, color=gold_color, spaceAfter=14))
-
-    # 2. Buyer & Payment Details Table
-    buyer_name = _user_display_name(user)
-    buyer_mobile = getattr(user, "mobile_number", "") or "N/A"
-    buyer_email = getattr(user, "email", "") or "N/A"
-    payment_id = getattr(order, "razorpay_payment_id", "") or "Completed"
-    bank_rrn = getattr(order, "bank_rrn", "") or "N/A"
+    buyer_name     = _user_display_name(user)
+    buyer_mobile   = getattr(user, "mobile_number", "") or "N/A"
+    buyer_email    = getattr(user, "email", "") or "N/A"
+    payment_id     = getattr(order, "razorpay_payment_id", "") or "Completed"
+    bank_rrn       = getattr(order, "bank_rrn", "") or "N/A"
     payment_method = getattr(order, "payment_method", "") or "UPI / Online"
 
-    info_table_data = [
-        [
-            Paragraph("<b>BILLED TO (CUSTOMER):</b>", section_title),
-            Paragraph("<b>PAYMENT TRANSACTION DETAILS:</b>", section_title),
-        ],
-        [
-            Paragraph(f"<b>Name:</b> {buyer_name}<br/><b>Mobile:</b> +91 {buyer_mobile}<br/><b>Email:</b> {buyer_email}", body_style),
-            Paragraph(f"<b>Payment Gateway:</b> Razorpay<br/><b>Payment ID:</b> {payment_id}<br/><b>Payment Mode:</b> {payment_method}<br/><b>Bank Reference (UTR):</b> {bank_rrn}<br/><b>Payment Status:</b> <font color='#28A745'><b>PAID (SUCCESSFUL)</b></font>", body_style),
-        ],
-    ]
-    info_table = Table(info_table_data, colWidths=[260, 260])
-    info_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), gray_bg),
-        ("PADDING", (0, 0), (-1, -1), 8),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
-    ]))
-    story.append(info_table)
-    story.append(Spacer(1, 16))
-
-    # 3. Metal Purchase Line Item
-    is_gold = (order.metal or "gold").lower() == "gold"
+    is_gold    = (order.metal or "gold").lower() == "gold"
     metal_name = "24K Pure Digital Gold (99.9% / 999 Fineness)" if is_gold else "Pure Digital Silver (99.9% / 999 Fineness)"
-    hsn_code = "7108" if is_gold else "7106"
-    grams = Decimal(str(order.grams))
-    rate = Decimal(str(order.rate_per_gram))
+    hsn_code   = "7108" if is_gold else "7106"
+
+    grams        = Decimal(str(order.grams))
+    rate         = Decimal(str(order.rate_per_gram))
     total_amount = Decimal(str(order.amount_paise)) / Decimal("100")
 
     metal_value = order.metal_value_inr
@@ -186,77 +162,152 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
     cgst = (gst_amount / Decimal("2")).quantize(Decimal("0.01"))
     sgst = gst_amount - cgst
 
-    items_data = [
+    # ── Story ─────────────────────────────────────────────────────────────
+    story = []
+
+    # 1. Invoice reference strip
+    hdr_data = [[
+        Paragraph(
+            f"<b>Invoice No:</b> {invoice_number}<br/>"
+            f"<b>Date:</b> {date_str}<br/>"
+            f"<b>Order Ref:</b> {order.razorpay_order_id}",
+            body_style,
+        ),
+        Paragraph(
+            "<font color='#28A745'><b>PAYMENT SUCCESSFUL</b></font>",
+            _s("PS", fontName="Helvetica-Bold", fontSize=11, leading=14,
+               textColor=colors.HexColor("#28A745"), alignment=2),
+        ),
+    ]]
+    hdr_table = Table(hdr_data, colWidths=[300, 215])
+    hdr_table.setStyle(TableStyle([
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN",      (1, 0), (1, 0),  "RIGHT"),
+        ("BACKGROUND", (0, 0), (-1, -1), LIGHT_BG),
+        ("BOX",        (0, 0), (-1, -1), 0.5, BORDER),
+        ("PADDING",    (0, 0), (-1, -1), 10),
+    ]))
+    story.append(hdr_table)
+    story.append(Spacer(1, 14))
+
+    # Maroon section divider
+    story.append(HRFlowable(width="100%", thickness=2, color=MAROON, spaceAfter=14))
+
+    # 2. Billed To / Payment Details
+    info_data = [
         [
-            Paragraph("Item Description", table_header),
-            Paragraph("HSN", table_header),
-            Paragraph("Weight", table_header),
-            Paragraph("Rate / Gram", table_header),
-            Paragraph("Metal Value", table_header),
-            Paragraph("GST (3%)", table_header),
-            Paragraph("Total (INR)", table_header),
+            Paragraph("<b>BILLED TO (CUSTOMER)</b>",
+                      _s("SH", fontName="Helvetica-Bold", fontSize=9, leading=12, textColor=colors.white)),
+            Paragraph("<b>PAYMENT TRANSACTION</b>",
+                      _s("SH2", fontName="Helvetica-Bold", fontSize=9, leading=12, textColor=colors.white)),
         ],
         [
-            Paragraph(f"<b>{metal_name}</b><br/><font size='7.5' color='#6C757D'>Stored in Insured Custody Vault</font>", table_cell),
-            Paragraph(hsn_code, table_cell),
-            Paragraph(f"{grams:.4f} g", table_cell),
-            Paragraph(f"INR {_format_inr(rate)}", table_cell),
-            Paragraph(f"INR {_format_inr(metal_value)}", table_cell),
-            Paragraph(f"INR {_format_inr(gst_amount)}", table_cell),
-            Paragraph(f"<b>INR {_format_inr(total_amount)}</b>", table_cell_bold),
+            Paragraph(
+                f"<b>Name:</b> {buyer_name}<br/>"
+                f"<b>Mobile:</b> +91 {buyer_mobile}<br/>"
+                f"<b>Email:</b> {buyer_email}",
+                body_style,
+            ),
+            Paragraph(
+                f"<b>Gateway:</b> Razorpay<br/>"
+                f"<b>Payment ID:</b> {payment_id}<br/>"
+                f"<b>Mode:</b> {payment_method}<br/>"
+                f"<b>Bank Ref (UTR):</b> {bank_rrn}<br/>"
+                f"<b>Status:</b> <font color='#28A745'>PAID</font>",
+                body_style,
+            ),
         ],
     ]
+    info_table = Table(info_data, colWidths=[257, 258])
+    info_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), MAROON),
+        ("BACKGROUND", (0, 1), (-1, 1), LIGHT_BG),
+        ("PADDING",    (0, 0), (-1, -1), 8),
+        ("VALIGN",     (0, 0), (-1, -1), "TOP"),
+        ("BOX",        (0, 0), (-1, -1), 0.5, BORDER),
+        ("LINEAFTER",  (0, 0), (0, -1), 0.5, BORDER),
+    ]))
+    story.append(info_table)
+    story.append(Spacer(1, 16))
 
-    items_table = Table(items_data, colWidths=[160, 45, 55, 65, 65, 60, 70])
+    # 3. Line Items
+    items_data = [
+        [
+            Paragraph("Item Description", th_style),
+            Paragraph("HSN",              th_style),
+            Paragraph("Weight",           th_style),
+            Paragraph("Rate / Gram",      th_style),
+            Paragraph("Metal Value",      th_style),
+            Paragraph("GST (3%)",         th_style),
+            Paragraph("Total (INR)",      th_style),
+        ],
+        [
+            Paragraph(
+                f"<b>{metal_name}</b><br/>"
+                f"<font size='7' color='#6C757D'>Stored in Insured Custody Vault</font>",
+                td_style,
+            ),
+            Paragraph(hsn_code,                        td_style),
+            Paragraph(f"{grams:.4f} g",                td_style),
+            Paragraph(f"INR {_format_inr(rate)}",      td_style),
+            Paragraph(f"INR {_format_inr(metal_value)}",td_style),
+            Paragraph(f"INR {_format_inr(gst_amount)}", td_style),
+            Paragraph(f"<b>INR {_format_inr(total_amount)}</b>", td_bold),
+        ],
+    ]
+    items_table = Table(items_data, colWidths=[155, 42, 55, 65, 65, 60, 73])
     items_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), dark_color),
-        ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("PADDING", (0, 0), (-1, -1), 6),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
+        ("BACKGROUND",     (0, 0), (-1, 0), MAROON),
+        ("ALIGN",          (1, 0), (-1, -1), "CENTER"),
+        ("VALIGN",         (0, 0), (-1, -1), "MIDDLE"),
+        ("PADDING",        (0, 0), (-1, -1), 6),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, LIGHT_BG]),
+        ("GRID",           (0, 0), (-1, -1), 0.5, BORDER),
     ]))
     story.append(items_table)
     story.append(Spacer(1, 14))
 
-    # 4. Tax & Totals Breakdown Table
+    # 4. Tax Summary (right-aligned block)
     summary_data = [
-        [Paragraph("Taxable Metal Amount:", body_style), Paragraph(f"INR {_format_inr(metal_value)}", table_cell_bold)],
-        [Paragraph("CGST @ 1.5%:", body_style), Paragraph(f"INR {_format_inr(cgst)}", table_cell)],
-        [Paragraph("SGST @ 1.5%:", body_style), Paragraph(f"INR {_format_inr(sgst)}", table_cell)],
-        [Paragraph("Total GST (3.0%):", body_style), Paragraph(f"INR {_format_inr(gst_amount)}", table_cell)],
-        [Paragraph("<b>TOTAL AMOUNT PAID:</b>", section_title), Paragraph(f"<font color='#B8860B'><b>INR {_format_inr(total_amount)}</b></font>", section_title)],
+        [Paragraph("Taxable Metal Amount:", body_style),   Paragraph(f"INR {_format_inr(metal_value)}", td_bold)],
+        [Paragraph("CGST @ 1.5%:",          body_style),   Paragraph(f"INR {_format_inr(cgst)}",        td_style)],
+        [Paragraph("SGST @ 1.5%:",          body_style),   Paragraph(f"INR {_format_inr(sgst)}",        td_style)],
+        [Paragraph("Total GST (3.0%):",     body_style),   Paragraph(f"INR {_format_inr(gst_amount)}",  td_style)],
+        [Paragraph("<b>TOTAL AMOUNT PAID:</b>", label_style), Paragraph(f"<b>INR {_format_inr(total_amount)}</b>", total_style)],
     ]
-    summary_table = Table(summary_data, colWidths=[150, 110])
+    summary_table = Table(summary_data, colWidths=[155, 110])
     summary_table.setStyle(TableStyle([
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("PADDING", (0, 0), (-1, -1), 4),
-        ("LINEBELOW", (0, 3), (-1, 3), 0.5, gold_color),
+        ("ALIGN",      (1, 0), (1, -1), "RIGHT"),
+        ("PADDING",    (0, 0), (-1, -1), 5),
+        ("LINEABOVE",  (0, 4), (-1, 4), 1.5, GOLD_ACCENT),
+        ("BACKGROUND", (0, 4), (-1, 4), colors.HexColor("#FDF3DC")),
+        ("BOX",        (0, 0), (-1, -1), 0.5, BORDER),
     ]))
-
-    # Wrap summary to right side
-    outer_summary = Table([[Paragraph("", body_style), summary_table]], colWidths=[260, 260])
+    outer_summary = Table([[Paragraph("", body_style), summary_table]], colWidths=[255, 265])
     outer_summary.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story.append(outer_summary)
-    story.append(Spacer(1, 20))
+    story.append(Spacer(1, 18))
 
-    # 5. Security & Vault Certification Notice
+    # 5. Vault notice
     terms_text = (
-        "<b>Vault & Custody Certificate:</b><br/>"
-        "• Your purchased precious metal is 100% physically backed, allocated, and stored in secure, insured bullion vaults.<br/>"
-        "• Purity is certified 24 Karat 99.9% (999 fineness) for Gold, conforming to national bullion standards.<br/>"
-        "• You can sell back or withdraw your accumulated gold anytime directly through the AGS Gold mobile application.<br/>"
-        "• This is a computer-generated tax invoice and requires no physical signature."
+        "<b>Vault &amp; Custody Certificate:</b><br/>"
+        "&#8226; Your purchased metal is 100% physically backed, allocated, and stored in secure, insured bullion vaults.<br/>"
+        "&#8226; Purity is certified 24 Karat 99.9% (999 fineness) for Gold, conforming to national bullion standards.<br/>"
+        "&#8226; You can sell back or withdraw your accumulated gold anytime through the AGS Gold mobile application.<br/>"
+        "&#8226; This is a computer-generated tax invoice and requires no physical signature."
     )
-    terms_p = Paragraph(terms_text, ParagraphStyle("Terms", parent=styles["Normal"], fontSize=7.5, leading=10, textColor=text_muted))
-    terms_box = Table([[terms_p]], colWidths=[520])
+    terms_box = Table(
+        [[Paragraph(terms_text, _s("Terms", fontSize=7.5, leading=10, textColor=MUTED))]],
+        colWidths=[515],
+    )
     terms_box.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FDF9F0")),
-        ("PADDING", (0, 0), (-1, -1), 8),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#EEDBB2")),
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FDF8F0")),
+        ("BOX",        (0, 0), (-1, -1), 0.5, GOLD_BAND),
+        ("PADDING",    (0, 0), (-1, -1), 9),
     ]))
     story.append(terms_box)
 
-    doc.build(story)
+    doc.build(story, onFirstPage=draw_letterhead, onLaterPages=draw_letterhead)
     return buffer.getvalue()
 
 
@@ -270,7 +321,7 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
 
     is_gold = (order.metal or "gold").lower() == "gold"
     metal_name = "24K Pure Digital Gold" if is_gold else "Pure Digital Silver"
-    metal_icon = "🪙" if is_gold else "🥈"
+    metal_icon = "\U0001fa99" if is_gold else "\U0001f948"
     grams = Decimal(str(order.grams))
     rate = Decimal(str(order.rate_per_gram))
     total_amount = Decimal(str(order.amount_paise)) / Decimal("100")
@@ -296,7 +347,7 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Receipt & Tax Invoice - AGS Gold</title>
+  <title>Payment Receipt &amp; Tax Invoice - AGS Gold</title>
   <style>
     body {{
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -379,13 +430,8 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
       font-size: 16px;
       color: #D4AF37;
     }}
-    .label {{
-      color: #94A3B8;
-    }}
-    .val {{
-      color: #F8FAFC;
-      font-weight: 600;
-    }}
+    .label {{ color: #94A3B8; }}
+    .val {{ color: #F8FAFC; font-weight: 600; }}
     .table-container {{
       width: 100%;
       border-collapse: collapse;
@@ -423,10 +469,7 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
       color: #64748B;
       border-top: 1px solid #232734;
     }}
-    .footer a {{
-      color: #D4AF37;
-      text-decoration: none;
-    }}
+    .footer a {{ color: #D4AF37; text-decoration: none; }}
   </style>
 </head>
 <body>
@@ -434,9 +477,9 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
     <div class="wrapper">
       <div class="header">
         <div class="logo-badge">{metal_icon}</div>
-        <div class="brand-title">AURUM GOLD & SILVERS</div>
-        <div style="color: #94A3B8; font-size: 13px;">Official Payment Receipt & Tax Invoice</div>
-        <div class="badge-success">✓ Payment Successful</div>
+        <div class="brand-title">AURUM GOLD &amp; SILVERS</div>
+        <div style="color: #94A3B8; font-size: 13px;">Official Payment Receipt &amp; Tax Invoice</div>
+        <div class="badge-success">&#x2713; Payment Successful</div>
       </div>
 
       <div class="content">
@@ -468,7 +511,7 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
           </div>
           <div class="summary-row">
             <span class="label">Total Paid (Incl. GST)</span>
-            <span class="val">₹{_format_inr(total_amount)}</span>
+            <span class="val">&#x20B9;{_format_inr(total_amount)}</span>
           </div>
         </div>
 
@@ -485,11 +528,11 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
             <tr>
               <td>
                 <strong>{metal_name}</strong><br/>
-                <small style="color: #94A3B8;">99.9% Purity • HSN: 7108</small>
+                <small style="color: #94A3B8;">99.9% Purity &bull; HSN: 7108</small>
               </td>
               <td>{grams:.4f} g</td>
-              <td>₹{_format_inr(rate)}</td>
-              <td><strong>₹{_format_inr(total_amount)}</strong></td>
+              <td>&#x20B9;{_format_inr(rate)}</td>
+              <td><strong>&#x20B9;{_format_inr(total_amount)}</strong></td>
             </tr>
           </tbody>
         </table>
@@ -497,31 +540,31 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
         <div style="margin-bottom: 24px; padding: 12px; background: #1C202A; border-radius: 8px; font-size: 13px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
             <span style="color: #94A3B8;">Taxable Metal Value:</span>
-            <span>₹{_format_inr(metal_value)}</span>
+            <span>&#x20B9;{_format_inr(metal_value)}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
             <span style="color: #94A3B8;">GST (3% - 1.5% CGST + 1.5% SGST):</span>
-            <span>₹{_format_inr(gst_amount)}</span>
+            <span>&#x20B9;{_format_inr(gst_amount)}</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-weight: 700; color: #D4AF37; font-size: 15px; border-top: 1px solid #2D3342; padding-top: 8px;">
             <span>Total INR:</span>
-            <span>₹{_format_inr(total_amount)}</span>
+            <span>&#x20B9;{_format_inr(total_amount)}</span>
           </div>
         </div>
 
         <div class="vault-box">
-          🔒 <strong>Insured Bullion Vault Custody:</strong> Your physical gold is safeguarded in institutional-grade vaults insured by national carriers. You can sell back or order physical delivery anytime via the AGS Gold App.
+          &#x1F512; <strong>Insured Bullion Vault Custody:</strong> Your physical gold is safeguarded in institutional-grade vaults insured by national carriers. You can sell back or order physical delivery anytime via the AGS Gold App.
         </div>
 
         <p style="font-size: 13px; color: #94A3B8; text-align: center;">
-          📎 <strong>Note:</strong> Your official printable PDF tax invoice is attached to this email.
+          &#x1F4CE; <strong>Note:</strong> Your official printable PDF tax invoice is attached to this email.
         </p>
       </div>
 
       <div class="footer">
-        © 2026 Aurum Gold Works (AGS Gold). All rights reserved.<br/>
-        Coimbatore, Tamil Nadu, India • <a href="mailto:info@aurumgold.co.in">info@aurumgold.co.in</a><br/>
-        Visit: <a href="https://aurumgold.co.in" target="_blank">aurumgold.co.in</a>
+        &copy; 2026 Aurum Gold &amp; Silvers (AGS Gold). All rights reserved.<br/>
+        82B, South Masi Street, Madurai - 625 001 &bull; <a href="mailto:aurumgoldsilver@gmail.com">aurumgoldsilver@gmail.com</a><br/>
+        Tel: 99437 95005
       </div>
     </div>
   </div>
