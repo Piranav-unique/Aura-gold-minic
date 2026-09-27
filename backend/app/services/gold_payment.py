@@ -225,7 +225,13 @@ class GoldPaymentService:
                 message="Payment not completed yet.",
             )
 
-        verify_response = await self._mark_order_paid(user, order, payment_id)
+        customer_email = str(captured.get("email") or "").strip()
+        verify_response = await self._mark_order_paid(
+            user,
+            order,
+            payment_id,
+            customer_email=customer_email or None,
+        )
         return self._build_sync_response(
             user,
             order,
@@ -242,12 +248,21 @@ class GoldPaymentService:
         bank_rrn: str | None = None,
         payment_method: str | None = None,
         customer_contact: str | None = None,
+        customer_email: str | None = None,
     ) -> VerifyPaymentResponse:
         if order.status == "paid":
             fresh_user = await self.user_repo.get(user.id)
             if fresh_user:
                 user = fresh_user
             return self._build_verify_response(user, order)
+
+        if (
+            customer_email
+            and "@" in str(customer_email)
+            and not str(customer_email).lower().endswith("void@razorpay.com")
+            and (not user.email or user.email.lower().endswith("@mobile.agsgold.com"))
+        ):
+            user.email = str(customer_email).strip().lower()
 
         if self.digital_inventory_service:
             await self.digital_inventory_service.consume_for_paid_order(
@@ -704,6 +719,7 @@ class GoldPaymentService:
             )
             method = payment_entity.get("method")
             contact = payment_entity.get("contact")
+            customer_email = payment_entity.get("email")
 
             await self._mark_order_paid(
                 user,
@@ -712,6 +728,7 @@ class GoldPaymentService:
                 bank_rrn=str(rrn) if rrn else None,
                 payment_method=str(method) if method else None,
                 customer_contact=str(contact) if contact else None,
+                customer_email=str(customer_email) if customer_email else None,
             )
             from app.core.logging import logger
             logger.info(
