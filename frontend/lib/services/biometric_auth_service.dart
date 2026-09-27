@@ -53,7 +53,7 @@ class BiometricAuthService {
     try {
       final isSupported = await _auth.isDeviceSupported();
       final canCheck = await _auth.canCheckBiometrics;
-      return isSupported && canCheck;
+      return isSupported || canCheck;
     } on PlatformException {
       return false;
     } catch (_) {
