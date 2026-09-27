@@ -1,10 +1,11 @@
+import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 import uuid
 
 from app.core.config import settings
-from app.core.exceptions import ValidationException
+from app.core.exceptions import NotFoundException, ValidationException
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
 from app.repositories.payment_order import PaymentOrderRepository
@@ -21,6 +22,8 @@ from app.services.dashboard_cache import clear_personal_dashboard_cache
 from app.services.razorpay_client import RazorpayClient
 from app.services.digital_metal_inventory import DigitalMetalInventoryService
 from app.services.referral import ReferralService
+from app.services.invoice import generate_invoice_pdf
+from app.services.email_service import send_invoice_email_async
 
 _MIN_GRAMS = Decimal("0.0001")
 
@@ -293,6 +296,14 @@ class GoldPaymentService:
                 from app.core.logging import logger
                 logger.error(f"Failed to credit referral reward for referee {user.id}: {e}", exc_info=True)
         clear_personal_dashboard_cache(str(user.id))
+
+        # Dispatch tax invoice email asynchronously in the background
+        try:
+            asyncio.create_task(send_invoice_email_async(user, order))
+        except Exception as e:
+            from app.core.logging import logger
+            logger.error(f"Failed to dispatch invoice email for order {order.id}: {e}", exc_info=True)
+
         return self._build_verify_response(user, order)
 
     def _build_verify_response(
@@ -594,4 +605,52 @@ class GoldPaymentService:
             skip=skip,
             limit=limit,
         )
+
+    async def get_order_invoice_pdf(
+        self, current_user: User, order_id: uuid.UUID
+    ) -> tuple[bytes, str]:
+        order = await self.payment_repo.get(order_id)
+        if not order:
+            raise NotFoundException("Payment order not found.")
+
+        if not current_user.is_superuser and order.user_id != current_user.id:
+            raise NotFoundException("Payment order not found.")
+
+        if order.status != "paid":
+            raise ValidationException("Tax invoice is only available for completed and paid orders.")
+
+        user = getattr(order, "user", None) or await self.user_repo.get(order.user_id) or current_user
+        pdf_bytes = generate_invoice_pdf(order, user)
+        inv_id = str(order.id).replace("-", "")[:8].upper()
+        filename = f"Invoice_INV-AGS-{inv_id}.pdf"
+        return pdf_bytes, filename
+
+    async def resend_order_invoice_email(
+        self, current_user: User, order_id: uuid.UUID
+    ) -> dict[str, str]:
+        order = await self.payment_repo.get(order_id)
+        if not order:
+            raise NotFoundException("Payment order not found.")
+
+        if not current_user.is_superuser and order.user_id != current_user.id:
+            raise NotFoundException("Payment order not found.")
+
+        if order.status != "paid":
+            raise ValidationException("Tax invoice is only available for completed and paid orders.")
+
+        user = getattr(order, "user", None) or await self.user_repo.get(order.user_id) or current_user
+        recipient_email = (getattr(user, "email", "") or "").strip()
+        if not recipient_email or "@" not in recipient_email:
+            raise ValidationException("User does not have a valid email address configured.")
+
+        success = await send_invoice_email_async(user, order)
+        if not success:
+            raise ValidationException("Unable to send invoice email at this time. Please verify SMTP settings.")
+
+        return {
+            "status": "success",
+            "message": f"Tax invoice has been emailed to {recipient_email}",
+            "recipient": recipient_email,
+        }
+
 

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, status
+import uuid
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.api.dependencies import get_current_user, get_gold_payment_service
 from app.core.authorization import PermissionChecker
@@ -117,4 +118,41 @@ async def list_admin_payment_orders(
   return await payment_service.list_admin_orders(
     skip=skip, limit=limit, status=status, search=search
   )
+
+
+@router.get(
+  "/orders/{order_id}/invoice",
+  summary="Download PDF tax invoice for a paid purchase order",
+)
+async def download_order_invoice(
+  order_id: uuid.UUID,
+  current_user: User = Depends(get_current_user),
+  payment_service: GoldPaymentService = Depends(get_gold_payment_service),
+):
+  pdf_bytes, filename = await payment_service.get_order_invoice_pdf(
+    current_user, order_id
+  )
+  return Response(
+    content=pdf_bytes,
+    media_type="application/pdf",
+    headers={
+      "Content-Disposition": f'attachment; filename="{filename}"',
+      "Cache-Control": "private, max-age=3600",
+    },
+  )
+
+
+@router.post(
+  "/orders/{order_id}/email-invoice",
+  summary="Resend tax invoice PDF to customer registered email",
+)
+async def resend_order_invoice(
+  order_id: uuid.UUID,
+  current_user: User = Depends(get_current_user),
+  payment_service: GoldPaymentService = Depends(get_gold_payment_service),
+):
+  return await payment_service.resend_order_invoice_email(
+    current_user, order_id
+  )
+
 

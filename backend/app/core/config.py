@@ -76,6 +76,16 @@ class Settings(BaseSettings):
     REPORT_EXPORT_MAX_ROWS: int = 5000
     REPORT_ANALYTICS_CACHE_TTL_SECONDS: int = 30
 
+    # SMTP Email Settings (Brevo / Sendinblue / Gmail)
+    SMTP_HOST: str = "smtp-relay.brevo.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = "bb6311001@smtp-brevo.com"
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "info@aurumgold.co.in"
+    SMTP_FROM_NAME: str = "Aurum Gold & Silvers"
+    SMTP_TLS: bool = True
+    SMTP_ENABLED: bool = True
+
     # Sandbox KYC (Aadhaar OTP + PAN linking) — set in .env, never commit secrets
     SANDBOX_API_KEY: str = ""
     SANDBOX_API_SECRET: str = ""
