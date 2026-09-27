@@ -7,15 +7,14 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.utils import ImageReader
-from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-
-# Resolve logo path relative to this file
-_ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
-_LOGO_PATH = _ASSETS_DIR / "ags_logo.png"
-
+from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
+
+_ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+_LETTERHEAD_PATH = _ASSETS_DIR / "letterhead.png"
+_LOGO_PATH = _ASSETS_DIR / "ags_logo.png"
 
 
 def _format_inr(val) -> str:
@@ -39,81 +38,49 @@ def _user_display_name(user: User) -> str:
 
 
 def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
-    """Generate an A4 PDF Tax Invoice styled to match the AGS Gold & Silver letterhead."""
+    """Generate an A4 PDF invoice using the exact AGS letterhead as background."""
     buffer = io.BytesIO()
-
     PAGE_W, PAGE_H = A4  # 595.27 x 841.89 pt
 
-    # ── Brand colours ────────────────────────────────────────────────────
-    MAROON      = colors.HexColor("#7A1E2A")   # dark wine-red band
-    GOLD_BAND   = colors.HexColor("#C8A000")   # gold stripe
-    GOLD_ACCENT = colors.HexColor("#B8860B")   # totals / highlights
-    DARK        = colors.HexColor("#1A1D24")   # body text
-    MUTED       = colors.HexColor("#6C757D")   # sub-labels
-    LIGHT_BG    = colors.HexColor("#FDF8F0")   # table row bg
-    BORDER      = colors.HexColor("#E5D8C0")   # table borders
+    # ── Content area (measured from letterhead layout) ──────────────────
+    # The letterhead has:
+    #   Top bands (maroon+gold): ~42pt
+    #   Logo + Company name area: ~150pt  → content starts at ~200pt from top
+    #   Bottom contact section:  ~130pt from bottom
+    # We add a little padding so text doesn't touch the decorative elements.
+    TOP_MARGIN    = 205   # start of invoice content (below logo+name)
+    BOTTOM_MARGIN = 135   # space reserved at bottom for contact/bands
+    SIDE_MARGIN   = 50
 
-    # ── Band heights ─────────────────────────────────────────────────────
-    TOP_BAND_H   = 58
-    TOP_STRIPE_H = 12
-    BOT_BAND_H   = 52
-    BOT_STRIPE_H = 12
-
-    # ── Per-page letterhead ───────────────────────────────────────────────
-    def draw_letterhead(c, doc):
+    # ── Draw letterhead as full-page background ───────────────────────
+    def draw_background(c, doc):
         c.saveState()
-
-        # Top maroon band
-        c.setFillColor(MAROON)
-        c.rect(0, PAGE_H - TOP_BAND_H, PAGE_W, TOP_BAND_H, fill=1, stroke=0)
-
-        # Top gold stripe
-        c.setFillColor(GOLD_BAND)
-        c.rect(0, PAGE_H - TOP_BAND_H - TOP_STRIPE_H, PAGE_W, TOP_STRIPE_H, fill=1, stroke=0)
-
-        # "TAX INVOICE" label — centred inside band (right side)
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 11)
-        c.drawRightString(PAGE_W - 36, PAGE_H - 36, "TAX INVOICE")
-        c.setFont("Helvetica", 8)
-        c.drawRightString(PAGE_W - 36, PAGE_H - 50, "Official Purchase Receipt")
-
-
-        # Watermark: light AGS centred on page
-        c.setFillColor(colors.Color(0.48, 0.12, 0.16, alpha=0.06))
-        c.setFont("Helvetica-Bold", 110)
-        c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 55, "AGS")
-
-        # Bottom gold stripe
-        c.setFillColor(GOLD_BAND)
-        c.rect(0, BOT_BAND_H, PAGE_W, BOT_STRIPE_H, fill=1, stroke=0)
-
-        # Bottom maroon band
-        c.setFillColor(MAROON)
-        c.rect(0, 0, PAGE_W, BOT_BAND_H, fill=1, stroke=0)
-
-        # Contact details inside bottom band — right-aligned
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica", 7.5)
-        c.drawRightString(PAGE_W - 36, BOT_BAND_H - 16, "Tel: 99437 95005")
-        c.drawRightString(PAGE_W - 36, BOT_BAND_H - 28, "Email: aurumgoldsilver@gmail.com")
-        c.drawRightString(PAGE_W - 36, BOT_BAND_H - 40, "82B, South Masi Street, Madurai - 625 001")
-
-        # Computer-generated note — bottom-left
-        c.setFont("Helvetica", 7)
-        c.drawString(36, BOT_BAND_H - 22, "This is a computer-generated invoice.")
-        c.drawString(36, BOT_BAND_H - 34, "No signature required.")
-
+        if _LETTERHEAD_PATH.exists():
+            lh = ImageReader(str(_LETTERHEAD_PATH))
+            c.drawImage(lh, 0, 0, width=PAGE_W, height=PAGE_H, preserveAspectRatio=False)
+        else:
+            # Fallback: plain white
+            c.setFillColor(colors.white)
+            c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
         c.restoreState()
 
-    # ── Document ──────────────────────────────────────────────────────────
+    # ── Colour palette (maroon/gold to match letterhead) ─────────────
+    MAROON      = colors.HexColor("#7A1E2A")
+    GOLD_ACCENT = colors.HexColor("#B8860B")
+    GOLD_LINE   = colors.HexColor("#C8A000")
+    DARK        = colors.HexColor("#1A1D24")
+    MUTED       = colors.HexColor("#6C757D")
+    LIGHT_BG    = colors.HexColor("#FDF8F0")
+    BORDER      = colors.HexColor("#E5D8C0")
+
+    # ── Document with margins matching the letterhead content area ───
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=40,
-        rightMargin=40,
-        topMargin=TOP_BAND_H + TOP_STRIPE_H + 12,
-        bottomMargin=BOT_BAND_H + BOT_STRIPE_H + 14,
+        leftMargin=SIDE_MARGIN,
+        rightMargin=SIDE_MARGIN,
+        topMargin=TOP_MARGIN,
+        bottomMargin=BOTTOM_MARGIN,
     )
 
     styles = getSampleStyleSheet()
@@ -121,14 +88,14 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
     def _s(name, **kw):
         return ParagraphStyle(name, parent=styles["Normal"], **kw)
 
-    body_style    = _s("Body",    fontName="Helvetica",      fontSize=8.5, leading=11, textColor=DARK)
-    label_style   = _s("Label",   fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=DARK)
-    th_style      = _s("TH",      fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=colors.white)
-    td_style      = _s("TD",      fontName="Helvetica",      fontSize=8.5, leading=11, textColor=DARK)
-    td_bold       = _s("TDBold",  fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=DARK)
-    total_style   = _s("Total",   fontName="Helvetica-Bold", fontSize=11,  leading=14, textColor=GOLD_ACCENT)
+    body_style  = _s("Body",   fontName="Helvetica",      fontSize=8.5, leading=12, textColor=DARK)
+    label_style = _s("Label",  fontName="Helvetica-Bold", fontSize=8.5, leading=12, textColor=DARK)
+    th_style    = _s("TH",     fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=colors.white)
+    td_style    = _s("TD",     fontName="Helvetica",      fontSize=8.5, leading=11, textColor=DARK)
+    td_bold     = _s("TDBold", fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=DARK)
+    total_style = _s("Total",  fontName="Helvetica-Bold", fontSize=11,  leading=14, textColor=GOLD_ACCENT)
 
-    # ── Data ─────────────────────────────────────────────────────────────
+    # ── Invoice data ──────────────────────────────────────────────────
     inv_id         = str(order.id).replace("-", "")[:8].upper()
     invoice_number = f"INV-AGS-{inv_id}"
     paid_dt        = order.paid_at or order.created_at or datetime.now(timezone.utc)
@@ -164,38 +131,22 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
     cgst = (gst_amount / Decimal("2")).quantize(Decimal("0.01"))
     sgst = gst_amount - cgst
 
-    # ── Story ─────────────────────────────────────────────────────────────
+    # Usable content width
+    W = PAGE_W - SIDE_MARGIN * 2  # 495 pt
+
+    # ── Story ─────────────────────────────────────────────────────────
     story = []
 
-    # 0. Logo + Company Name header (matching letterhead layout)
-    logo_row_items = []
-    if _LOGO_PATH.exists():
-        logo_img = Image(str(_LOGO_PATH), width=70, height=70)
-        logo_row_items.append(logo_img)
-    else:
-        logo_row_items.append(Paragraph("<b>AGS</b>", _s("FallbackLogo", fontName="Helvetica-Bold",
-                                         fontSize=28, leading=32, textColor=MAROON, alignment=1)))
-
-    logo_table = Table([logo_row_items], colWidths=[515])
-    logo_table.setStyle(TableStyle([
-        ("ALIGN",   (0, 0), (-1, -1), "CENTER"),
-        ("VALIGN",  (0, 0), (-1, -1), "MIDDLE"),
-        ("PADDING", (0, 0), (-1, -1), 0),
-    ]))
-    story.append(logo_table)
-    story.append(Spacer(1, 4))
-
-    company_name_p = Paragraph(
-        "<b>AURUM GOLD &amp; SILVER</b>",
-        _s("CompanyName", fontName="Helvetica-Bold", fontSize=13, leading=16,
+    # Title: "TAX INVOICE" centred
+    story.append(Paragraph(
+        "<b>TAX INVOICE / PAYMENT RECEIPT</b>",
+        _s("InvTitle", fontName="Helvetica-Bold", fontSize=13, leading=16,
            textColor=MAROON, alignment=1),
-    )
-    story.append(company_name_p)
-    story.append(Spacer(1, 12))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=GOLD_BAND, spaceAfter=12))
+    ))
+    story.append(Spacer(1, 4))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=GOLD_LINE, spaceAfter=10))
 
     # 1. Invoice reference strip
-
     hdr_data = [[
         Paragraph(
             f"<b>Invoice No:</b> {invoice_number}<br/>"
@@ -209,19 +160,16 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
                textColor=colors.HexColor("#28A745"), alignment=2),
         ),
     ]]
-    hdr_table = Table(hdr_data, colWidths=[300, 215])
+    hdr_table = Table(hdr_data, colWidths=[W * 0.58, W * 0.42])
     hdr_table.setStyle(TableStyle([
         ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN",      (1, 0), (1, 0),  "RIGHT"),
         ("BACKGROUND", (0, 0), (-1, -1), LIGHT_BG),
         ("BOX",        (0, 0), (-1, -1), 0.5, BORDER),
-        ("PADDING",    (0, 0), (-1, -1), 10),
+        ("PADDING",    (0, 0), (-1, -1), 8),
     ]))
     story.append(hdr_table)
-    story.append(Spacer(1, 14))
-
-    # Maroon section divider
-    story.append(HRFlowable(width="100%", thickness=2, color=MAROON, spaceAfter=14))
+    story.append(Spacer(1, 12))
 
     # 2. Billed To / Payment Details
     info_data = [
@@ -248,7 +196,7 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
             ),
         ],
     ]
-    info_table = Table(info_data, colWidths=[257, 258])
+    info_table = Table(info_data, colWidths=[W * 0.5, W * 0.5])
     info_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), MAROON),
         ("BACKGROUND", (0, 1), (-1, 1), LIGHT_BG),
@@ -258,34 +206,28 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
         ("LINEAFTER",  (0, 0), (0, -1), 0.5, BORDER),
     ]))
     story.append(info_table)
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 12))
 
     # 3. Line Items
+    cw = [W * 0.30, W * 0.08, W * 0.10, W * 0.13, W * 0.13, W * 0.12, W * 0.14]
     items_data = [
-        [
-            Paragraph("Item Description", th_style),
-            Paragraph("HSN",              th_style),
-            Paragraph("Weight",           th_style),
-            Paragraph("Rate / Gram",      th_style),
-            Paragraph("Metal Value",      th_style),
-            Paragraph("GST (3%)",         th_style),
-            Paragraph("Total (INR)",      th_style),
-        ],
+        [Paragraph(h, th_style) for h in
+         ["Item Description", "HSN", "Weight", "Rate / Gram", "Metal Value", "GST (3%)", "Total (INR)"]],
         [
             Paragraph(
                 f"<b>{metal_name}</b><br/>"
-                f"<font size='7' color='#6C757D'>Stored in Insured Custody Vault</font>",
+                f"<font size='7' color='#6C757D'>Insured Custody Vault</font>",
                 td_style,
             ),
-            Paragraph(hsn_code,                        td_style),
-            Paragraph(f"{grams:.4f} g",                td_style),
-            Paragraph(f"INR {_format_inr(rate)}",      td_style),
-            Paragraph(f"INR {_format_inr(metal_value)}",td_style),
+            Paragraph(hsn_code, td_style),
+            Paragraph(f"{grams:.4f} g", td_style),
+            Paragraph(f"INR {_format_inr(rate)}", td_style),
+            Paragraph(f"INR {_format_inr(metal_value)}", td_style),
             Paragraph(f"INR {_format_inr(gst_amount)}", td_style),
             Paragraph(f"<b>INR {_format_inr(total_amount)}</b>", td_bold),
         ],
     ]
-    items_table = Table(items_data, colWidths=[155, 42, 55, 65, 65, 60, 73])
+    items_table = Table(items_data, colWidths=cw)
     items_table.setStyle(TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0), MAROON),
         ("ALIGN",          (1, 0), (-1, -1), "CENTER"),
@@ -295,17 +237,19 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
         ("GRID",           (0, 0), (-1, -1), 0.5, BORDER),
     ]))
     story.append(items_table)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 12))
 
-    # 4. Tax Summary (right-aligned block)
+    # 4. Tax Summary (right-aligned)
+    sw = W * 0.32
     summary_data = [
         [Paragraph("Taxable Metal Amount:", body_style),   Paragraph(f"INR {_format_inr(metal_value)}", td_bold)],
         [Paragraph("CGST @ 1.5%:",          body_style),   Paragraph(f"INR {_format_inr(cgst)}",        td_style)],
         [Paragraph("SGST @ 1.5%:",          body_style),   Paragraph(f"INR {_format_inr(sgst)}",        td_style)],
         [Paragraph("Total GST (3.0%):",     body_style),   Paragraph(f"INR {_format_inr(gst_amount)}",  td_style)],
-        [Paragraph("<b>TOTAL AMOUNT PAID:</b>", label_style), Paragraph(f"<b>INR {_format_inr(total_amount)}</b>", total_style)],
+        [Paragraph("<b>TOTAL AMOUNT PAID:</b>", label_style),
+         Paragraph(f"<b>INR {_format_inr(total_amount)}</b>", total_style)],
     ]
-    summary_table = Table(summary_data, colWidths=[155, 110])
+    summary_table = Table(summary_data, colWidths=[sw * 1.2, sw * 0.9])
     summary_table.setStyle(TableStyle([
         ("ALIGN",      (1, 0), (1, -1), "RIGHT"),
         ("PADDING",    (0, 0), (-1, -1), 5),
@@ -313,31 +257,32 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
         ("BACKGROUND", (0, 4), (-1, 4), colors.HexColor("#FDF3DC")),
         ("BOX",        (0, 0), (-1, -1), 0.5, BORDER),
     ]))
-    outer_summary = Table([[Paragraph("", body_style), summary_table]], colWidths=[255, 265])
+    outer_summary = Table([[Paragraph("", body_style), summary_table]],
+                          colWidths=[W - sw * 2.1, sw * 2.1])
     outer_summary.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story.append(outer_summary)
-    story.append(Spacer(1, 18))
+    story.append(Spacer(1, 14))
 
     # 5. Vault notice
     terms_text = (
         "<b>Vault &amp; Custody Certificate:</b><br/>"
         "&#8226; Your purchased metal is 100% physically backed, allocated, and stored in secure, insured bullion vaults.<br/>"
         "&#8226; Purity is certified 24 Karat 99.9% (999 fineness) for Gold, conforming to national bullion standards.<br/>"
-        "&#8226; You can sell back or withdraw your accumulated gold anytime through the AGS Gold mobile application.<br/>"
+        "&#8226; You can sell back or withdraw anytime through the AGS Gold mobile application.<br/>"
         "&#8226; This is a computer-generated tax invoice and requires no physical signature."
     )
     terms_box = Table(
         [[Paragraph(terms_text, _s("Terms", fontSize=7.5, leading=10, textColor=MUTED))]],
-        colWidths=[515],
+        colWidths=[W],
     )
     terms_box.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FDF8F0")),
-        ("BOX",        (0, 0), (-1, -1), 0.5, GOLD_BAND),
-        ("PADDING",    (0, 0), (-1, -1), 9),
+        ("BOX",        (0, 0), (-1, -1), 0.5, GOLD_LINE),
+        ("PADDING",    (0, 0), (-1, -1), 8),
     ]))
     story.append(terms_box)
 
-    doc.build(story, onFirstPage=draw_letterhead, onLaterPages=draw_letterhead)
+    doc.build(story, onFirstPage=draw_background, onLaterPages=draw_background)
     return buffer.getvalue()
 
 
@@ -381,123 +326,63 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
   <style>
     body {{
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #0F1115;
-      color: #E2E8F0;
+      margin: 0; padding: 0;
+      background-color: #0F1115; color: #E2E8F0;
     }}
     .wrapper {{
-      width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #171A21;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid #282C37;
+      width: 100%; max-width: 600px; margin: 0 auto;
+      background-color: #171A21; border-radius: 16px;
+      overflow: hidden; border: 1px solid #282C37;
     }}
     .header {{
       background: linear-gradient(135deg, #2A2415 0%, #15181F 100%);
-      padding: 32px 24px;
-      text-align: center;
+      padding: 32px 24px; text-align: center;
       border-bottom: 1px solid #3A321E;
     }}
     .logo-badge {{
-      display: inline-block;
-      width: 52px;
-      height: 52px;
-      line-height: 52px;
+      display: inline-block; width: 52px; height: 52px; line-height: 52px;
       border-radius: 50%;
       background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
-      font-size: 26px;
-      margin-bottom: 12px;
+      font-size: 26px; margin-bottom: 12px;
     }}
-    .brand-title {{
-      color: #D4AF37;
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin: 0 0 4px;
-    }}
+    .brand-title {{ color: #D4AF37; font-size: 22px; font-weight: 800; letter-spacing: 1px; margin: 0 0 4px; }}
     .badge-success {{
       display: inline-block;
-      background: rgba(40, 167, 69, 0.15);
-      color: #4ADE80;
-      border: 1px solid rgba(74, 222, 128, 0.3);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 14px;
-      border-radius: 20px;
-      margin-top: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      background: rgba(40,167,69,0.15); color: #4ADE80;
+      border: 1px solid rgba(74,222,128,0.3);
+      font-size: 12px; font-weight: 700; padding: 4px 14px;
+      border-radius: 20px; margin-top: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }}
-    .content {{
-      padding: 28px 24px;
-    }}
-    .greeting {{
-      font-size: 16px;
-      color: #FFFFFF;
-      margin-bottom: 16px;
-    }}
+    .content {{ padding: 28px 24px; }}
+    .greeting {{ font-size: 16px; color: #FFFFFF; margin-bottom: 16px; }}
     .summary-card {{
-      background-color: #0B0D11;
-      border: 1px solid #2A2F3D;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
+      background-color: #0B0D11; border: 1px solid #2A2F3D;
+      border-radius: 12px; padding: 20px; margin-bottom: 24px;
     }}
     .summary-row {{
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-size: 14px;
+      display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px;
     }}
     .summary-row:last-child {{
-      margin-bottom: 0;
-      padding-top: 12px;
-      border-top: 1px solid #242936;
-      font-weight: 700;
-      font-size: 16px;
-      color: #D4AF37;
+      margin-bottom: 0; padding-top: 12px; border-top: 1px solid #242936;
+      font-weight: 700; font-size: 16px; color: #D4AF37;
     }}
     .label {{ color: #94A3B8; }}
     .val {{ color: #F8FAFC; font-weight: 600; }}
-    .table-container {{
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 24px;
-    }}
+    .table-container {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
     .table-container th {{
-      background-color: #212631;
-      color: #CBD5E1;
-      font-size: 12px;
-      text-transform: uppercase;
-      padding: 10px 12px;
-      text-align: left;
+      background-color: #7A1E2A; color: #ffffff;
+      font-size: 12px; text-transform: uppercase; padding: 10px 12px; text-align: left;
     }}
-    .table-container td {{
-      padding: 12px;
-      border-bottom: 1px solid #232734;
-      font-size: 13px;
-      color: #E2E8F0;
-    }}
+    .table-container td {{ padding: 12px; border-bottom: 1px solid #232734; font-size: 13px; color: #E2E8F0; }}
     .vault-box {{
-      background: rgba(212, 175, 55, 0.08);
-      border: 1px solid rgba(212, 175, 55, 0.25);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 24px;
-      font-size: 12px;
-      color: #D4AF37;
-      line-height: 1.5;
+      background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 10px; padding: 14px; margin-bottom: 24px;
+      font-size: 12px; color: #D4AF37; line-height: 1.5;
     }}
     .footer {{
-      background-color: #101217;
-      padding: 20px 24px;
-      text-align: center;
-      font-size: 12px;
-      color: #64748B;
-      border-top: 1px solid #232734;
+      background-color: #101217; padding: 20px 24px; text-align: center;
+      font-size: 12px; color: #64748B; border-top: 1px solid #232734;
     }}
     .footer a {{ color: #D4AF37; text-decoration: none; }}
   </style>
@@ -515,30 +400,16 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
       <div class="content">
         <div class="greeting">
           Dear <strong>{user_name}</strong>,<br/>
-          Thank you for investing with AGS Gold. Your payment has been received, and <strong>{grams:.4f} grams</strong> of pure {metal_name} have been deposited into your secure digital vault.
+          Thank you for investing with AGS Gold. Your payment has been received, and
+          <strong>{grams:.4f} grams</strong> of pure {metal_name} have been deposited into your secure digital vault.
         </div>
 
         <div class="summary-card">
-          <div class="summary-row">
-            <span class="label">Invoice Number</span>
-            <span class="val">{invoice_number}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Order Reference</span>
-            <span class="val">{order_ref}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Transaction Date</span>
-            <span class="val">{date_str}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Payment ID</span>
-            <span class="val">{payment_id}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Bank Reference (UTR)</span>
-            <span class="val">{bank_rrn}</span>
-          </div>
+          <div class="summary-row"><span class="label">Invoice Number</span><span class="val">{invoice_number}</span></div>
+          <div class="summary-row"><span class="label">Order Reference</span><span class="val">{order_ref}</span></div>
+          <div class="summary-row"><span class="label">Transaction Date</span><span class="val">{date_str}</span></div>
+          <div class="summary-row"><span class="label">Payment ID</span><span class="val">{payment_id}</span></div>
+          <div class="summary-row"><span class="label">Bank Reference (UTR)</span><span class="val">{bank_rrn}</span></div>
           <div class="summary-row">
             <span class="label">Total Paid (Incl. GST)</span>
             <span class="val">&#x20B9;{_format_inr(total_amount)}</span>
@@ -547,19 +418,11 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
 
         <table class="table-container">
           <thead>
-            <tr>
-              <th>Metal Item</th>
-              <th>Weight</th>
-              <th>Rate / g</th>
-              <th>Total</th>
-            </tr>
+            <tr><th>Metal Item</th><th>Weight</th><th>Rate / g</th><th>Total</th></tr>
           </thead>
           <tbody>
             <tr>
-              <td>
-                <strong>{metal_name}</strong><br/>
-                <small style="color: #94A3B8;">99.9% Purity &bull; HSN: 7108</small>
-              </td>
+              <td><strong>{metal_name}</strong><br/><small style="color:#94A3B8;">99.9% Purity &bull; HSN: 7108</small></td>
               <td>{grams:.4f} g</td>
               <td>&#x20B9;{_format_inr(rate)}</td>
               <td><strong>&#x20B9;{_format_inr(total_amount)}</strong></td>
@@ -567,33 +430,33 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
           </tbody>
         </table>
 
-        <div style="margin-bottom: 24px; padding: 12px; background: #1C202A; border-radius: 8px; font-size: 13px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="color: #94A3B8;">Taxable Metal Value:</span>
-            <span>&#x20B9;{_format_inr(metal_value)}</span>
+        <div style="margin-bottom:24px;padding:12px;background:#1C202A;border-radius:8px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:#94A3B8;">Taxable Metal Value:</span><span>&#x20B9;{_format_inr(metal_value)}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="color: #94A3B8;">GST (3% - 1.5% CGST + 1.5% SGST):</span>
-            <span>&#x20B9;{_format_inr(gst_amount)}</span>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:#94A3B8;">GST (3% - 1.5% CGST + 1.5% SGST):</span><span>&#x20B9;{_format_inr(gst_amount)}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-weight: 700; color: #D4AF37; font-size: 15px; border-top: 1px solid #2D3342; padding-top: 8px;">
-            <span>Total INR:</span>
-            <span>&#x20B9;{_format_inr(total_amount)}</span>
+          <div style="display:flex;justify-content:space-between;font-weight:700;color:#D4AF37;font-size:15px;border-top:1px solid #2D3342;padding-top:8px;">
+            <span>Total INR:</span><span>&#x20B9;{_format_inr(total_amount)}</span>
           </div>
         </div>
 
         <div class="vault-box">
-          &#x1F512; <strong>Insured Bullion Vault Custody:</strong> Your physical gold is safeguarded in institutional-grade vaults insured by national carriers. You can sell back or order physical delivery anytime via the AGS Gold App.
+          &#x1F512; <strong>Insured Bullion Vault Custody:</strong>
+          Your physical gold is safeguarded in institutional-grade vaults.
+          Sell back or order physical delivery anytime via the AGS Gold App.
         </div>
 
-        <p style="font-size: 13px; color: #94A3B8; text-align: center;">
+        <p style="font-size:13px;color:#94A3B8;text-align:center;">
           &#x1F4CE; <strong>Note:</strong> Your official printable PDF tax invoice is attached to this email.
         </p>
       </div>
 
       <div class="footer">
-        &copy; 2026 Aurum Gold &amp; Silvers (AGS Gold). All rights reserved.<br/>
-        82B, South Masi Street, Madurai - 625 001 &bull; <a href="mailto:aurumgoldsilver@gmail.com">aurumgoldsilver@gmail.com</a><br/>
+        &copy; 2026 Aurum Gold &amp; Silvers. All rights reserved.<br/>
+        82B, South Masi Street, Madurai - 625 001 &bull;
+        <a href="mailto:aurumgoldsilver@gmail.com">aurumgoldsilver@gmail.com</a><br/>
         Tel: 99437 95005
       </div>
     </div>
