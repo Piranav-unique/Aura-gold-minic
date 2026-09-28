@@ -21,7 +21,11 @@ def is_placeholder_email(email: Optional[str]) -> bool:
         return True
 
     # Reject system generated placeholder domain
-    if cleaned.endswith("@mobile.agsgold.com") or cleaned.endswith("@agsgold.com"):
+    if (
+        cleaned.endswith("@mobile.agsgold.com")
+        or cleaned.endswith("@agsgold.com")
+        or cleaned.endswith("@mobile.aurumgold.co.in")
+    ):
         return True
 
     # Reject placeholder addresses containing 'agsgold' in username or domain

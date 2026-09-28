@@ -65,8 +65,14 @@ class ProfileService:
                     "Placeholder or phone-based emails are not allowed."
                 )
 
-            # If user currently has a real email already configured, require current password
-            if not is_placeholder_email(user.email) and user.hashed_password:
+            # Require password only for password-based (e.g. staff/admin) users changing an existing email.
+            # End-users who authenticate via mobile OTP or users with placeholder emails do not require a password.
+            is_mobile_user = (
+                getattr(user, "has_completed_mobile_login", False)
+                or bool(getattr(user, "registered_device_id", None))
+                or is_placeholder_email(user.email)
+            )
+            if not is_mobile_user and not is_placeholder_email(user.email) and user.hashed_password:
                 if not current_password:
                     raise ValidationException(
                         "Current password is required to change email address"

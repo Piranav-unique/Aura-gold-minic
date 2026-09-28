@@ -4,6 +4,7 @@ services:
   db:
     image: public.ecr.aws/docker/library/postgres:15-alpine
     container_name: ags-gold-db
+    restart: unless-stopped
 
     environment:
       POSTGRES_DB: ags_gold_db
@@ -29,7 +30,7 @@ services:
       dockerfile: Dockerfile
 
     container_name: ags-gold-api
-    restart: "no"
+    restart: unless-stopped
 
     ports:
       - "8001:8000"

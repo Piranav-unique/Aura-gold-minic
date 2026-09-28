@@ -127,6 +127,59 @@ async def test_update_profile(profile_service, mock_user_repo):
 
 
 @pytest.mark.asyncio
+async def test_update_email_from_placeholder_requires_no_password(
+    profile_service, mock_user_repo
+):
+    user = _user(email="7010196231@mobile.agsgold.com")
+    mock_user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
+    mock_user_repo.get_by_email = AsyncMock(return_value=None)
+    mock_user_repo.db.commit = AsyncMock()
+
+    result = await profile_service.update_profile(
+        user.id, ProfileUpdate(email="customer@gmail.com")
+    )
+    assert result.email == "customer@gmail.com"
+
+
+@pytest.mark.asyncio
+async def test_update_email_mobile_login_user_requires_no_password(
+    profile_service, mock_user_repo
+):
+    user = _user(
+        email="previous.user@gmail.com",
+        has_completed_mobile_login=True,
+    )
+    mock_user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
+    mock_user_repo.get_by_email = AsyncMock(return_value=None)
+    mock_user_repo.db.commit = AsyncMock()
+
+    result = await profile_service.update_profile(
+        user.id, ProfileUpdate(email="new.user@gmail.com")
+    )
+    assert result.email == "new.user@gmail.com"
+
+
+@pytest.mark.asyncio
+async def test_update_email_staff_with_password_requires_password(
+    profile_service, mock_user_repo
+):
+    from app.core.exceptions import ValidationException
+
+    user = _user(
+        email="staff@example.com",
+        has_completed_mobile_login=False,
+        registered_device_id=None,
+    )
+    mock_user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
+    mock_user_repo.get_by_email = AsyncMock(return_value=None)
+
+    with pytest.raises(ValidationException, match="Current password is required"):
+        await profile_service.update_profile(
+            user.id, ProfileUpdate(email="newstaff@example.com")
+        )
+
+
+@pytest.mark.asyncio
 async def test_change_password_wrong_current(profile_service, mock_user_repo):
     user = _user()
     mock_user_repo.get = AsyncMock(return_value=user)
