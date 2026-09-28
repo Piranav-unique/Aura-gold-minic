@@ -294,6 +294,8 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
 
     is_gold = (order.metal or "gold").lower() == "gold"
     metal_name = "24K Pure Digital Gold" if is_gold else "Pure Digital Silver"
+    metal_purity = "99.9% Purity (24 Karat) &bull; HSN: 7108" if is_gold else "99.9% Purity &bull; HSN: 7106"
+    metal_short = "24K digital gold" if is_gold else "digital silver"
     metal_icon = "\U0001fa99" if is_gold else "\U0001f948"
     grams = Decimal(str(order.grams))
     rate = Decimal(str(order.rate_per_gram))
@@ -313,37 +315,38 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
 
     order_ref = getattr(order, "razorpay_order_id", "") or "N/A"
     payment_id = getattr(order, "razorpay_payment_id", "") or "Completed"
-    bank_rrn = getattr(order, "bank_rrn", "") or "N/A"
+    bank_rrn_raw = getattr(order, "bank_rrn", "") or ""
+    bank_rrn_display = bank_rrn_raw if bank_rrn_raw and bank_rrn_raw.upper() != "N/A" else "—"
 
     return f"""<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Receipt &amp; Tax Invoice - AGS Gold</title>
+  <title>Payment Receipt &amp; Tax Invoice - Aurum Gold &amp; Silvers</title>
   <style>
     body {{
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       margin: 0; padding: 0;
-      background-color: #0F1115; color: #E2E8F0;
+      background-color: #0B0D13; color: #E2E8F0;
     }}
     .wrapper {{
       width: 100%; max-width: 600px; margin: 0 auto;
-      background-color: #171A21; border-radius: 16px;
-      overflow: hidden; border: 1px solid #282C37;
+      background-color: #151821; border-radius: 16px;
+      overflow: hidden; border: 1px solid #252A36;
     }}
     .header {{
-      background: linear-gradient(135deg, #2A2415 0%, #15181F 100%);
-      padding: 32px 24px; text-align: center;
-      border-bottom: 1px solid #3A321E;
+      background: linear-gradient(135deg, #261F12 0%, #12141A 100%);
+      padding: 30px 24px 24px; text-align: center;
+      border-bottom: 1px solid #332B1A;
     }}
     .logo-badge {{
-      display: inline-block; width: 52px; height: 52px; line-height: 52px;
+      display: inline-block; width: 50px; height: 50px; line-height: 50px;
       border-radius: 50%;
       background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
-      font-size: 26px; margin-bottom: 12px;
+      font-size: 24px; margin-bottom: 10px;
     }}
-    .brand-title {{ color: #D4AF37; font-size: 22px; font-weight: 800; letter-spacing: 1px; margin: 0 0 4px; }}
+    .brand-title {{ color: #D4AF37; font-size: 21px; font-weight: 800; letter-spacing: 1px; margin: 0 0 4px; }}
     .badge-success {{
       display: inline-block;
       background: rgba(40,167,69,0.15); color: #4ADE80;
@@ -352,113 +355,140 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
       border-radius: 20px; margin-top: 10px;
       text-transform: uppercase; letter-spacing: 0.5px;
     }}
-    .content {{ padding: 28px 24px; }}
-    .greeting {{ font-size: 16px; color: #FFFFFF; margin-bottom: 16px; }}
-    .summary-card {{
-      background-color: #0B0D11; border: 1px solid #2A2F3D;
-      border-radius: 12px; padding: 20px; margin-bottom: 24px;
-    }}
-    .summary-row {{
-      display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px;
-    }}
-    .summary-row:last-child {{
-      margin-bottom: 0; padding-top: 12px; border-top: 1px solid #242936;
-      font-weight: 700; font-size: 16px; color: #D4AF37;
-    }}
-    .label {{ color: #94A3B8; }}
-    .val {{ color: #F8FAFC; font-weight: 600; }}
-    .table-container {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
-    .table-container th {{
-      background-color: #7A1E2A; color: #ffffff;
-      font-size: 12px; text-transform: uppercase; padding: 10px 12px; text-align: left;
-    }}
-    .table-container td {{ padding: 12px; border-bottom: 1px solid #232734; font-size: 13px; color: #E2E8F0; }}
-    .vault-box {{
-      background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.25);
-      border-radius: 10px; padding: 14px; margin-bottom: 24px;
-      font-size: 12px; color: #D4AF37; line-height: 1.5;
-    }}
+    .content {{ padding: 26px 24px; }}
     .footer {{
-      background-color: #101217; padding: 20px 24px; text-align: center;
-      font-size: 12px; color: #64748B; border-top: 1px solid #232734;
+      background-color: #0E1015; padding: 22px 24px; text-align: center;
+      font-size: 12px; color: #64748B; border-top: 1px solid #20242F; line-height: 1.6;
     }}
     .footer a {{ color: #D4AF37; text-decoration: none; }}
   </style>
 </head>
 <body>
-  <div style="padding: 20px 10px;">
+  <div style="padding: 24px 12px; background-color: #0B0D13;">
     <div class="wrapper">
       <div class="header">
         <div class="logo-badge">{metal_icon}</div>
         <div class="brand-title">AURUM GOLD &amp; SILVERS</div>
-        <div style="color: #94A3B8; font-size: 13px;">Official Payment Receipt &amp; Tax Invoice</div>
+        <div style="color: #94A3B8; font-size: 13px; margin-top: 2px;">Official Payment Receipt &amp; Tax Invoice</div>
         <div class="badge-success">&#x2713; Payment Successful</div>
       </div>
 
       <div class="content">
-        <div class="greeting">
-          Dear <strong>{user_name}</strong>,<br/>
-          Thank you for investing with AGS Gold. Your payment has been received, and
-          <strong>{grams:.4f} grams</strong> of pure {metal_name} have been deposited into your secure digital vault.
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #FFFFFF; line-height: 1.6;">
+          Dear <strong>{user_name}</strong>,
+        </p>
+        <p style="margin: 0 0 14px 0; font-size: 14px; color: #CBD5E1; line-height: 1.6;">
+          Thank you for choosing <strong>Aurum Gold &amp; Silvers</strong>. We are pleased to confirm that your payment of <strong style="color: #FFFFFF;">&#x20B9;{_format_inr(total_amount)}</strong> has been received successfully.
+        </p>
+        <p style="margin: 0 0 22px 0; font-size: 14px; color: #CBD5E1; line-height: 1.6;">
+          A total of <strong style="color: #D4AF37;">{grams:.4f} grams</strong> of {metal_short} has been credited to your secure digital locker.
+        </p>
+
+        <!-- Payment & Order Metadata Table (Email-safe tables to prevent text overlap) -->
+        <div style="background-color: #0E1117; border: 1px solid #222734; border-radius: 12px; padding: 16px 18px; margin-bottom: 22px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 7px 0; color: #8E9BAE; font-size: 13px; text-align: left; border-bottom: 1px solid #1C202C;">Invoice Number</td>
+              <td style="padding: 7px 0; color: #FFFFFF; font-size: 13px; font-weight: 600; text-align: right; border-bottom: 1px solid #1C202C; font-family: monospace;">{invoice_number}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #8E9BAE; font-size: 13px; text-align: left; border-bottom: 1px solid #1C202C;">Order Reference</td>
+              <td style="padding: 7px 0; color: #CBD5E1; font-size: 13px; text-align: right; border-bottom: 1px solid #1C202C; font-family: monospace;">{order_ref}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #8E9BAE; font-size: 13px; text-align: left; border-bottom: 1px solid #1C202C;">Transaction Date</td>
+              <td style="padding: 7px 0; color: #CBD5E1; font-size: 13px; text-align: right; border-bottom: 1px solid #1C202C;">{date_str}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #8E9BAE; font-size: 13px; text-align: left; border-bottom: 1px solid #1C202C;">Payment ID</td>
+              <td style="padding: 7px 0; color: #CBD5E1; font-size: 13px; text-align: right; border-bottom: 1px solid #1C202C; font-family: monospace;">{payment_id}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #8E9BAE; font-size: 13px; text-align: left; border-bottom: 1px solid #1C202C;">Bank Reference (UTR)</td>
+              <td style="padding: 7px 0; color: #CBD5E1; font-size: 13px; text-align: right; border-bottom: 1px solid #1C202C; font-family: monospace;">{bank_rrn_display}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0 2px 0; color: #FFFFFF; font-size: 14px; font-weight: 600; text-align: left;">Total Paid (Incl. GST)</td>
+              <td style="padding: 10px 0 2px 0; color: #D4AF37; font-size: 16px; font-weight: 700; text-align: right;">&#x20B9;{_format_inr(total_amount)}</td>
+            </tr>
+          </table>
         </div>
 
-        <div class="summary-card">
-          <div class="summary-row"><span class="label">Invoice Number</span><span class="val">{invoice_number}</span></div>
-          <div class="summary-row"><span class="label">Order Reference</span><span class="val">{order_ref}</span></div>
-          <div class="summary-row"><span class="label">Transaction Date</span><span class="val">{date_str}</span></div>
-          <div class="summary-row"><span class="label">Payment ID</span><span class="val">{payment_id}</span></div>
-          <div class="summary-row"><span class="label">Bank Reference (UTR)</span><span class="val">{bank_rrn}</span></div>
-          <div class="summary-row">
-            <span class="label">Total Paid (Incl. GST)</span>
-            <span class="val">&#x20B9;{_format_inr(total_amount)}</span>
-          </div>
-        </div>
-
-        <table class="table-container">
+        <!-- Purchased Item Table -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #282C37; border-radius: 8px; overflow: hidden;">
           <thead>
-            <tr><th>Metal Item</th><th>Weight</th><th>Rate / g</th><th>Total</th></tr>
+            <tr style="background-color: #6B1B25;">
+              <th style="padding: 10px 14px; color: #FFFFFF; font-size: 12px; font-weight: 700; text-transform: uppercase; text-align: left; letter-spacing: 0.5px;">Metal Item</th>
+              <th style="padding: 10px 14px; color: #FFFFFF; font-size: 12px; font-weight: 700; text-transform: uppercase; text-align: center; letter-spacing: 0.5px;">Weight</th>
+              <th style="padding: 10px 14px; color: #FFFFFF; font-size: 12px; font-weight: 700; text-transform: uppercase; text-align: right; letter-spacing: 0.5px;">Rate / g</th>
+              <th style="padding: 10px 14px; color: #FFFFFF; font-size: 12px; font-weight: 700; text-transform: uppercase; text-align: right; letter-spacing: 0.5px;">Total</th>
+            </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><strong>{metal_name}</strong><br/><small style="color:#94A3B8;">99.9% Purity</small></td>
-              <td>{grams:.4f} g</td>
-              <td>&#x20B9;{_format_inr(rate)}</td>
-              <td><strong>&#x20B9;{_format_inr(total_amount)}</strong></td>
+            <tr style="background-color: #12151B;">
+              <td style="padding: 14px; border-top: 1px solid #282C37; font-size: 13px; color: #FFFFFF; text-align: left;">
+                <strong style="color: #FFFFFF; font-size: 14px;">{metal_name}</strong><br/>
+                <span style="font-size: 11px; color: #94A3B8;">{metal_purity}</span>
+              </td>
+              <td style="padding: 14px; border-top: 1px solid #282C37; font-size: 13px; color: #FFFFFF; text-align: center; font-weight: 600;">{grams:.4f} g</td>
+              <td style="padding: 14px; border-top: 1px solid #282C37; font-size: 13px; color: #E2E8F0; text-align: right;">&#x20B9;{_format_inr(rate)}</td>
+              <td style="padding: 14px; border-top: 1px solid #282C37; font-size: 14px; color: #D4AF37; text-align: right; font-weight: 700;">&#x20B9;{_format_inr(total_amount)}</td>
             </tr>
           </tbody>
         </table>
 
-        <div style="margin-bottom:24px;padding:12px;background:#1C202A;border-radius:8px;font-size:13px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <span style="color:#94A3B8;">Taxable Metal Value:</span><span>&#x20B9;{_format_inr(metal_value)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <span style="color:#94A3B8;">GST (3% - 1.5% CGST + 1.5% SGST):</span><span>&#x20B9;{_format_inr(gst_amount)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-weight:700;color:#D4AF37;font-size:15px;border-top:1px solid #2D3342;padding-top:8px;">
-            <span>Total INR:</span><span>&#x20B9;{_format_inr(total_amount)}</span>
+        <!-- Tax Breakdown (Explicit high-contrast colors to eliminate invisible text) -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 22px; background-color: #12151B; border: 1px solid #242936; border-radius: 8px;">
+          <tr>
+            <td style="padding: 10px 16px 4px 16px; color: #94A3B8; font-size: 13px; text-align: left;">Taxable Metal Value</td>
+            <td style="padding: 10px 16px 4px 16px; color: #F8FAFC; font-size: 13px; font-weight: 600; text-align: right;">&#x20B9;{_format_inr(metal_value)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 16px 10px 16px; color: #94A3B8; font-size: 13px; text-align: left;">GST (3% &bull; 1.5% CGST + 1.5% SGST)</td>
+            <td style="padding: 4px 16px 10px 16px; color: #F8FAFC; font-size: 13px; font-weight: 600; text-align: right;">&#x20B9;{_format_inr(gst_amount)}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding: 0 16px;"><div style="border-top: 1px solid #242936;"></div></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 16px; color: #D4AF37; font-size: 14px; font-weight: 700; text-align: left;">Total INR</td>
+            <td style="padding: 10px 16px; color: #D4AF37; font-size: 16px; font-weight: 800; text-align: right;">&#x20B9;{_format_inr(total_amount)}</td>
+          </tr>
+        </table>
+
+        <!-- Security & Human Support Reassurance -->
+        <div style="background-color: #161A22; border-left: 3px solid #D4AF37; border-radius: 4px; padding: 14px 16px; margin-bottom: 20px;">
+          <div style="font-size: 13px; font-weight: 700; color: #D4AF37; margin-bottom: 4px;">Insured Bullion Vault Custody</div>
+          <div style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">
+            Your physical gold is 100% physically backed, 24 Karat certified (999 fineness), and safeguarded in institutional-grade vaults. You can monitor your portfolio, sell back at live rates, or request doorstep physical delivery anytime through your Aurum Gold mobile app.
           </div>
         </div>
 
-        <div class="vault-box">
-          &#x1F512; <strong>Insured Bullion Vault Custody:</strong>
-          Your physical gold is safeguarded in institutional-grade vaults.
-          Sell back or order physical delivery anytime via the AGS Gold App.
+        <div style="font-size: 13px; color: #94A3B8; line-height: 1.6; margin-bottom: 22px;">
+          <p style="margin: 0 0 10px 0;">
+            Your official GST Tax Invoice (PDF) is attached to this email for your accounting and taxation records.
+          </p>
+          <p style="margin: 0;">
+            If you have any questions or need help with your account, feel free to reply directly to this email or speak with our team at <strong style="color: #E2E8F0;">+91 99437 95005</strong>.
+          </p>
         </div>
 
-        <p style="font-size:13px;color:#94A3B8;text-align:center;">
-          &#x1F4CE; <strong>Note:</strong> Your official printable PDF tax invoice is attached to this email.
-        </p>
+        <div style="border-top: 1px solid #242936; padding-top: 16px; margin-bottom: 6px;">
+          <div style="font-size: 13px; color: #94A3B8;">Warm regards,</div>
+          <div style="font-size: 14px; font-weight: 700; color: #FFFFFF; margin-top: 3px;">Team Aurum Gold &amp; Silvers</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Madurai, Tamil Nadu</div>
+        </div>
       </div>
 
       <div class="footer">
         &copy; 2026 Aurum Gold &amp; Silvers. All rights reserved.<br/>
         82B, South Masi Street, Madurai - 625 001 &bull;
         <a href="mailto:aurumgoldsilver@gmail.com">aurumgoldsilver@gmail.com</a><br/>
-        Tel: 99437 95005
+        Customer Support: +91 99437 95005
       </div>
     </div>
   </div>
 </body>
 </html>
 """
+

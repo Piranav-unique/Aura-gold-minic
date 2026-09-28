@@ -7,6 +7,7 @@ import 'package:ags_gold/features/user_dashboard/domain/kyc_status.dart';
 
 class PersonalDashboard {
   final String displayName;
+  final String? email;
   final String? mobileNumber;
   final List<String> roles;
   final int unreadNotifications;
@@ -29,6 +30,7 @@ class PersonalDashboard {
 
   const PersonalDashboard({
     required this.displayName,
+    this.email,
     this.mobileNumber,
     required this.roles,
     required this.unreadNotifications,
@@ -53,11 +55,13 @@ class PersonalDashboard {
   factory PersonalDashboard.fromJson(Map<String, dynamic> json) {
     return PersonalDashboard(
       displayName: json['display_name'] as String? ?? '',
+      email: json['email'] as String?,
       mobileNumber: json['mobile_number'] as String?,
       roles: (json['roles'] as List<dynamic>? ?? [])
           .map((e) => e as String)
           .toList(),
       unreadNotifications: json['unread_notifications'] as int? ?? 0,
+
       refreshedAt: DateTime.parse(json['refreshed_at'] as String),
       loginStatistics: LoginStatistics.fromJson(
         json['login_statistics'] as Map<String, dynamic>? ?? {},

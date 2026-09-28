@@ -39,6 +39,7 @@ class UserPermission {
 
 class UserProfile {
   final String id;
+  final String? email;
   final String? mobileNumber;
   final String? firstName;
   final String? lastName;
@@ -51,6 +52,7 @@ class UserProfile {
 
   const UserProfile({
     required this.id,
+    this.email,
     this.mobileNumber,
     this.firstName,
     this.lastName,
@@ -61,6 +63,7 @@ class UserProfile {
     required this.createdAt,
     required this.updatedAt,
   });
+
 
   String get displayName {
     final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
@@ -95,6 +98,7 @@ class UserProfile {
         .toList();
     return UserProfile(
       id: json['id'] as String,
+      email: json['email'] as String?,
       mobileNumber: json['mobile_number'] as String?,
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
@@ -105,5 +109,6 @@ class UserProfile {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
+
   }
 }
