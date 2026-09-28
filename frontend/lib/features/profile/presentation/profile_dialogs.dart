@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/utils/email_validator.dart';
 import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
+import 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
+
+export 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
+
 
 Future<void> showEditProfileDialog(
   BuildContext context,
