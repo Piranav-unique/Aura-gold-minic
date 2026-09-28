@@ -5,6 +5,7 @@ import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/user_dashboard/domain/gold_scheme.dart';
 import 'package:ags_gold/features/user_dashboard/domain/gold_scheme_utils.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/gold_scheme_provider.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 Future<void> showSelectOrUpgradeSchemeSheet({
   required BuildContext context,
@@ -42,7 +43,7 @@ Future<void> showSelectOrUpgradeSchemeSheet({
               if (sheetContext.mounted) {
                 Navigator.of(sheetContext).pop();
                 ScaffoldMessenger.of(sheetContext).showSnackBar(
-                  SnackBar(content: Text('Switched to ${grams}g Gold Savings Goal!')),
+                  SnackBar(content: Text(sheetContext.l10n.switchedToGoal('$grams'))),
                 );
               }
             } catch (e) {
@@ -100,7 +101,9 @@ Future<void> showSelectOrUpgradeSchemeSheet({
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isCompleted ? 'Choose Next Gold Scheme' : 'Select Your Gold Savings Goal',
+                            isCompleted
+                                ? sheetContext.l10n.chooseNextGoldScheme
+                                : sheetContext.l10n.selectGoldSavingsGoal,
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
@@ -109,7 +112,7 @@ Future<void> showSelectOrUpgradeSchemeSheet({
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Earn 24K pure physical gold coins delivered to your home',
+                            sheetContext.l10n.earnGoldCoinsSub,
                             style: TextStyle(
                               fontSize: 12,
                               color: AurumConsumerTheme.muted(sheetContext),

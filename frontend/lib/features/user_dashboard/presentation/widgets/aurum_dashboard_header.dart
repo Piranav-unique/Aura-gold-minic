@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/services/service_providers.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumDashboardHeader extends ConsumerWidget {
   final int unreadNotifications;
@@ -92,7 +93,7 @@ class AurumDashboardHeader extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Save Gold • Secure Tomorrow',
+                        context.l10n.saveGoldSecureTomorrow,
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w500,

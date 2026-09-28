@@ -5,6 +5,7 @@ import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/admin/domain/wallet_models.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/user_statements_provider.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 enum TransactionFilter { all, buy, sell, successful, pending, failed }
 
@@ -29,20 +30,20 @@ class _AurumTransactionHistorySectionState
     TransactionFilter.failed,
   ];
 
-  String _filterLabel(TransactionFilter filter) {
+  String _filterLabel(TransactionFilter filter, BuildContext context) {
     switch (filter) {
       case TransactionFilter.all:
-        return 'All';
+        return context.l10n.filterAll;
       case TransactionFilter.buy:
-        return 'Buy';
+        return context.l10n.filterBuy;
       case TransactionFilter.sell:
-        return 'Sell';
+        return context.l10n.filterSell;
       case TransactionFilter.successful:
-        return 'Successful';
+        return context.l10n.filterSuccessful;
       case TransactionFilter.pending:
-        return 'Pending';
+        return context.l10n.filterPending;
       case TransactionFilter.failed:
-        return 'Failed';
+        return context.l10n.filterFailed;
     }
   }
 
@@ -110,7 +111,7 @@ class _AurumTransactionHistorySectionState
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Transaction History',
+                    context.l10n.transactionHistory,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -143,7 +144,7 @@ class _AurumTransactionHistorySectionState
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
-                    label: Text(_filterLabel(filter)),
+                    label: Text(_filterLabel(filter, context)),
                     selected: isSelected,
                     onSelected: (_) => setState(() => _currentFilter = filter),
                     selectedColor: AppTheme.primaryGold.withValues(alpha: 0.2),
@@ -193,7 +194,7 @@ class _AurumTransactionHistorySectionState
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'No ${_filterLabel(_currentFilter).toLowerCase()} transactions found',
+                          context.l10n.noTransactionsFound(_filterLabel(_currentFilter, context)),
                           style: TextStyle(
                             fontSize: 13,
                             color: AurumConsumerTheme.muted(context),
@@ -280,15 +281,17 @@ class _TransactionItemTile extends StatelessWidget {
             : const Color(0xFFB45309);
 
     final String statusText = isPaid
-        ? 'Successful'
+        ? context.l10n.filterSuccessful
         : isFailed
-            ? 'Failed'
-            : 'Pending';
+            ? context.l10n.filterFailed
+            : context.l10n.filterPending;
 
     final title = isBuy
-        ? 'Buy ${item.metal ?? 'Gold'}'
+        ? (item.metal != null && item.metal!.toLowerCase().contains('silver')
+            ? context.l10n.buySilver
+            : context.l10n.buyGold)
         : isSell
-            ? 'Sell Gold'
+            ? context.l10n.sellGold
             : item.transactionType.replaceAll('_', ' ').toUpperCase();
 
     final txRef = item.referenceId ?? item.id;

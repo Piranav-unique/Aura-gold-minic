@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
@@ -43,14 +44,13 @@ class CustomerDetailScreen extends ConsumerWidget {
           'This action can be reversed by an administrator.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Delete'),
+          AuraDialogActions.buttons(
+            context: context,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(context, false),
+            confirmLabel: 'Delete',
+            isDestructive: true,
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),

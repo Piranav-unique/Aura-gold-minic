@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+export 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 
 /// Shared Aura Gold cream + gold presentational building blocks.
 ///

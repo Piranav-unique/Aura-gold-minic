@@ -110,7 +110,6 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
 
     is_gold    = (order.metal or "gold").lower() == "gold"
     metal_name = "24K Pure Digital Gold (99.9% / 999 Fineness)" if is_gold else "Pure Digital Silver (99.9% / 999 Fineness)"
-    hsn_code   = "7108" if is_gold else "7106"
 
     grams        = Decimal(str(order.grams))
     rate         = Decimal(str(order.rate_per_gram))
@@ -209,17 +208,16 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
     story.append(Spacer(1, 12))
 
     # 3. Line Items
-    cw = [W * 0.30, W * 0.08, W * 0.10, W * 0.13, W * 0.13, W * 0.12, W * 0.14]
+    cw = [W * 0.36, W * 0.12, W * 0.13, W * 0.13, W * 0.12, W * 0.14]
     items_data = [
         [Paragraph(h, th_style) for h in
-         ["Item Description", "HSN", "Weight", "Rate / Gram", "Metal Value", "GST (3%)", "Total (INR)"]],
+         ["Item Description", "Weight", "Rate / Gram", "Metal Value", "GST (3%)", "Total (INR)"]],
         [
             Paragraph(
                 f"<b>{metal_name}</b><br/>"
                 f"<font size='7' color='#6C757D'>Insured Custody Vault</font>",
                 td_style,
             ),
-            Paragraph(hsn_code, td_style),
             Paragraph(f"{grams:.4f} g", td_style),
             Paragraph(f"INR {_format_inr(rate)}", td_style),
             Paragraph(f"INR {_format_inr(metal_value)}", td_style),
@@ -422,7 +420,7 @@ def generate_invoice_html(order: PaymentOrder, user: User) -> str:
           </thead>
           <tbody>
             <tr>
-              <td><strong>{metal_name}</strong><br/><small style="color:#94A3B8;">99.9% Purity &bull; HSN: 7108</small></td>
+              <td><strong>{metal_name}</strong><br/><small style="color:#94A3B8;">99.9% Purity</small></td>
               <td>{grams:.4f} g</td>
               <td>&#x20B9;{_format_inr(rate)}</td>
               <td><strong>&#x20B9;{_format_inr(total_amount)}</strong></td>

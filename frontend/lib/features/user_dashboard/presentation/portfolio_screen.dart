@@ -191,7 +191,7 @@ class _SilverHoldingsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Silver Savings',
+                    context.l10n.silverSavings,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -199,7 +199,7 @@ class _SilverHoldingsCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Rate: ${currencyFormatter.format(silverRate)}/g',
+                    context.l10n.ratePerGram(currencyFormatter.format(silverRate)),
                     style: TextStyle(
                       fontSize: 11,
                       color: AurumConsumerTheme.muted(context),

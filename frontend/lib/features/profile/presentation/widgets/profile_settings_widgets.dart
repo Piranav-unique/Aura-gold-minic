@@ -188,26 +188,14 @@ class ProfileAccountShortcuts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Column(
-      children: [
-        _ProfileShortcutCard(
-          icon: kycVerified ? Icons.verified_user_rounded : Icons.badge_outlined,
-          title: kycVerified ? l10n.kycVerifiedHeading : l10n.kycVerification,
-          subtitle: kycVerified
-              ? l10n.identityVerified
-              : l10n.completeKycToStartTrading,
-          accent: kycVerified ? AppTheme.emerald : AppTheme.goldDeep,
-          onTap: () => context.push('/kyc'),
-        ),
-        const SizedBox(height: 10),
-        _ProfileShortcutCard(
-          icon: Icons.account_balance_outlined,
-          title: l10n.bankAccounts,
-          subtitle: l10n.manageBankAccounts,
-          accent: AppTheme.goldDeep,
-          onTap: () => context.push('/bank-accounts'),
-        ),
-      ],
+    return _ProfileShortcutCard(
+      icon: kycVerified ? Icons.verified_user_rounded : Icons.badge_outlined,
+      title: kycVerified ? l10n.kycVerifiedHeading : l10n.kycVerification,
+      subtitle: kycVerified
+          ? l10n.identityVerified
+          : l10n.completeKycToStartTrading,
+      accent: kycVerified ? AppTheme.emerald : AppTheme.goldDeep,
+      onTap: () => context.push('/kyc'),
     );
   }
 }

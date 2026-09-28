@@ -10,7 +10,9 @@ from email.utils import formataddr
 import structlog
 
 from app.core.config import settings
+from app.core.email_utils import is_placeholder_email
 from app.services.invoice import generate_invoice_html, generate_invoice_pdf
+
 
 logger = structlog.get_logger()
 
@@ -63,15 +65,16 @@ def _send_invoice_smtp_sync(user: Any, order: Any) -> bool:
         )
         return False
 
-    if recipient_email.endswith("@mobile.agsgold.com"):
+    if is_placeholder_email(recipient_email):
         logger.warning(
-            "user_has_placeholder_mobile_email_skipping_invoice",
+            "user_has_placeholder_or_invalid_email_skipping_invoice",
             user_id=str(getattr(user, "id", "")),
             order_id=str(getattr(order, "id", "")),
             placeholder_email=recipient_email,
-            hint="Set a real email address (e.g. Gmail) on the user profile to receive invoices.",
+            hint="Set a real personal email address (e.g. Gmail) on the user profile to receive invoices.",
         )
         return False
+
 
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         logger.warning("smtp_credentials_not_configured_skipping_email")

@@ -25,12 +25,6 @@ class DashboardMenuSection extends StatelessWidget {
           title: l10n.myTransactions,
           onTap: () => context.push('/user-transactions'),
         ),
-        const SizedBox(height: 10),
-        _MenuTile(
-          icon: Icons.account_balance_outlined,
-          title: l10n.bankAccounts,
-          onTap: () => context.push('/bank-accounts'),
-        ),
       ],
     );
   }

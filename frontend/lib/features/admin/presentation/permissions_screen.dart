@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
@@ -368,22 +369,13 @@ class _PermissionFormDialogState extends ConsumerState<PermissionFormDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Save'),
+        AuraDialogActions.buttons(
+          context: context,
+          cancelLabel: 'Cancel',
+          onCancel: _loading ? null : () => Navigator.pop(context),
+          confirmLabel: 'Save',
+          isLoading: _loading,
+          onConfirm: _loading ? null : _submit,
         ),
       ],
     );

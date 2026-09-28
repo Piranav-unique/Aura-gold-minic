@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 Future<bool> confirmAppExit(BuildContext context) async {
@@ -12,13 +13,12 @@ Future<bool> confirmAppExit(BuildContext context) async {
       title: Text(l10n.exitAppConfirmTitle),
       content: Text(l10n.exitAppConfirmMessage),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: Text(l10n.no),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(l10n.yes),
+        AuraDialogActions.buttons(
+          context: dialogContext,
+          cancelLabel: l10n.no,
+          onCancel: () => Navigator.pop(dialogContext, false),
+          confirmLabel: l10n.yes,
+          onConfirm: () => Navigator.pop(dialogContext, true),
         ),
       ],
     ),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_surface_card.dart';
@@ -424,13 +425,12 @@ class _SetMetalLimitDialogState extends State<_SetMetalLimitDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: const Text('Save'),
+        AuraDialogActions.buttons(
+          context: context,
+          cancelLabel: 'Cancel',
+          onCancel: () => Navigator.pop(context),
+          confirmLabel: 'Save',
+          onConfirm: _save,
         ),
       ],
     );

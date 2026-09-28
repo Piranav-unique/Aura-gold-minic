@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumSecurityTrustCard extends StatelessWidget {
   const AurumSecurityTrustCard({super.key});
@@ -46,7 +47,7 @@ class AurumSecurityTrustCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Why Your Gold Is 100% Safe',
+                  context.l10n.whyGoldSafe,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -59,38 +60,34 @@ class AurumSecurityTrustCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // 1. BIS Hallmarked 24K Pure Gold
-          const _TrustItem(
+          _TrustItem(
             icon: Icons.verified_rounded,
-            title: 'BIS Hallmarked 24K Pure Gold',
-            description:
-                '100% pure 24-Karat (999 fineness) gold, certified with government BIS hallmarking standards for genuine quality you can trust.',
+            title: context.l10n.safeFeature1Title,
+            description: context.l10n.safeFeature1Desc,
           ),
           const SizedBox(height: 12),
 
           // 2. 100% Real Physical Gold in Safe Lockers
-          const _TrustItem(
+          _TrustItem(
             icon: Icons.lock_outline_rounded,
-            title: 'Stored in Bank-Grade Insured Lockers',
-            description:
-                'Every rupee you save buys real physical gold, safely kept in fully insured bank vaults on your behalf.',
+            title: context.l10n.safeFeature2Title,
+            description: context.l10n.safeFeature2Desc,
           ),
           const SizedBox(height: 12),
 
           // 3. Simple & Safe Payments
-          const _TrustItem(
+          _TrustItem(
             icon: Icons.shield_outlined,
-            title: 'Safe Payments via UPI & Cards',
-            description:
-                'Pay securely with Google Pay, PhonePe, Paytm, Net Banking, or Debit Cards via India’s trusted Razorpay gateway.',
+            title: context.l10n.safeFeature3Title,
+            description: context.l10n.safeFeature3Desc,
           ),
           const SizedBox(height: 12),
 
           // 4. Easy Cashout or Shop Collection
-          const _TrustItem(
+          _TrustItem(
             icon: Icons.storefront_outlined,
-            title: 'Sell Anytime or Visit Our Shop',
-            description:
-                'Withdraw money directly to your bank account at today’s live gold rate, or visit our shop to collect your physical gold.',
+            title: context.l10n.safeFeature4Title,
+            description: context.l10n.safeFeature4Desc,
           ),
         ],
       ),

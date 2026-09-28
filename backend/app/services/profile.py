@@ -3,7 +3,9 @@ import uuid
 from typing import List, Optional
 
 from app.core.avatar import validate_and_encode_avatar
+from app.core.email_utils import is_placeholder_email
 from app.core.exceptions import AuthenticationException, ValidationException
+
 from app.core.security import verify_password, get_password_hash
 from app.core import audit_actions
 from app.models.user import User
@@ -56,18 +58,29 @@ class ProfileService:
         current_password = update_data.pop("current_password", None)
 
         if "email" in update_data and update_data["email"] != user.email:
-            if not current_password:
+            new_email = update_data["email"].strip().lower()
+            if is_placeholder_email(new_email):
                 raise ValidationException(
-                    "Current password is required to change email address"
+                    "Please provide a personal email address (e.g. name@gmail.com). "
+                    "Placeholder or phone-based emails are not allowed."
                 )
-            if not verify_password(current_password, user.hashed_password):
-                raise AuthenticationException("Current password is incorrect")
 
-            existing = await self.user_repo.get_by_email(update_data["email"])
-            if existing:
+            # If user currently has a real email already configured, require current password
+            if not is_placeholder_email(user.email) and user.hashed_password:
+                if not current_password:
+                    raise ValidationException(
+                        "Current password is required to change email address"
+                    )
+                if not verify_password(current_password, user.hashed_password):
+                    raise AuthenticationException("Current password is incorrect")
+
+            existing = await self.user_repo.get_by_email(new_email)
+            if existing and existing.id != user.id:
                 raise ValidationException(
-                    f"Email '{update_data['email']}' already registered"
+                    f"Email '{new_email}' is already registered with another account"
                 )
+            update_data["email"] = new_email
+
 
         for field, value in update_data.items():
             setattr(user, field, value)

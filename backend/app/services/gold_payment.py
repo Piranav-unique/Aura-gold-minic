@@ -5,7 +5,9 @@ from typing import Optional
 import uuid
 
 from app.core.config import settings
+from app.core.email_utils import is_placeholder_email
 from app.core.exceptions import NotFoundException, ValidationException
+
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
 from app.repositories.payment_order import PaymentOrderRepository
@@ -55,12 +57,17 @@ class GoldPaymentService:
     ) -> CreatePaymentOrderResponse:
         if user.kyc_status != "verified":
             raise ValidationException("Complete KYC verification before buying gold.")
+        if is_placeholder_email(user.email):
+            raise ValidationException(
+                "Please add your personal email address (e.g. name@gmail.com) in your profile to receive tax invoices before purchasing."
+            )
         if metal == "gold" and (user.gold_scheme_status or "not_selected") == "not_selected":
             raise ValidationException(
                 "Choose a gold savings scheme (1 g, 5 g, or 10 g) before buying gold."
             )
         if metal not in {"gold", "silver"}:
             raise ValidationException("Only gold and silver purchases are supported.")
+
 
         prices = await self.metal_prices.get_prices()
         quote = prices.gold if metal == "gold" else prices.silver
@@ -260,9 +267,11 @@ class GoldPaymentService:
             customer_email
             and "@" in str(customer_email)
             and not str(customer_email).lower().endswith("void@razorpay.com")
-            and (not user.email or user.email.lower().endswith("@mobile.agsgold.com"))
+            and not is_placeholder_email(str(customer_email))
+            and is_placeholder_email(user.email)
         ):
             user.email = str(customer_email).strip().lower()
+
 
         if self.digital_inventory_service:
             await self.digital_inventory_service.consume_for_paid_order(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumHeroPortfolioCard extends StatefulWidget {
   final double totalValue;
@@ -100,7 +101,7 @@ class _AurumHeroPortfolioCardState extends State<AurumHeroPortfolioCard> {
                         children: [
                           Flexible(
                             child: Text(
-                              'Total Portfolio Value',
+                              context.l10n.totalPortfolioValue,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -141,19 +142,19 @@ class _AurumHeroPortfolioCardState extends State<AurumHeroPortfolioCard> {
                               color: Colors.white.withValues(alpha: 0.12),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Details',
-                                style: TextStyle(
+                                context.l10n.details,
+                                style: const TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFFE5D5AA),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              SizedBox(width: 2),
-                              Icon(
+                              const SizedBox(width: 2),
+                              const Icon(
                                 Icons.chevron_right,
                                 size: 14,
                                 color: Color(0xFFE5D5AA),
@@ -274,7 +275,7 @@ class _AurumHeroPortfolioCardState extends State<AurumHeroPortfolioCard> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Gold Owned',
+                                    context.l10n.goldOwned,
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w500,
@@ -333,7 +334,7 @@ class _AurumHeroPortfolioCardState extends State<AurumHeroPortfolioCard> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Silver Owned',
+                                    context.l10n.silverOwned,
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w500,

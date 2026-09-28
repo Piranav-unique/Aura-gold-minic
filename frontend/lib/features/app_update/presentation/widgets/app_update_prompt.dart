@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/features/app_update/domain/android_app_release.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
@@ -41,14 +42,15 @@ Future<bool> showAppUpdatePrompt({
                 ),
               ),
               actions: [
-                if (!release.forceUpdate)
-                  TextButton(
-                    onPressed: () => Navigator.pop(dialogContext, false),
-                    child: Text(l10n.appUpdateLater),
-                  ),
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: Text(l10n.appUpdateNow),
+                AuraDialogActions.buttons(
+                  context: dialogContext,
+                  cancelLabel:
+                      release.forceUpdate ? null : l10n.appUpdateLater,
+                  onCancel: release.forceUpdate
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
+                  confirmLabel: l10n.appUpdateNow,
+                  onConfirm: () => Navigator.pop(dialogContext, true),
                 ),
               ],
             ),

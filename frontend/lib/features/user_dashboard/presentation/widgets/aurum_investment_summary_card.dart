@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumInvestmentSummaryCard extends StatelessWidget {
   final double totalInvestedInr;
@@ -80,7 +81,7 @@ class AurumInvestmentSummaryCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'Investment Summary',
+                context.l10n.investmentSummary,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
@@ -93,12 +94,12 @@ class AurumInvestmentSummaryCard extends StatelessWidget {
 
           _SummaryRow(
             icon: Icons.account_balance_wallet_outlined,
-            label: 'Total Amount Invested',
+            label: context.l10n.totalAmountInvested,
             value: currencyFormatter.format(totalInvestedInr),
           ),
           _SummaryRow(
             icon: Icons.trending_up_rounded,
-            label: 'Current Value',
+            label: context.l10n.currentValueLabel,
             valueWidget: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -124,24 +125,24 @@ class AurumInvestmentSummaryCard extends StatelessWidget {
           ),
           _SummaryRow(
             icon: Icons.view_in_ar_outlined,
-            label: 'Total Gold Quantity',
+            label: context.l10n.totalGoldQuantity,
             value: _formatGrams(goldGrams),
           ),
           _SummaryRow(
             icon: Icons.currency_rupee_rounded,
-            label: 'Average Buy Price',
+            label: context.l10n.averageBuyPrice,
             value: '${currency0.format(avgBuyPrice)}/g',
           ),
           _SummaryRow(
             icon: Icons.show_chart_rounded,
-            label: 'Current Market Price',
+            label: context.l10n.currentMarketPrice,
             value: '${currency0.format(liveGoldRate)}/g',
             isLast: totalTransactionsCount == null,
           ),
           if (totalTransactionsCount != null)
             _SummaryRow(
               icon: Icons.receipt_long_outlined,
-              label: 'Total Transactions',
+              label: context.l10n.totalTransactions,
               value: '$totalTransactionsCount',
               isLast: true,
             ),

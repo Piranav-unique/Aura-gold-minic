@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from app.schemas.rbac import RoleResponse
 from app.schemas.audit_log import AuditLogResponse
 
-EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+from app.core.email_utils import EMAIL_REGEX, is_placeholder_email
 
 
 class ProfileUpdate(BaseModel):
@@ -22,9 +22,14 @@ class ProfileUpdate(BaseModel):
     def validate_email(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        if not EMAIL_REGEX.match(v):
-            raise ValueError("Invalid email format")
-        return v.lower()
+        cleaned = v.strip().lower()
+        if is_placeholder_email(cleaned):
+            raise ValueError(
+                "Please enter a valid personal email address (e.g. name@gmail.com). "
+                "Phone-based or placeholder emails are not allowed."
+            )
+        return cleaned
+
 
 
 class ChangePasswordRequest(BaseModel):

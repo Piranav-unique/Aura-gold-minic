@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
@@ -37,13 +38,13 @@ class TransactionDetailScreen extends ConsumerWidget {
           maxLines: 3,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep active'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cancel transaction'),
+          AuraDialogActions.buttons(
+            context: ctx,
+            cancelLabel: 'Keep active',
+            onCancel: () => Navigator.pop(ctx, false),
+            confirmLabel: 'Cancel transaction',
+            isDestructive: true,
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       ),
@@ -101,24 +102,38 @@ class TransactionDetailScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              downloadTextFile(
-                filename: '${doc.documentNumber}.json',
-                content: const JsonEncoder.withIndent('  ').convert({
-                  'document_type': doc.documentType,
-                  'document_number': doc.documentNumber,
-                  'transaction_number': doc.transactionNumber,
-                  'total_amount': doc.totalAmount,
-                }),
-                mimeType: 'application/json',
-              );
-            },
-            child: const Text('Download JSON'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+          AuraDialogActions(
+            cancel: OutlinedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Close'),
+            ),
+            confirm: FilledButton(
+              onPressed: () {
+                downloadTextFile(
+                  filename: '${doc.documentNumber}.json',
+                  content: const JsonEncoder.withIndent('  ').convert({
+                    'document_type': doc.documentType,
+                    'document_number': doc.documentNumber,
+                    'transaction_number': doc.transactionNumber,
+                    'total_amount': doc.totalAmount,
+                  }),
+                  mimeType: 'application/json',
+                );
+              },
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Download JSON'),
+            ),
           ),
         ],
       ),

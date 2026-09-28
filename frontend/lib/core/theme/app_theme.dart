@@ -243,6 +243,15 @@ class AppTheme {
         elevation: 0,
       ),
       dividerTheme: const DividerThemeData(color: creamBorder, space: 1),
+      dialogTheme: DialogThemeData(
+        backgroundColor: creamSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: creamBorder, width: 1),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
     );
   }
 
@@ -326,6 +335,15 @@ class AppTheme {
             letterSpacing: 0.5,
           ),
         ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: darkSurf,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFF334155), width: 1),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
   }

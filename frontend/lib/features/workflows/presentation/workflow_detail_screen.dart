@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/premium_timeline.dart';
@@ -34,13 +35,13 @@ class WorkflowDetailScreen extends ConsumerWidget {
           maxLines: 3,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(approve ? 'Approve' : 'Reject'),
+          AuraDialogActions.buttons(
+            context: context,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(ctx, false),
+            confirmLabel: approve ? 'Approve' : 'Reject',
+            isDestructive: !approve,
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       ),
@@ -91,13 +92,12 @@ class WorkflowDetailScreen extends ConsumerWidget {
           maxLines: 4,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Post'),
+          AuraDialogActions.buttons(
+            context: context,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(ctx, false),
+            confirmLabel: 'Post',
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       ),

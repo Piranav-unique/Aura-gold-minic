@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumLiveGoldCard extends StatefulWidget {
   final double livePricePerGram;
@@ -74,7 +75,7 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
                   children: [
                     Flexible(
                       child: Text(
-                        'Live 24K Gold Price',
+                        context.l10n.liveGoldPrice,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -91,17 +92,17 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
                         color: const Color(0xFF10B981).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircleAvatar(
+                          const CircleAvatar(
                             radius: 3,
                             backgroundColor: Color(0xFF10B981),
                           ),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
-                            'Live',
-                            style: TextStyle(
+                            context.l10n.liveTag,
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF10B981),
@@ -118,18 +119,18 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
               if (widget.onChartTap != null)
                 InkWell(
                   onTap: widget.onChartTap,
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Full Chart',
-                        style: TextStyle(
+                        context.l10n.fullChart,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.primaryGold,
                         ),
                       ),
-                      Icon(
+                      const Icon(
                         Icons.chevron_right,
                         size: 14,
                         color: AppTheme.primaryGold,

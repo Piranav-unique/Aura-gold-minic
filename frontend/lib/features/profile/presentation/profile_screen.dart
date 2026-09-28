@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/premium_timeline.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
@@ -14,6 +15,7 @@ import 'package:ags_gold/features/settings/presentation/providers/settings_provi
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
+import 'package:ags_gold/features/profile/presentation/widgets/nominee_details_sheet.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
 import 'package:ags_gold/l10n/locale_preference_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -66,12 +68,6 @@ class _ConsumerProfileBody extends ConsumerWidget {
 
   const _ConsumerProfileBody({required this.user});
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.comingSoon(feature))),
-    );
-  }
-
   Future<void> _showLanguageSheet(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     final settings = await ref.read(userSettingsProvider.future);
@@ -120,16 +116,15 @@ class _ConsumerProfileBody extends ConsumerWidget {
         title: Text(l10n.logoutConfirmTitle),
         content: Text(l10n.logoutConfirmMessage),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
+          AuraDialogActions.buttons(
+            context: context,
+            cancelLabel: l10n.cancel,
+            onCancel: () => Navigator.pop(context),
+            confirmLabel: l10n.logout,
+            onConfirm: () {
               Navigator.pop(context);
               ref.read(authNotifierProvider.notifier).logout();
             },
-            child: Text(l10n.logout),
           ),
         ],
       ),
@@ -189,17 +184,22 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 onTap: () => context.push('/user-transactions'),
               ),
               ProfileSettingsTile(
-                icon: Icons.account_balance_outlined,
-                title: l10n.linkedBankAccount,
-                onTap: () => context.push('/bank-accounts'),
-              ),
-              ProfileSettingsTile(
-                icon: Icons.person_add_alt_1_outlined,
+                icon: Icons.family_restroom_rounded,
                 title: l10n.nomineeDetails,
-                onTap: () => _showComingSoon(context, l10n.nomineeDetails),
+                trailing: Text(
+                  l10n.nomineeActiveVerified,
+                  style: const TextStyle(
+                    color: Color(0xFF10B981),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                onTap: () => showNomineeDetailsSheet(context, ref),
               ),
             ],
           ),
+          ProfileSectionHeader(title: l10n.nomineeDetails),
+          const ProfileNomineeCard(),
           ProfileSectionHeader(title: l10n.general),
           ProfileSettingsGroup(
             children: [
@@ -344,16 +344,15 @@ class _AdminProfileBody extends ConsumerWidget {
         title: Text(l10n.logoutConfirmTitle),
         content: Text(l10n.logoutConfirmMessage),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
+          AuraDialogActions.buttons(
+            context: context,
+            cancelLabel: l10n.cancel,
+            onCancel: () => Navigator.pop(context),
+            confirmLabel: l10n.logout,
+            onConfirm: () {
               Navigator.pop(context);
               ref.read(authNotifierProvider.notifier).logout();
             },
-            child: Text(l10n.logout),
           ),
         ],
       ),

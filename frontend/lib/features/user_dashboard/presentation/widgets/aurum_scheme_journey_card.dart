@@ -4,6 +4,7 @@ import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/user_dashboard/domain/gold_scheme.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_shop_withdrawal_sheet.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumSchemeJourneyCard extends StatelessWidget {
   final GoldScheme goldScheme;
@@ -91,7 +92,7 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_formatGrams(targetGrams)}g Milestone Achieved! 🎉',
+                        context.l10n.milestoneAchieved(_formatGrams(targetGrams)),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
@@ -100,7 +101,10 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Total: ${_formatGrams(currentGrams)}g (${currencyFormatter.format(currentValue)} current value)',
+                        context.l10n.milestoneTotalHoldings(
+                          _formatGrams(currentGrams),
+                          currencyFormatter.format(currentValue),
+                        ),
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -114,7 +118,7 @@ class AurumSchemeJourneyCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Congratulations! You have completed your saving scheme. You can now choose another scheme to continue saving, or visit our showroom to withdraw the money for the current gold value (or collect your certified gold coin).',
+              context.l10n.schemeCompletedCelebration,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withValues(alpha: 0.85),
@@ -138,12 +142,13 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Choose Next Scheme',
-                      style: TextStyle(
+                    child: Text(
+                      context.l10n.chooseNextScheme,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
@@ -168,12 +173,13 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Withdraw at Shop',
-                      style: TextStyle(
+                    child: Text(
+                      context.l10n.withdrawAtShop,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
@@ -226,7 +232,7 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Your ${_formatGrams(targetGrams)} Gram Journey',
+                        context.l10n.yourGramJourney(_formatGrams(targetGrams)),
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w800,
@@ -247,7 +253,7 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '${(progress * 100).toStringAsFixed(0)}% Completed',
+                  context.l10n.percentCompleted((progress * 100).toStringAsFixed(0)),
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -290,9 +296,8 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                       fontFamily: Theme.of(context).textTheme.bodySmall?.fontFamily,
                     ),
                     children: [
-                      const TextSpan(text: 'You have '),
                       TextSpan(
-                        text: '${_formatGrams(currentGrams)} g',
+                        text: context.l10n.youHaveGrams(_formatGrams(currentGrams)),
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           color: isDark ? Colors.white : const Color(0xFF1E1A14),
@@ -301,8 +306,11 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                       const TextSpan(text: '  |  '),
                       TextSpan(
                         text: remainingGrams > 0
-                            ? '${_formatGrams(remainingGrams)} g more to reach ${_formatGrams(targetGrams)} g'
-                            : 'Target achieved!',
+                            ? context.l10n.gramsMoreToReach(
+                                _formatGrams(remainingGrams),
+                                _formatGrams(targetGrams),
+                              )
+                            : context.l10n.targetAchieved,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: AppTheme.primaryGold,
@@ -323,18 +331,18 @@ class AurumSchemeJourneyCard extends StatelessWidget {
                       color: AppTheme.primaryGold.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.flag_outlined,
                         size: 13,
                         color: AppTheme.primaryGold,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Set Goal',
-                        style: TextStyle(
+                        context.l10n.setGoal,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.primaryGold,
@@ -350,9 +358,9 @@ class AurumSchemeJourneyCard extends StatelessWidget {
           const Divider(height: 1, color: Colors.black12),
           const SizedBox(height: 12),
 
-          // 6 Stages Roadmap (Started -> First Investment -> Regular Saving -> Accumulation -> Target Progress -> Completed)
+          // 6 Stages Roadmap
           Text(
-            'Scheme Milestones:',
+            context.l10n.schemeMilestones,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -365,32 +373,32 @@ class AurumSchemeJourneyCard extends StatelessWidget {
             child: Row(
               children: [
                 _StagePill(
-                  label: 'Started',
+                  label: context.l10n.stageStarted,
                   isReached: !goldScheme.status.isNotSelected,
                 ),
                 _StageConnector(isReached: currentGrams > 0),
                 _StagePill(
-                  label: 'First Investment',
+                  label: context.l10n.stageFirstInvestment,
                   isReached: currentGrams > 0,
                 ),
                 _StageConnector(isReached: currentGrams >= 0.05 || progress >= 0.1),
                 _StagePill(
-                  label: 'Regular Saving',
+                  label: context.l10n.stageRegularSaving,
                   isReached: currentGrams >= 0.05 || progress >= 0.1,
                 ),
                 _StageConnector(isReached: progress >= 0.3),
                 _StagePill(
-                  label: 'Accumulation',
+                  label: context.l10n.stageAccumulation,
                   isReached: progress >= 0.3,
                 ),
                 _StageConnector(isReached: progress >= 0.6),
                 _StagePill(
-                  label: 'Target Progress',
+                  label: context.l10n.stageTargetProgress,
                   isReached: progress >= 0.6,
                 ),
                 _StageConnector(isReached: isCompleted || progress >= 1.0),
                 _StagePill(
-                  label: 'Goal Completed',
+                  label: context.l10n.stageGoalCompleted,
                   isReached: isCompleted || progress >= 1.0,
                 ),
               ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/api_client.dart';
@@ -607,26 +608,14 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: _deleting ? null : () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _deleting ? null : _delete,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.rose,
-            foregroundColor: Colors.white,
-          ),
-          child: _deleting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(l10n.deleteAccountConfirm),
+        AuraDialogActions.buttons(
+          context: context,
+          cancelLabel: l10n.cancel,
+          onCancel: _deleting ? null : () => Navigator.pop(context),
+          confirmLabel: l10n.deleteAccountConfirm,
+          isDestructive: true,
+          isLoading: _deleting,
+          onConfirm: _deleting ? null : _delete,
         ),
       ],
     );

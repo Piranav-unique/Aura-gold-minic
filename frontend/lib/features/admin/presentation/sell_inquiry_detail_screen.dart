@@ -5,6 +5,7 @@ import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
@@ -58,13 +59,12 @@ class _SellInquiryDetailScreenState
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Approve payment'),
+          AuraDialogActions.buttons(
+            context: ctx,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(ctx, false),
+            confirmLabel: 'Approve payment',
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       ),
@@ -114,17 +114,17 @@ class _SellInquiryDetailScreenState
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
+          AuraDialogActions.buttons(
+            context: ctx,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(ctx),
+            confirmLabel: 'Reject',
+            isDestructive: true,
+            onConfirm: () {
               if (formKey.currentState!.validate()) {
                 Navigator.pop(ctx, controller.text.trim());
               }
             },
-            child: const Text('Reject'),
           ),
         ],
       ),
@@ -178,17 +178,16 @@ class _SellInquiryDetailScreenState
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
+          AuraDialogActions.buttons(
+            context: ctx,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(ctx),
+            confirmLabel: 'Send',
+            onConfirm: () {
               if (formKey.currentState!.validate()) {
                 Navigator.pop(ctx, controller.text.trim());
               }
             },
-            child: const Text('Send'),
           ),
         ],
       ),

@@ -698,5 +698,157 @@
   "aadhaarLabel": "Aadhaar",
   "panLabel": "PAN",
   "searchHint": "Search",
-  "stateLabel": "State"
+  "stateLabel": "State",
+
+  "saveGoldSecureTomorrow": "Save Gold • Secure Tomorrow",
+  "goldOwned": "Gold Owned",
+  "silverOwned": "Silver Owned",
+  "details": "Details",
+  "liveGoldPrice": "Live 24K Gold Price",
+  "liveTag": "Live",
+  "fullChart": "Full Chart",
+  "buyGoldCta": "BUY GOLD",
+  "sellGoldCta": "SELL GOLD",
+  "quickBuy": "Quick Buy",
+  "customAmount": "Custom Amount",
+  "buyGoldNow": "Buy Gold Now",
+  "milestoneAchieved": "{grams}g Milestone Achieved! 🎉",
+  "@milestoneAchieved": {
+    "placeholders": {
+      "grams": {"type": "String"}
+    }
+  },
+  "milestoneTotalHoldings": "Total: {grams}g ({value} current value)",
+  "@milestoneTotalHoldings": {
+    "placeholders": {
+      "grams": {"type": "String"},
+      "value": {"type": "String"}
+    }
+  },
+  "schemeCompletedCelebration": "Congratulations! You have completed your saving scheme. You can now choose another scheme to continue saving, or visit our showroom to withdraw the money for the current gold value (or collect your certified gold coin).",
+  "chooseNextScheme": "Choose Next Scheme",
+  "withdrawAtShop": "Withdraw at Shop",
+  "yourGramJourney": "Your {grams} Gram Journey",
+  "@yourGramJourney": {
+    "placeholders": {
+      "grams": {"type": "String"}
+    }
+  },
+  "percentCompleted": "{percent}% Completed",
+  "@percentCompleted": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "youHaveGrams": "You have {grams} g",
+  "@youHaveGrams": {
+    "placeholders": {
+      "grams": {"type": "String"}
+    }
+  },
+  "gramsMoreToReach": "{remaining} g more to reach {target} g",
+  "@gramsMoreToReach": {
+    "placeholders": {
+      "remaining": {"type": "String"},
+      "target": {"type": "String"}
+    }
+  },
+  "targetAchieved": "Target achieved!",
+  "setGoal": "Set Goal",
+  "schemeMilestones": "Scheme Milestones:",
+  "stageStarted": "Started",
+  "stageFirstInvestment": "First Investment",
+  "stageRegularSaving": "Regular Saving",
+  "stageAccumulation": "Accumulation",
+  "stageTargetProgress": "Target Progress",
+  "stageGoalCompleted": "Goal Completed",
+  "whyGoldSafe": "Why Your Gold Is 100% Safe",
+  "safeFeature1Title": "BIS Hallmarked 24K Pure Gold",
+  "safeFeature1Desc": "100% pure 24-Karat (999 fineness) gold, certified with government BIS hallmarking standards for genuine quality you can trust.",
+  "safeFeature2Title": "Stored in Bank-Grade Insured Lockers",
+  "safeFeature2Desc": "Every rupee you save buys real physical gold, safely kept in fully insured bank vaults on your behalf.",
+  "safeFeature3Title": "Safe Payments via UPI & Cards",
+  "safeFeature3Desc": "Pay securely with Google Pay, PhonePe, Paytm, Net Banking, or Debit Cards via India’s trusted Razorpay gateway.",
+  "safeFeature4Title": "Sell Anytime or Visit Our Shop",
+  "safeFeature4Desc": "Withdraw money directly to your bank account at today’s live gold rate, or visit our shop to collect your physical gold.",
+  "whySaveDigitalGold": "Why Save in Digital Gold?",
+  "goldInsight1Title": "24K 99.9% BIS Hallmarked Purity",
+  "goldInsight1Subtitle": "Government certified purest 24 Karat gold",
+  "goldInsight1Content": "Every gram you save is genuine 24 Karat (99.9% pure) gold meeting official BIS hallmarking standards, with zero compromise on purity.",
+  "goldInsight2Title": "Better Returns Than Bank Savings",
+  "goldInsight2Subtitle": "Protect your money from price rises",
+  "goldInsight2Content": "Gold has historically given strong long-term growth in India. Saving small amounts in gold helps protect your hard-earned money from inflation far better than idle bank deposits.",
+  "goldInsight3Title": "Zero Making Charges When Buying",
+  "goldInsight3Subtitle": "Pay only for pure gold, no wastage",
+  "goldInsight3Content": "Traditional jewellery shops charge 10% to 20% in making charges and wastage. Here, 100% of your money buys pure gold at live market prices with clear 3% GST.",
+  "goldInsight4Title": "Easy Cashout or Collect from Shop",
+  "goldInsight4Subtitle": "Transfer money to bank or get real gold coins",
+  "goldInsight4Content": "Whenever you need funds, sell your gold instantly for direct bank deposit at live rates, or visit our trusted showroom to take delivery of your physical gold coins.",
+  "investmentSummary": "Investment Summary",
+  "totalAmountInvested": "Total Amount Invested",
+  "currentValueLabel": "Current Value",
+  "totalGoldQuantity": "Total Gold Quantity",
+  "averageBuyPrice": "Average Buy Price",
+  "currentMarketPrice": "Current Market Price",
+  "totalTransactions": "Total Transactions",
+  "silverSavings": "Silver Savings",
+  "ratePerGram": "Rate: {rate}/g",
+  "@ratePerGram": {
+    "placeholders": {
+      "rate": {"type": "String"}
+    }
+  },
+  "recentTransactions": "Recent Transactions",
+  "startSavingsJourney": "Start your savings journey",
+  "transactionsShowUpHere": "Your transactions will show up here",
+  "transactionHistory": "Transaction History",
+  "filterAll": "All",
+  "filterBuy": "Buy",
+  "filterSell": "Sell",
+  "filterSuccessful": "Successful",
+  "filterPending": "Pending",
+  "filterFailed": "Failed",
+  "noTransactionsFound": "No {filter} transactions found",
+  "@noTransactionsFound": {
+    "placeholders": {
+      "filter": {"type": "String"}
+    }
+  },
+  "buyMetal": "Buy {metal}",
+  "@buyMetal": {
+    "placeholders": {
+      "metal": {"type": "String"}
+    }
+  },
+  "sellGold": "Sell Gold",
+  "chooseNextGoldScheme": "Choose Next Gold Scheme",
+  "selectGoldSavingsGoal": "Select Your Gold Savings Goal",
+  "earnGoldCoinsSub": "Earn 24K pure physical gold coins delivered to your home",
+  "switchedToGoal": "Switched to {grams}g Gold Savings Goal!",
+  "@switchedToGoal": {
+    "placeholders": {
+      "grams": {"type": "String"}
+    }
+  },
+  "showroomCashoutTitle": "Showroom Cashout & Delivery",
+  "showroomCashoutSubtitle": "Withdraw money or collect your physical coin",
+  "manageNomineeSubtitle": "View & manage registered legal beneficiary",
+  "nomineeName": "Nominee Name",
+  "nomineeRelationship": "Relationship",
+  "nomineeDob": "Date of Birth",
+  "nomineePhone": "Contact Number",
+  "nomineeAllocation": "Share Allocation",
+  "nomineeStatus": "Nominee Status",
+  "nomineeActiveVerified": "Active & Verified",
+  "editNominee": "Edit Nominee",
+  "saveNominee": "Save Nominee Details",
+  "nomineeSavedSuccess": "Nominee details saved successfully",
+  "nomineeLegalDisclaimer": "In accordance with regulatory guidelines, 100% of your vault-stored gold balance will be securely transferred to the registered nominee upon claim.",
+  "relSpouse": "Spouse",
+  "relMother": "Mother",
+  "relFather": "Father",
+  "relSon": "Son",
+  "relDaughter": "Daughter",
+  "relSibling": "Sibling",
+  "relOther": "Other"
 }

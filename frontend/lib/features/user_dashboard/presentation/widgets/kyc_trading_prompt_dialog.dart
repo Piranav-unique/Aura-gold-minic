@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/pending_trade_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -21,13 +22,12 @@ Future<void> showKycTradingPrompt(
       title: Text(l10n.kycPromptTitle),
       content: Text(l10n.kycPromptMessage(actionLabel)),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(l10n.kycBannerStartAction),
+        AuraDialogActions.buttons(
+          context: context,
+          cancelLabel: l10n.cancel,
+          onCancel: () => Navigator.pop(context, false),
+          confirmLabel: l10n.kycBannerStartAction,
+          onConfirm: () => Navigator.pop(context, true),
         ),
       ],
     ),

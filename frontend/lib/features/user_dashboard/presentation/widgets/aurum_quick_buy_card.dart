@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumQuickBuyCard extends StatefulWidget {
   final double liveGoldRatePerGram;
@@ -130,7 +131,7 @@ class _AurumQuickBuyCardState extends State<AurumQuickBuyCard> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Quick Buy',
+                        context.l10n.quickBuy,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -146,17 +147,17 @@ class _AurumQuickBuyCardState extends State<AurumQuickBuyCard> {
               const SizedBox(width: 8),
               InkWell(
                 onTap: widget.onCustomAmount,
-                child: const Row(
+                child: Row(
                   children: [
                     Text(
-                      'Custom Amount',
-                      style: TextStyle(
+                      context.l10n.customAmount,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.primaryGold,
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.chevron_right,
                       size: 15,
                       color: AppTheme.primaryGold,
@@ -209,12 +210,12 @@ class _AurumQuickBuyCardState extends State<AurumQuickBuyCard> {
               child: InkWell(
                 onTap: () => widget.onBuy(_selectedAmount),
                 borderRadius: BorderRadius.circular(14),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Buy Gold Now',
-                      style: TextStyle(
+                      context.l10n.buyGoldNow,
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF2C1E03),

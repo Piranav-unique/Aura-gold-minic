@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Bottom sheet displaying in-store withdrawal details and physical gold collection options.
 Future<void> showShopWithdrawalSheet({
@@ -71,7 +72,7 @@ Future<void> showShopWithdrawalSheet({
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Showroom Cashout & Delivery',
+                        modalContext.l10n.showroomCashoutTitle,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -80,7 +81,7 @@ Future<void> showShopWithdrawalSheet({
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Withdraw money or collect your physical coin',
+                        modalContext.l10n.showroomCashoutSubtitle,
                         style: TextStyle(
                           fontSize: 12,
                           color: AurumConsumerTheme.muted(modalContext),

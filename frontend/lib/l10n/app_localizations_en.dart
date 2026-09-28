@@ -1594,4 +1594,333 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stateLabel => 'State';
+
+  @override
+  String get saveGoldSecureTomorrow => 'Save Gold • Secure Tomorrow';
+
+  @override
+  String get goldOwned => 'Gold Owned';
+
+  @override
+  String get silverOwned => 'Silver Owned';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get liveGoldPrice => 'Live 24K Gold Price';
+
+  @override
+  String get liveTag => 'Live';
+
+  @override
+  String get fullChart => 'Full Chart';
+
+  @override
+  String get buyGoldCta => 'BUY GOLD';
+
+  @override
+  String get sellGoldCta => 'SELL GOLD';
+
+  @override
+  String get quickBuy => 'Quick Buy';
+
+  @override
+  String get customAmount => 'Custom Amount';
+
+  @override
+  String get buyGoldNow => 'Buy Gold Now';
+
+  @override
+  String milestoneAchieved(String grams) {
+    return '${grams}g Milestone Achieved! 🎉';
+  }
+
+  @override
+  String milestoneTotalHoldings(String grams, String value) {
+    return 'Total: ${grams}g ($value current value)';
+  }
+
+  @override
+  String get schemeCompletedCelebration =>
+      'Congratulations! You have completed your saving scheme. You can now choose another scheme to continue saving, or visit our showroom to withdraw the money for the current gold value (or collect your certified gold coin).';
+
+  @override
+  String get chooseNextScheme => 'Choose Next Scheme';
+
+  @override
+  String get withdrawAtShop => 'Withdraw at Shop';
+
+  @override
+  String yourGramJourney(String grams) {
+    return 'Your $grams Gram Journey';
+  }
+
+  @override
+  String percentCompleted(String percent) {
+    return '$percent% Completed';
+  }
+
+  @override
+  String youHaveGrams(String grams) {
+    return 'You have $grams g';
+  }
+
+  @override
+  String gramsMoreToReach(String remaining, String target) {
+    return '$remaining g more to reach $target g';
+  }
+
+  @override
+  String get targetAchieved => 'Target achieved!';
+
+  @override
+  String get setGoal => 'Set Goal';
+
+  @override
+  String get schemeMilestones => 'Scheme Milestones:';
+
+  @override
+  String get stageStarted => 'Started';
+
+  @override
+  String get stageFirstInvestment => 'First Investment';
+
+  @override
+  String get stageRegularSaving => 'Regular Saving';
+
+  @override
+  String get stageAccumulation => 'Accumulation';
+
+  @override
+  String get stageTargetProgress => 'Target Progress';
+
+  @override
+  String get stageGoalCompleted => 'Goal Completed';
+
+  @override
+  String get whyGoldSafe => 'Why Your Gold Is 100% Safe';
+
+  @override
+  String get safeFeature1Title => 'BIS Hallmarked 24K Pure Gold';
+
+  @override
+  String get safeFeature1Desc =>
+      '100% pure 24-Karat (999 fineness) gold, certified with government BIS hallmarking standards for genuine quality you can trust.';
+
+  @override
+  String get safeFeature2Title => 'Stored in Bank-Grade Insured Lockers';
+
+  @override
+  String get safeFeature2Desc =>
+      'Every rupee you save buys real physical gold, safely kept in fully insured bank vaults on your behalf.';
+
+  @override
+  String get safeFeature3Title => 'Safe Payments via UPI & Cards';
+
+  @override
+  String get safeFeature3Desc =>
+      'Pay securely with Google Pay, PhonePe, Paytm, Net Banking, or Debit Cards via India’s trusted Razorpay gateway.';
+
+  @override
+  String get safeFeature4Title => 'Sell Anytime or Visit Our Shop';
+
+  @override
+  String get safeFeature4Desc =>
+      'Withdraw money directly to your bank account at today’s live gold rate, or visit our shop to collect your physical gold.';
+
+  @override
+  String get whySaveDigitalGold => 'Why Save in Digital Gold?';
+
+  @override
+  String get goldInsight1Title => '24K 99.9% BIS Hallmarked Purity';
+
+  @override
+  String get goldInsight1Subtitle =>
+      'Government certified purest 24 Karat gold';
+
+  @override
+  String get goldInsight1Content =>
+      'Every gram you save is genuine 24 Karat (99.9% pure) gold meeting official BIS hallmarking standards, with zero compromise on purity.';
+
+  @override
+  String get goldInsight2Title => 'Better Returns Than Bank Savings';
+
+  @override
+  String get goldInsight2Subtitle => 'Protect your money from price rises';
+
+  @override
+  String get goldInsight2Content =>
+      'Gold has historically given strong long-term growth in India. Saving small amounts in gold helps protect your hard-earned money from inflation far better than idle bank deposits.';
+
+  @override
+  String get goldInsight3Title => 'Zero Making Charges When Buying';
+
+  @override
+  String get goldInsight3Subtitle => 'Pay only for pure gold, no wastage';
+
+  @override
+  String get goldInsight3Content =>
+      'Traditional jewellery shops charge 10% to 20% in making charges and wastage. Here, 100% of your money buys pure gold at live market prices with clear 3% GST.';
+
+  @override
+  String get goldInsight4Title => 'Easy Cashout or Collect from Shop';
+
+  @override
+  String get goldInsight4Subtitle =>
+      'Transfer money to bank or get real gold coins';
+
+  @override
+  String get goldInsight4Content =>
+      'Whenever you need funds, sell your gold instantly for direct bank deposit at live rates, or visit our trusted showroom to take delivery of your physical gold coins.';
+
+  @override
+  String get investmentSummary => 'Investment Summary';
+
+  @override
+  String get totalAmountInvested => 'Total Amount Invested';
+
+  @override
+  String get currentValueLabel => 'Current Value';
+
+  @override
+  String get totalGoldQuantity => 'Total Gold Quantity';
+
+  @override
+  String get averageBuyPrice => 'Average Buy Price';
+
+  @override
+  String get currentMarketPrice => 'Current Market Price';
+
+  @override
+  String get totalTransactions => 'Total Transactions';
+
+  @override
+  String get silverSavings => 'Silver Savings';
+
+  @override
+  String ratePerGram(String rate) {
+    return 'Rate: $rate/g';
+  }
+
+  @override
+  String get recentTransactions => 'Recent Transactions';
+
+  @override
+  String get startSavingsJourney => 'Start your savings journey';
+
+  @override
+  String get transactionsShowUpHere => 'Your transactions will show up here';
+
+  @override
+  String get transactionHistory => 'Transaction History';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterBuy => 'Buy';
+
+  @override
+  String get filterSell => 'Sell';
+
+  @override
+  String get filterSuccessful => 'Successful';
+
+  @override
+  String get filterPending => 'Pending';
+
+  @override
+  String get filterFailed => 'Failed';
+
+  @override
+  String noTransactionsFound(String filter) {
+    return 'No $filter transactions found';
+  }
+
+  @override
+  String buyMetal(String metal) {
+    return 'Buy $metal';
+  }
+
+  @override
+  String get chooseNextGoldScheme => 'Choose Next Gold Scheme';
+
+  @override
+  String get selectGoldSavingsGoal => 'Select Your Gold Savings Goal';
+
+  @override
+  String get earnGoldCoinsSub =>
+      'Earn 24K pure physical gold coins delivered to your home';
+
+  @override
+  String switchedToGoal(String grams) {
+    return 'Switched to ${grams}g Gold Savings Goal!';
+  }
+
+  @override
+  String get showroomCashoutTitle => 'Showroom Cashout & Delivery';
+
+  @override
+  String get showroomCashoutSubtitle =>
+      'Withdraw money or collect your physical coin';
+
+  @override
+  String get manageNomineeSubtitle =>
+      'View & manage registered legal beneficiary';
+
+  @override
+  String get nomineeName => 'Nominee Name';
+
+  @override
+  String get nomineeRelationship => 'Relationship';
+
+  @override
+  String get nomineeDob => 'Date of Birth';
+
+  @override
+  String get nomineePhone => 'Contact Number';
+
+  @override
+  String get nomineeAllocation => 'Share Allocation';
+
+  @override
+  String get nomineeStatus => 'Nominee Status';
+
+  @override
+  String get nomineeActiveVerified => 'Active & Verified';
+
+  @override
+  String get editNominee => 'Edit Nominee';
+
+  @override
+  String get saveNominee => 'Save Nominee Details';
+
+  @override
+  String get nomineeSavedSuccess => 'Nominee details saved successfully';
+
+  @override
+  String get nomineeLegalDisclaimer =>
+      'In accordance with regulatory guidelines, 100% of your vault-stored gold balance will be securely transferred to the registered nominee upon claim.';
+
+  @override
+  String get relSpouse => 'Spouse';
+
+  @override
+  String get relMother => 'Mother';
+
+  @override
+  String get relFather => 'Father';
+
+  @override
+  String get relSon => 'Son';
+
+  @override
+  String get relDaughter => 'Daughter';
+
+  @override
+  String get relSibling => 'Sibling';
+
+  @override
+  String get relOther => 'Other';
 }

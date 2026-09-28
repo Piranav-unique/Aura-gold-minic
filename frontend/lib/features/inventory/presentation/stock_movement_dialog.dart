@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/features/inventory/presentation/providers/inventory_provider.dart';
 
 enum StockMovementMode { stockIn, stockOut, adjust }
@@ -78,93 +79,85 @@ Future<void> showStockMovementDialog(
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      final qtyText = quantityController.text.trim();
-                      final qty = int.tryParse(qtyText);
-                      if (qty == null ||
-                          (mode != StockMovementMode.adjust && qty <= 0)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Enter a valid quantity'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (mode == StockMovementMode.adjust && qty < 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Quantity cannot be negative'),
-                          ),
-                        );
-                        return;
-                      }
+            AuraDialogActions.buttons(
+              context: context,
+              cancelLabel: 'Cancel',
+              onCancel: isLoading ? null : () => Navigator.pop(context),
+              confirmLabel: 'Submit',
+              isLoading: isLoading,
+              onConfirm: () async {
+                final qtyText = quantityController.text.trim();
+                final qty = int.tryParse(qtyText);
+                if (qty == null ||
+                    (mode != StockMovementMode.adjust && qty <= 0)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Enter a valid quantity'),
+                    ),
+                  );
+                  return;
+                }
+                if (mode == StockMovementMode.adjust && qty < 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Quantity cannot be negative'),
+                    ),
+                  );
+                  return;
+                }
 
-                      setState(() => isLoading = true);
-                      try {
-                        switch (mode) {
-                          case StockMovementMode.stockIn:
-                            await ref.read(stockInProvider)(
-                              itemId,
-                              qty,
-                              reference: referenceController.text.trim().isEmpty
-                                  ? null
-                                  : referenceController.text.trim(),
-                              notes: notesController.text.trim().isEmpty
-                                  ? null
-                                  : notesController.text.trim(),
-                            );
-                          case StockMovementMode.stockOut:
-                            await ref.read(stockOutProvider)(
-                              itemId,
-                              qty,
-                              reference: referenceController.text.trim().isEmpty
-                                  ? null
-                                  : referenceController.text.trim(),
-                              notes: notesController.text.trim().isEmpty
-                                  ? null
-                                  : notesController.text.trim(),
-                            );
-                          case StockMovementMode.adjust:
-                            await ref.read(stockAdjustProvider)(
-                              itemId,
-                              qty,
-                              reason: reasonController.text.trim().isEmpty
-                                  ? null
-                                  : reasonController.text.trim(),
-                              notes: notesController.text.trim().isEmpty
-                                  ? null
-                                  : notesController.text.trim(),
-                            );
-                        }
-                        if (dialogContext.mounted) {
-                          Navigator.pop(dialogContext);
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(content: Text('$title recorded')),
-                          );
-                        }
-                      } catch (e) {
-                        setState(() => isLoading = false);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text('Failed: $e')));
-                        }
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Submit'),
+                setState(() => isLoading = true);
+                try {
+                  switch (mode) {
+                    case StockMovementMode.stockIn:
+                      await ref.read(stockInProvider)(
+                        itemId,
+                        qty,
+                        reference: referenceController.text.trim().isEmpty
+                            ? null
+                            : referenceController.text.trim(),
+                        notes: notesController.text.trim().isEmpty
+                            ? null
+                            : notesController.text.trim(),
+                      );
+                    case StockMovementMode.stockOut:
+                      await ref.read(stockOutProvider)(
+                        itemId,
+                        qty,
+                        reference: referenceController.text.trim().isEmpty
+                            ? null
+                            : referenceController.text.trim(),
+                        notes: notesController.text.trim().isEmpty
+                            ? null
+                            : notesController.text.trim(),
+                      );
+                    case StockMovementMode.adjust:
+                      await ref.read(stockAdjustProvider)(
+                        itemId,
+                        qty,
+                        reason: reasonController.text.trim().isEmpty
+                            ? null
+                            : reasonController.text.trim(),
+                        notes: notesController.text.trim().isEmpty
+                            ? null
+                            : notesController.text.trim(),
+                      );
+                  }
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(content: Text('$title recorded')),
+                    );
+                  }
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  }
+                }
+              },
             ),
           ],
         );

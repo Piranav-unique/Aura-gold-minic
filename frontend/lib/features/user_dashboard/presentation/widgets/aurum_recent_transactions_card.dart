@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/user_statements_provider.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumRecentTransactionsCard extends ConsumerWidget {
   final VoidCallback onViewAll;
@@ -55,7 +56,7 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Recent Transactions',
+                    context.l10n.recentTransactions,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -66,17 +67,17 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
               ),
               InkWell(
                 onTap: onViewAll,
-                child: const Row(
+                child: Row(
                   children: [
                     Text(
-                      'View All',
-                      style: TextStyle(
+                      context.l10n.viewAll,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.primaryGold,
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.chevron_right,
                       size: 15,
                       color: AppTheme.primaryGold,
@@ -113,7 +114,7 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Start your savings journey',
+                              context.l10n.startSavingsJourney,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -122,7 +123,7 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Your transactions will show up here',
+                              context.l10n.transactionsShowUpHere,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: AurumConsumerTheme.muted(context),
@@ -156,9 +157,11 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
                       item.transactionType.toLowerCase().contains('deposit') ||
                       isBuy;
                   final title = isBuy
-                      ? 'Buy ${item.metal ?? 'Gold'}'
+                      ? (item.metal != null && item.metal!.toLowerCase().contains('silver')
+                          ? context.l10n.buySilver
+                          : context.l10n.buyGold)
                       : isSell
-                          ? 'Sell Gold'
+                          ? context.l10n.sellGold
                           : item.transactionType.replaceAll('_', ' ').toUpperCase();
                   final amountStr = item.amountInr != null
                       ? currencyFormatter.format(item.amountInr!)
@@ -174,10 +177,10 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
                           ? Colors.redAccent
                           : const Color(0xFFB45309);
                   final statusLabel = isPaid
-                      ? 'Successful'
+                      ? context.l10n.filterSuccessful
                       : isFailed
-                          ? 'Failed'
-                          : 'Pending';
+                          ? context.l10n.filterFailed
+                          : context.l10n.filterPending;
 
                   return Row(
                     children: [

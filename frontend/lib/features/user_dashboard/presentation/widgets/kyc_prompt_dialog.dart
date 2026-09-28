@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Session flag so the KYC reminder pops up at most once per app run.
@@ -72,16 +73,15 @@ class _KycPromptDialog extends StatelessWidget {
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.later),
-        ),
-        FilledButton(
-          onPressed: () {
+        AuraDialogActions.buttons(
+          context: context,
+          cancelLabel: l10n.later,
+          onCancel: () => Navigator.of(context).pop(),
+          confirmLabel: l10n.verifyNow,
+          onConfirm: () {
             Navigator.of(context).pop();
             context.push('/kyc');
           },
-          child: Text(l10n.verifyNow),
         ),
       ],
     );

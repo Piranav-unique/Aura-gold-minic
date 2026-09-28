@@ -2947,6 +2947,594 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'State'**
   String get stateLabel;
+
+  /// No description provided for @saveGoldSecureTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Gold • Secure Tomorrow'**
+  String get saveGoldSecureTomorrow;
+
+  /// No description provided for @goldOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold Owned'**
+  String get goldOwned;
+
+  /// No description provided for @silverOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver Owned'**
+  String get silverOwned;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @liveGoldPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Live 24K Gold Price'**
+  String get liveGoldPrice;
+
+  /// No description provided for @liveTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveTag;
+
+  /// No description provided for @fullChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Chart'**
+  String get fullChart;
+
+  /// No description provided for @buyGoldCta.
+  ///
+  /// In en, this message translates to:
+  /// **'BUY GOLD'**
+  String get buyGoldCta;
+
+  /// No description provided for @sellGoldCta.
+  ///
+  /// In en, this message translates to:
+  /// **'SELL GOLD'**
+  String get sellGoldCta;
+
+  /// No description provided for @quickBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Buy'**
+  String get quickBuy;
+
+  /// No description provided for @customAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Amount'**
+  String get customAmount;
+
+  /// No description provided for @buyGoldNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy Gold Now'**
+  String get buyGoldNow;
+
+  /// No description provided for @milestoneAchieved.
+  ///
+  /// In en, this message translates to:
+  /// **'{grams}g Milestone Achieved! 🎉'**
+  String milestoneAchieved(String grams);
+
+  /// No description provided for @milestoneTotalHoldings.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {grams}g ({value} current value)'**
+  String milestoneTotalHoldings(String grams, String value);
+
+  /// No description provided for @schemeCompletedCelebration.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations! You have completed your saving scheme. You can now choose another scheme to continue saving, or visit our showroom to withdraw the money for the current gold value (or collect your certified gold coin).'**
+  String get schemeCompletedCelebration;
+
+  /// No description provided for @chooseNextScheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Next Scheme'**
+  String get chooseNextScheme;
+
+  /// No description provided for @withdrawAtShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw at Shop'**
+  String get withdrawAtShop;
+
+  /// No description provided for @yourGramJourney.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {grams} Gram Journey'**
+  String yourGramJourney(String grams);
+
+  /// No description provided for @percentCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% Completed'**
+  String percentCompleted(String percent);
+
+  /// No description provided for @youHaveGrams.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {grams} g'**
+  String youHaveGrams(String grams);
+
+  /// No description provided for @gramsMoreToReach.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} g more to reach {target} g'**
+  String gramsMoreToReach(String remaining, String target);
+
+  /// No description provided for @targetAchieved.
+  ///
+  /// In en, this message translates to:
+  /// **'Target achieved!'**
+  String get targetAchieved;
+
+  /// No description provided for @setGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Goal'**
+  String get setGoal;
+
+  /// No description provided for @schemeMilestones.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheme Milestones:'**
+  String get schemeMilestones;
+
+  /// No description provided for @stageStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started'**
+  String get stageStarted;
+
+  /// No description provided for @stageFirstInvestment.
+  ///
+  /// In en, this message translates to:
+  /// **'First Investment'**
+  String get stageFirstInvestment;
+
+  /// No description provided for @stageRegularSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Regular Saving'**
+  String get stageRegularSaving;
+
+  /// No description provided for @stageAccumulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulation'**
+  String get stageAccumulation;
+
+  /// No description provided for @stageTargetProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Progress'**
+  String get stageTargetProgress;
+
+  /// No description provided for @stageGoalCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal Completed'**
+  String get stageGoalCompleted;
+
+  /// No description provided for @whyGoldSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Why Your Gold Is 100% Safe'**
+  String get whyGoldSafe;
+
+  /// No description provided for @safeFeature1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'BIS Hallmarked 24K Pure Gold'**
+  String get safeFeature1Title;
+
+  /// No description provided for @safeFeature1Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'100% pure 24-Karat (999 fineness) gold, certified with government BIS hallmarking standards for genuine quality you can trust.'**
+  String get safeFeature1Desc;
+
+  /// No description provided for @safeFeature2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored in Bank-Grade Insured Lockers'**
+  String get safeFeature2Title;
+
+  /// No description provided for @safeFeature2Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Every rupee you save buys real physical gold, safely kept in fully insured bank vaults on your behalf.'**
+  String get safeFeature2Desc;
+
+  /// No description provided for @safeFeature3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe Payments via UPI & Cards'**
+  String get safeFeature3Title;
+
+  /// No description provided for @safeFeature3Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay securely with Google Pay, PhonePe, Paytm, Net Banking, or Debit Cards via India’s trusted Razorpay gateway.'**
+  String get safeFeature3Desc;
+
+  /// No description provided for @safeFeature4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell Anytime or Visit Our Shop'**
+  String get safeFeature4Title;
+
+  /// No description provided for @safeFeature4Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw money directly to your bank account at today’s live gold rate, or visit our shop to collect your physical gold.'**
+  String get safeFeature4Desc;
+
+  /// No description provided for @whySaveDigitalGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Why Save in Digital Gold?'**
+  String get whySaveDigitalGold;
+
+  /// No description provided for @goldInsight1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'24K 99.9% BIS Hallmarked Purity'**
+  String get goldInsight1Title;
+
+  /// No description provided for @goldInsight1Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Government certified purest 24 Karat gold'**
+  String get goldInsight1Subtitle;
+
+  /// No description provided for @goldInsight1Content.
+  ///
+  /// In en, this message translates to:
+  /// **'Every gram you save is genuine 24 Karat (99.9% pure) gold meeting official BIS hallmarking standards, with zero compromise on purity.'**
+  String get goldInsight1Content;
+
+  /// No description provided for @goldInsight2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Better Returns Than Bank Savings'**
+  String get goldInsight2Title;
+
+  /// No description provided for @goldInsight2Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your money from price rises'**
+  String get goldInsight2Subtitle;
+
+  /// No description provided for @goldInsight2Content.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold has historically given strong long-term growth in India. Saving small amounts in gold helps protect your hard-earned money from inflation far better than idle bank deposits.'**
+  String get goldInsight2Content;
+
+  /// No description provided for @goldInsight3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero Making Charges When Buying'**
+  String get goldInsight3Title;
+
+  /// No description provided for @goldInsight3Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay only for pure gold, no wastage'**
+  String get goldInsight3Subtitle;
+
+  /// No description provided for @goldInsight3Content.
+  ///
+  /// In en, this message translates to:
+  /// **'Traditional jewellery shops charge 10% to 20% in making charges and wastage. Here, 100% of your money buys pure gold at live market prices with clear 3% GST.'**
+  String get goldInsight3Content;
+
+  /// No description provided for @goldInsight4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Cashout or Collect from Shop'**
+  String get goldInsight4Title;
+
+  /// No description provided for @goldInsight4Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer money to bank or get real gold coins'**
+  String get goldInsight4Subtitle;
+
+  /// No description provided for @goldInsight4Content.
+  ///
+  /// In en, this message translates to:
+  /// **'Whenever you need funds, sell your gold instantly for direct bank deposit at live rates, or visit our trusted showroom to take delivery of your physical gold coins.'**
+  String get goldInsight4Content;
+
+  /// No description provided for @investmentSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment Summary'**
+  String get investmentSummary;
+
+  /// No description provided for @totalAmountInvested.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Amount Invested'**
+  String get totalAmountInvested;
+
+  /// No description provided for @currentValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Value'**
+  String get currentValueLabel;
+
+  /// No description provided for @totalGoldQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Gold Quantity'**
+  String get totalGoldQuantity;
+
+  /// No description provided for @averageBuyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Buy Price'**
+  String get averageBuyPrice;
+
+  /// No description provided for @currentMarketPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Market Price'**
+  String get currentMarketPrice;
+
+  /// No description provided for @totalTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Transactions'**
+  String get totalTransactions;
+
+  /// No description provided for @silverSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver Savings'**
+  String get silverSavings;
+
+  /// No description provided for @ratePerGram.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate: {rate}/g'**
+  String ratePerGram(String rate);
+
+  /// No description provided for @recentTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Transactions'**
+  String get recentTransactions;
+
+  /// No description provided for @startSavingsJourney.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your savings journey'**
+  String get startSavingsJourney;
+
+  /// No description provided for @transactionsShowUpHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Your transactions will show up here'**
+  String get transactionsShowUpHere;
+
+  /// No description provided for @transactionHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction History'**
+  String get transactionHistory;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get filterBuy;
+
+  /// No description provided for @filterSell.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get filterSell;
+
+  /// No description provided for @filterSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Successful'**
+  String get filterSuccessful;
+
+  /// No description provided for @filterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get filterPending;
+
+  /// No description provided for @filterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get filterFailed;
+
+  /// No description provided for @noTransactionsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No {filter} transactions found'**
+  String noTransactionsFound(String filter);
+
+  /// No description provided for @buyMetal.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {metal}'**
+  String buyMetal(String metal);
+
+  /// No description provided for @chooseNextGoldScheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Next Gold Scheme'**
+  String get chooseNextGoldScheme;
+
+  /// No description provided for @selectGoldSavingsGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Your Gold Savings Goal'**
+  String get selectGoldSavingsGoal;
+
+  /// No description provided for @earnGoldCoinsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn 24K pure physical gold coins delivered to your home'**
+  String get earnGoldCoinsSub;
+
+  /// No description provided for @switchedToGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to {grams}g Gold Savings Goal!'**
+  String switchedToGoal(String grams);
+
+  /// No description provided for @showroomCashoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Showroom Cashout & Delivery'**
+  String get showroomCashoutTitle;
+
+  /// No description provided for @showroomCashoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw money or collect your physical coin'**
+  String get showroomCashoutSubtitle;
+
+  /// No description provided for @manageNomineeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View & manage registered legal beneficiary'**
+  String get manageNomineeSubtitle;
+
+  /// No description provided for @nomineeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Nominee Name'**
+  String get nomineeName;
+
+  /// No description provided for @nomineeRelationship.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship'**
+  String get nomineeRelationship;
+
+  /// No description provided for @nomineeDob.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Birth'**
+  String get nomineeDob;
+
+  /// No description provided for @nomineePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Number'**
+  String get nomineePhone;
+
+  /// No description provided for @nomineeAllocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Allocation'**
+  String get nomineeAllocation;
+
+  /// No description provided for @nomineeStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Nominee Status'**
+  String get nomineeStatus;
+
+  /// No description provided for @nomineeActiveVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Active & Verified'**
+  String get nomineeActiveVerified;
+
+  /// No description provided for @editNominee.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Nominee'**
+  String get editNominee;
+
+  /// No description provided for @saveNominee.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Nominee Details'**
+  String get saveNominee;
+
+  /// No description provided for @nomineeSavedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Nominee details saved successfully'**
+  String get nomineeSavedSuccess;
+
+  /// No description provided for @nomineeLegalDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'In accordance with regulatory guidelines, 100% of your vault-stored gold balance will be securely transferred to the registered nominee upon claim.'**
+  String get nomineeLegalDisclaimer;
+
+  /// No description provided for @relSpouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Spouse'**
+  String get relSpouse;
+
+  /// No description provided for @relMother.
+  ///
+  /// In en, this message translates to:
+  /// **'Mother'**
+  String get relMother;
+
+  /// No description provided for @relFather.
+  ///
+  /// In en, this message translates to:
+  /// **'Father'**
+  String get relFather;
+
+  /// No description provided for @relSon.
+  ///
+  /// In en, this message translates to:
+  /// **'Son'**
+  String get relSon;
+
+  /// No description provided for @relDaughter.
+  ///
+  /// In en, this message translates to:
+  /// **'Daughter'**
+  String get relDaughter;
+
+  /// No description provided for @relSibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Sibling'**
+  String get relSibling;
+
+  /// No description provided for @relOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get relOther;
 }
 
 class _AppLocalizationsDelegate

@@ -1263,7 +1263,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get buyGold => 'தங்கம் வாங்க';
 
   @override
-  String get sellGold => 'தங்கம் விற்க';
+  String get sellGold => 'தங்கம் விற்பனை';
 
   @override
   String get buySilver => 'வெள்ளி வாங்க';
@@ -1617,4 +1617,340 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get stateLabel => 'மாநிலம்';
+
+  @override
+  String get saveGoldSecureTomorrow =>
+      'தங்கம் சேமிப்பீர் • எதிர்காலம் காப்பீர்';
+
+  @override
+  String get goldOwned => 'சேமிக்கப்பட்ட தங்கம்';
+
+  @override
+  String get silverOwned => 'சேமிக்கப்பட்ட வெள்ளி';
+
+  @override
+  String get details => 'விவரங்கள்';
+
+  @override
+  String get liveGoldPrice => 'நேரலை 24K தங்கம் விலை';
+
+  @override
+  String get liveTag => 'நேரலை';
+
+  @override
+  String get fullChart => 'முழு விளக்கப்படம்';
+
+  @override
+  String get buyGoldCta => 'தங்கம் வாங்குக';
+
+  @override
+  String get sellGoldCta => 'தங்கம் விற்க';
+
+  @override
+  String get quickBuy => 'உடனடி வாங்குதல்';
+
+  @override
+  String get customAmount => 'விருப்பத் தொகை';
+
+  @override
+  String get buyGoldNow => 'இப்போதே தங்கம் வாங்குக';
+
+  @override
+  String milestoneAchieved(String grams) {
+    return '$grams கிராம் இலக்கு முடிந்தது! 🎉';
+  }
+
+  @override
+  String milestoneTotalHoldings(String grams, String value) {
+    return 'மொத்தம்: $grams கிராம் (தற்போதைய மதிப்பு $value)';
+  }
+
+  @override
+  String get schemeCompletedCelebration =>
+      'வாழ்த்துகள்! உங்கள் தங்க சேமிப்பு திட்டத்தை வெற்றிகரமாக முடித்துவிட்டீர்கள். அடுத்த புதிய திட்டத்தை தொடங்கலாம் அல்லது எங்கள் கடைக்கு வந்து தற்போதைய தங்க விலைக்கு பணமாகவோ அல்லது தங்க நாணயமாகவோ பெற்றுக்கொள்ளலாம்.';
+
+  @override
+  String get chooseNextScheme => 'அடுத்த திட்டத்தை தேர்வு செய்க';
+
+  @override
+  String get withdrawAtShop => 'கடையில் பெற்றுக்கொள்ளுங்கள்';
+
+  @override
+  String yourGramJourney(String grams) {
+    return 'உங்கள் $grams கிராம் இலக்கு';
+  }
+
+  @override
+  String percentCompleted(String percent) {
+    return '$percent% முடிந்தது';
+  }
+
+  @override
+  String youHaveGrams(String grams) {
+    return 'உங்களிடம் $grams கிராம் உள்ளது';
+  }
+
+  @override
+  String gramsMoreToReach(String remaining, String target) {
+    return '$target கிராம் அடைய இன்னும் $remaining கிராம் தேவை';
+  }
+
+  @override
+  String get targetAchieved => 'இலக்கு எட்டப்பட்டது!';
+
+  @override
+  String get setGoal => 'இலக்கு அமைக்க';
+
+  @override
+  String get schemeMilestones => 'திட்டத்தின் மைல்கற்கள்:';
+
+  @override
+  String get stageStarted => 'துவக்கம்';
+
+  @override
+  String get stageFirstInvestment => 'முதல் முதலீடு';
+
+  @override
+  String get stageRegularSaving => 'தொடர் சேமிப்பு';
+
+  @override
+  String get stageAccumulation => 'சேர்ப்பு';
+
+  @override
+  String get stageTargetProgress => 'இலக்கு முன்னேற்றம்';
+
+  @override
+  String get stageGoalCompleted => 'இலக்கு நிறைவு';
+
+  @override
+  String get whyGoldSafe => 'உங்கள் தங்கம் ஏன் 100% பாதுகாப்பானது';
+
+  @override
+  String get safeFeature1Title => 'BIS ஹால்மார்க் 24K தூய தங்கம்';
+
+  @override
+  String get safeFeature1Desc =>
+      '100% தூய 24 காரட் (999 தூய்மை) அரசு BIS ஹால்மார்க் சான்றளிக்கப்பட்ட அசல் தங்கம்.';
+
+  @override
+  String get safeFeature2Title => 'வங்கி அளவிலான காப்பீடு பெட்டக பாதுகாப்பு';
+
+  @override
+  String get safeFeature2Desc =>
+      'நீங்கள் சேமிக்கும் ஒவ்வொரு ரூபாய்க்கும் உண்மையான தங்கம் வாங்கப்பட்டு, முழு காப்பீட்டுடன் பெட்டகத்தில் பாதுகாக்கப்படுகிறது.';
+
+  @override
+  String get safeFeature3Title =>
+      'UPI மற்றும் கார்டு மூலம் பாதுகாப்பான பணம் செலுத்துதல்';
+
+  @override
+  String get safeFeature3Desc =>
+      'Google Pay, PhonePe, Paytm, நெட் பேங்கிங் மூலம் இந்தியாவின் முன்னணி Razorpay தளத்தில் பாதுகாப்பாக பணம் செலுத்துங்கள்.';
+
+  @override
+  String get safeFeature4Title =>
+      'எப்போது வேண்டுமானாலும் விற்கலாம் அல்லது கடைக்கு வரலாம்';
+
+  @override
+  String get safeFeature4Desc =>
+      'இன்றைய நேரடி சந்தை விலையில் பணமாக பெற்றுக்கொள்ளலாம் அல்லது எங்கள் கடைக்கு வந்து தங்க நாணயத்தை பெற்றுக்கொள்ளலாம்.';
+
+  @override
+  String get whySaveDigitalGold => 'டிஜிட்டல் தங்கத்தில் ஏன் சேமிக்க வேண்டும்?';
+
+  @override
+  String get goldInsight1Title => '24K 99.9% BIS ஹால்மார்க் தூய்மை';
+
+  @override
+  String get goldInsight1Subtitle =>
+      'அரசு சான்றளிக்கப்பட்ட தூய 24 காரட் தங்கம்';
+
+  @override
+  String get goldInsight1Content =>
+      'நீங்கள் சேமிக்கும் ஒவ்வொரு கிராமும் BIS ஹால்மார்க் தரநிலைகளுடன் கூடிய 99.9% தூய தங்கமாகும்.';
+
+  @override
+  String get goldInsight2Title => 'வங்கி சேமிப்பை விட சிறந்த வருமானம்';
+
+  @override
+  String get goldInsight2Subtitle =>
+      'விலைவாசி உயர்வில் இருந்து உங்கள் பணத்தை பாதுகாக்கவும்';
+
+  @override
+  String get goldInsight2Content =>
+      'தங்கம் எப்போதும் பணவீக்கத்தை விட அதிக பலன் அளிக்கிறது. வங்கியில் சும்மா வைத்திருப்பதை விட தங்கத்தில் சேமிப்பது உங்கள் செல்வத்தை உயர்த்தும்.';
+
+  @override
+  String get goldInsight3Title => 'வாங்கும் போது செய்கூலி, சேதாரம் இல்லை';
+
+  @override
+  String get goldInsight3Subtitle =>
+      'தூய தங்கத்திற்கு மட்டுமே பணம், செய்கூலி இல்லை';
+
+  @override
+  String get goldInsight3Content =>
+      'நகைக் கடைகளில் 10% முதல் 20% வரை செய்கூலி சேதாரம் பிடிப்பார்கள். இங்கு நீங்கள் செலுத்தும் முழுத் தொகைக்கும் செய்கூலி இன்றி நேரடி விலையில் தங்கம் வாங்கலாம்.';
+
+  @override
+  String get goldInsight4Title => 'எளிதாக பணமாக்கலாம் அல்லது கடையில் பெறலாம்';
+
+  @override
+  String get goldInsight4Subtitle =>
+      'வங்கிக்கு பணம் மாற்றலாம் அல்லது தங்க நாணயங்களை பெறலாம்';
+
+  @override
+  String get goldInsight4Content =>
+      'தேவைப்படும் போது நேரடி விலையில் விற்று பணமாக பெறலாம் அல்லது எங்கள் நகைக்கடைக்கு வந்து தங்க நாணயங்களை பெற்றுக்கொள்ளலாம்.';
+
+  @override
+  String get investmentSummary => 'முதலீட்டு சுருக்கம்';
+
+  @override
+  String get totalAmountInvested => 'மொத்த முதலீட்டு தொகை';
+
+  @override
+  String get currentValueLabel => 'தற்போதைய மதிப்பு';
+
+  @override
+  String get totalGoldQuantity => 'மொத்த தங்க அளவு';
+
+  @override
+  String get averageBuyPrice => 'சராசரி வாங்கிய விலை';
+
+  @override
+  String get currentMarketPrice => 'தற்போதைய சந்தை விலை';
+
+  @override
+  String get totalTransactions => 'மொத்த பரிவர்த்தனைகள்';
+
+  @override
+  String get silverSavings => 'வெள்ளி சேமிப்பு';
+
+  @override
+  String ratePerGram(String rate) {
+    return 'விலை: $rate/கிராம்';
+  }
+
+  @override
+  String get recentTransactions => 'சமீபத்திய பரிவர்த்தனைகள்';
+
+  @override
+  String get startSavingsJourney => 'உங்கள் சேமிப்பு பயணத்தைத் தொடங்குங்கள்';
+
+  @override
+  String get transactionsShowUpHere => 'உங்கள் பரிவர்த்தனைகள் இங்கே தோன்றும்';
+
+  @override
+  String get transactionHistory => 'பரிவர்த்தனை வரலாறு';
+
+  @override
+  String get filterAll => 'அனைத்தும்';
+
+  @override
+  String get filterBuy => 'வாங்கியது';
+
+  @override
+  String get filterSell => 'விற்றது';
+
+  @override
+  String get filterSuccessful => 'வெற்றி';
+
+  @override
+  String get filterPending => 'நிலுவையில்';
+
+  @override
+  String get filterFailed => 'தோல்வி';
+
+  @override
+  String noTransactionsFound(String filter) {
+    return '$filter பரிவர்த்தனைகள் எதுவும் இல்லை';
+  }
+
+  @override
+  String buyMetal(String metal) {
+    return '$metal வாங்குதல்';
+  }
+
+  @override
+  String get chooseNextGoldScheme => 'அடுத்த தங்க திட்டத்தை தேர்வு செய்க';
+
+  @override
+  String get selectGoldSavingsGoal =>
+      'உங்கள் தங்க சேமிப்பு இலக்கை தேர்வு செய்க';
+
+  @override
+  String get earnGoldCoinsSub =>
+      'உங்கள் வீட்டிற்கு டெலிவரி செய்யப்படும் 24K தூய தங்க நாணயங்களை பெறுங்கள்';
+
+  @override
+  String switchedToGoal(String grams) {
+    return '$grams கிராம் தங்க சேமிப்பு இலக்குக்கு மாற்றப்பட்டது!';
+  }
+
+  @override
+  String get showroomCashoutTitle =>
+      'கடைக்கு வந்து பணம் பெறுதல் & நாணயம் பெறுதல்';
+
+  @override
+  String get showroomCashoutSubtitle =>
+      'பணமாக பெற்றுக்கொள்ளுங்கள் அல்லது தங்க நாணயத்தை பெற்றுக்கொள்ளுங்கள்';
+
+  @override
+  String get manageNomineeSubtitle => 'பதிவு செய்யப்பட்ட வாரிசுதாரர் விவரங்கள்';
+
+  @override
+  String get nomineeName => 'பரிந்துரைக்கப்படுபவர் பெயர்';
+
+  @override
+  String get nomineeRelationship => 'உறவுமுறை';
+
+  @override
+  String get nomineeDob => 'பிறந்த தேதி';
+
+  @override
+  String get nomineePhone => 'தொடர்பு எண்';
+
+  @override
+  String get nomineeAllocation => 'பங்கு சதவீதம்';
+
+  @override
+  String get nomineeStatus => 'வாரிசு நிலை';
+
+  @override
+  String get nomineeActiveVerified => 'செயலில் & சரிபார்க்கப்பட்டது';
+
+  @override
+  String get editNominee => 'வாரிசுதாரரை மாற்றுக';
+
+  @override
+  String get saveNominee => 'வாரிசு விவரங்களை சேமி';
+
+  @override
+  String get nomineeSavedSuccess =>
+      'வாரிசு விவரங்கள் வெற்றிகரமாக சேமிக்கப்பட்டது';
+
+  @override
+  String get nomineeLegalDisclaimer =>
+      'விதிமுறைகளின்படி, நீங்கள் சேமிக்கும் தங்க இருப்பு தேவைப்படும் போது உங்கள் பதிவு செய்யப்பட்ட வாரிசுதாரரிடம் பாதுகாப்பாக ஒப்படைக்கப்படும்.';
+
+  @override
+  String get relSpouse => 'மனைவி / கணவர்';
+
+  @override
+  String get relMother => 'தாய்';
+
+  @override
+  String get relFather => 'தந்தை';
+
+  @override
+  String get relSon => 'மகன்';
+
+  @override
+  String get relDaughter => 'மகள்';
+
+  @override
+  String get relSibling => 'சகோதரர் / சகோதரி';
+
+  @override
+  String get relOther => 'மற்றவர்';
 }

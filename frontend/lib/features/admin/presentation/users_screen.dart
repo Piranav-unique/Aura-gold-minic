@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
+import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
@@ -93,17 +94,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
           'Are you sure you want to delete $email? This action is soft-delete and reversible in DB.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete'),
+          AuraDialogActions.buttons(
+            context: context,
+            cancelLabel: 'Cancel',
+            onCancel: () => Navigator.pop(context, false),
+            confirmLabel: 'Delete',
+            isDestructive: true,
+            onConfirm: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -916,22 +913,13 @@ class _UserFormDialogState extends ConsumerState<UserFormDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Save'),
+        AuraDialogActions.buttons(
+          context: context,
+          cancelLabel: 'Cancel',
+          onCancel: _loading ? null : () => Navigator.pop(context),
+          confirmLabel: 'Save',
+          isLoading: _loading,
+          onConfirm: _loading ? null : _submit,
         ),
       ],
     );

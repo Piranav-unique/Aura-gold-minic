@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AurumBuySellButtons extends StatelessWidget {
   final VoidCallback onBuyGold;
@@ -42,18 +43,18 @@ class AurumBuySellButtons extends StatelessWidget {
               child: InkWell(
                 onTap: onBuyGold,
                 borderRadius: BorderRadius.circular(16),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.shopping_bag_outlined,
                       color: Color(0xFF38290D),
                       size: 20,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
-                      'BUY GOLD',
-                      style: TextStyle(
+                      context.l10n.buyGoldCta,
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
@@ -102,7 +103,7 @@ class AurumBuySellButtons extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'SELL GOLD',
+                      context.l10n.sellGoldCta,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
