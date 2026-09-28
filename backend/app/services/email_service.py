@@ -92,7 +92,7 @@ def _send_invoice_smtp_sync(user: Any, order: Any) -> bool:
         msg = MIMEMultipart("mixed")
         msg["From"] = formataddr((settings.SMTP_FROM_NAME, settings.SMTP_FROM_EMAIL))
         msg["To"] = recipient_email
-        msg["Subject"] = f"Tax Invoice #{invoice_number} - AGS Gold Purchase Receipt"
+        msg["Subject"] = f"Payment Receipt & Tax Invoice #{invoice_number} – Aurum Gold & Silvers"
 
         # Alternative part for HTML
         alt_part = MIMEMultipart("alternative")

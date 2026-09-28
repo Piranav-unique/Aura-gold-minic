@@ -7,12 +7,12 @@ import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/utils/email_validator.dart';
 import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
-import 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 export 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
+
 
 
 Future<void> showEditProfileDialog(
@@ -57,6 +57,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
   bool _saving = false;
   String? _errorMessage;
 
@@ -69,14 +70,21 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     _lastNameController = TextEditingController(
       text: widget.profile.lastName ?? '',
     );
+    _emailController = TextEditingController(
+      text: isPlaceholderEmail(widget.profile.email)
+          ? ''
+          : (widget.profile.email ?? ''),
+    );
     _firstNameController.addListener(_clearError);
     _lastNameController.addListener(_clearError);
+    _emailController.addListener(_clearError);
   }
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -102,12 +110,18 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
         'last_name': _lastNameController.text.trim(),
       };
 
+      final enteredEmail = _emailController.text.trim().toLowerCase();
+      if (enteredEmail.isNotEmpty) {
+        payload['email'] = enteredEmail;
+      }
+
       await apiClient.put('/profile/', data: payload);
 
       if (!mounted) return;
       Navigator.pop(context);
       widget.onSaved();
     } on ApiException catch (e) {
+
       if (!mounted) return;
       setState(() {
         _saving = false;
@@ -222,6 +236,24 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 fillColor: theme.colorScheme.surfaceContainerHighest,
               ),
             ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.email],
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: l10n.emailAddress,
+                hintText: 'name.someone@gmail.com',
+                prefixIcon: const Icon(Icons.alternate_email_rounded),
+                helperText: 'Required for receiving gold tax invoices & receipts',
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+              validator: validateUserEmail,
+            ),
+
             const SizedBox(height: 24),
             Row(
               children: [

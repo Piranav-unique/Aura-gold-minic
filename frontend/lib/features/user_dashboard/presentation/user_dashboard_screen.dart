@@ -22,7 +22,12 @@ import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_shop
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_useful_gold_info_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/kyc_prompt_dialog.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/kyc_trading_prompt_dialog.dart';
+import 'package:ags_gold/core/utils/email_validator.dart';
+import 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
+import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
+
+
 
 class UserDashboardScreen extends ConsumerWidget {
   const UserDashboardScreen({super.key});
@@ -77,6 +82,22 @@ class UserDashboardScreen extends ConsumerWidget {
                 );
                 return;
               }
+
+              final userEmail = data.email ?? ref.read(profileProvider).value?.email;
+              if (isPlaceholderEmail(userEmail)) {
+                showAddEmailDialog(
+                  context,
+                  ref,
+                  currentEmail: userEmail,
+                  onEmailSaved: () {
+                    if (context.mounted) {
+                      handleBuyGold(amount: amount);
+                    }
+                  },
+                );
+                return;
+              }
+
               if (data.goldScheme.status.isNotSelected) {
                 showSelectOrUpgradeSchemeSheet(
                   context: context,
@@ -85,6 +106,7 @@ class UserDashboardScreen extends ConsumerWidget {
                 );
                 return;
               }
+
               AppEventLog.action('buy_gold_tap', data: {
                 'kyc_complete': true,
                 'amount': ?amount,

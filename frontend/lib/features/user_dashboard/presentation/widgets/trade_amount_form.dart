@@ -12,9 +12,13 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_pr
 import 'package:ags_gold/features/user_dashboard/presentation/services/razorpay_checkout.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_surface_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/scheme_completion_dialog.dart';
+import 'package:ags_gold/core/utils/email_validator.dart';
+import 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
+import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+
 
 class TradeAmountForm extends ConsumerStatefulWidget {
   final bool isBuy;
@@ -109,6 +113,24 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       return;
     }
 
+    // Verify personal email is added for official tax invoice delivery
+    final profile = ref.read(profileProvider).value;
+    final dashboard = ref.read(personalDashboardProvider).value;
+    final userEmail = profile?.email ?? dashboard?.email;
+    if (isPlaceholderEmail(userEmail)) {
+      showAddEmailDialog(
+        context,
+        ref,
+        currentEmail: userEmail,
+        onEmailSaved: () {
+          if (mounted) {
+            _startPayment(rate);
+          }
+        },
+      );
+      return;
+    }
+
     setState(() => _paying = true);
     try {
       if (widget.isBuy && widget.metal == MetalType.gold) {
@@ -145,10 +167,22 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       );
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
         setState(() => _paying = false);
+        if (e.message.toLowerCase().contains('email')) {
+          showAddEmailDialog(
+            context,
+            ref,
+            onEmailSaved: () {
+              if (mounted) {
+                _startPayment(rate);
+              }
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message)),
+          );
+        }
       }
     } catch (_) {
       if (mounted) {
@@ -159,6 +193,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       }
     }
   }
+
 
   Future<void> _syncPendingPayment() async {
     final orderId = _pendingOrderId;

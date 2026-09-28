@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/core/utils/email_validator.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
+
 import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
 import 'package:ags_gold/core/widgets/premium_timeline.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
@@ -178,6 +180,46 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 title: l10n.accountDetails,
                 onTap: () => showEditProfileDialog(context, ref, user),
               ),
+              ProfileSettingsTile(
+                icon: Icons.mark_email_read_outlined,
+                title: l10n.emailAddress,
+                subtitle: (user.email != null && !isPlaceholderEmail(user.email))
+                    ? user.email
+                    : 'Add email for gold invoices',
+                trailing: (user.email != null && !isPlaceholderEmail(user.email))
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.primaryGold.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: const Text(
+                          'Required',
+                          style: TextStyle(
+                            color: AppTheme.primaryGold,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                onTap: () => showAddEmailDialog(
+                  context,
+                  ref,
+                  currentEmail: user.email,
+                ),
+              ),
+
               ProfileSettingsTile(
                 icon: Icons.description_outlined,
                 title: l10n.statements,

@@ -122,6 +122,7 @@ class ProfileSettingsGroup extends StatelessWidget {
 class ProfileSettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final VoidCallback? onTap;
   final Widget? trailing;
 
@@ -129,6 +130,7 @@ class ProfileSettingsTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle,
     this.onTap,
     this.trailing,
   });
@@ -161,12 +163,28 @@ class ProfileSettingsTile extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  title,
-                  style: ProfileTypography.tileTitle(context),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: ProfileTypography.tileTitle(context),
+                    ),
+                    if (subtitle != null && subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: ProfileTypography.tileSubtitle(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               trailing ??
+
                   Icon(
                     Icons.chevron_right_rounded,
                     color: muted,
