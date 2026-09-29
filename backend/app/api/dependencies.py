@@ -531,6 +531,7 @@ def get_gold_payment_service(
         get_digital_metal_inventory_service
     ),
     referral_service: ReferralService = Depends(get_referral_service),
+    audit_service: AuditService = Depends(get_audit_service),
 ) -> GoldPaymentService:
     return GoldPaymentService(
         user_repo,
@@ -539,6 +540,7 @@ def get_gold_payment_service(
         razorpay,
         digital_inventory_service,
         referral_service,
+        audit_service=audit_service,
     )
 
 

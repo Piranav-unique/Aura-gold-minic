@@ -148,6 +148,31 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
         )
         today_count, today_paise = today_res.one()
 
+        # Gold sold
+        gold_res = await self.db.execute(
+            select(
+                func.coalesce(func.sum(PaymentOrder.grams), 0),
+                func.coalesce(func.sum(PaymentOrder.amount_paise), 0),
+            ).where(PaymentOrder.status == "paid", PaymentOrder.metal == "gold")
+        )
+        gold_grams, gold_paise = gold_res.one()
+
+        # Silver sold
+        silver_res = await self.db.execute(
+            select(
+                func.coalesce(func.sum(PaymentOrder.grams), 0),
+                func.coalesce(func.sum(PaymentOrder.amount_paise), 0),
+            ).where(PaymentOrder.status == "paid", PaymentOrder.metal == "silver")
+        )
+        silver_grams, silver_paise = silver_res.one()
+
+        # Unique paying customers
+        paying_cust_res = await self.db.execute(
+            select(func.count(func.distinct(PaymentOrder.user_id)))
+            .where(PaymentOrder.status == "paid")
+        )
+        paying_cust_count = int(paying_cust_res.scalar_one() or 0)
+
         # Payment methods breakdown across paid orders
         methods_res = await self.db.execute(
             select(PaymentOrder.payment_method, func.count())
@@ -165,6 +190,11 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
             "total_failed_count": failed_count,
             "today_captured_revenue": Decimal(today_paise) / Decimal("100"),
             "today_captured_count": int(today_count),
+            "gold_sold_grams": Decimal(str(gold_grams)),
+            "gold_sold_revenue": Decimal(gold_paise) / Decimal("100"),
+            "silver_sold_grams": Decimal(str(silver_grams)),
+            "silver_sold_revenue": Decimal(silver_paise) / Decimal("100"),
+            "paying_customers_count": paying_cust_count,
             "payment_methods_breakdown": methods_breakdown,
         }
 

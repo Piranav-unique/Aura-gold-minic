@@ -28,8 +28,8 @@ class CreatePaymentOrderResponse(BaseModel):
   metal: str
   purchase_mode: str = "amount"
   currency: str = "INR"
-  user_email: str
-  user_name: str
+  user_email: Optional[str] = None
+  user_name: Optional[str] = None
 
 
 class SyncPaymentRequest(BaseModel):
@@ -117,6 +117,11 @@ class AdminPaymentSummary(BaseModel):
   total_failed_count: int
   today_captured_revenue: Decimal
   today_captured_count: int
+  gold_sold_grams: Decimal = Decimal("0")
+  gold_sold_revenue: Decimal = Decimal("0")
+  silver_sold_grams: Decimal = Decimal("0")
+  silver_sold_revenue: Decimal = Decimal("0")
+  paying_customers_count: int = 0
   last_synced_at: Optional[datetime] = None
   payment_methods_breakdown: dict[str, int] = {}
 

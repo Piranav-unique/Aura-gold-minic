@@ -226,6 +226,34 @@ class NotificationService:
                 category=self.CATEGORY_SYSTEM,
                 metadata=metadata,
             )
+        elif action == audit_actions.NEW_DEVICE_LOGIN and user_id:
+            await self.create_notification(
+                user_id=user_id,
+                title="New Device Login Alert",
+                message="Your account was accessed from a new device. If this was not you, please secure your account immediately.",
+                category=self.CATEGORY_SECURITY,
+                metadata=metadata,
+            )
+        elif action == audit_actions.PAYMENT_CAPTURED and user_id:
+            metal = metadata.get("metal", "metal").capitalize()
+            grams = metadata.get("grams", "")
+            amount = metadata.get("amount_inr", "")
+            await self.create_notification(
+                user_id=user_id,
+                title=f"{metal} Purchase Successful",
+                message=f"Successfully purchased {grams}g of {metal} for ₹{amount}.",
+                category=self.CATEGORY_SYSTEM,
+                metadata=metadata,
+            )
+        elif action in (audit_actions.ADMIN_2FA_ENABLED, audit_actions.ADMIN_2FA_DISABLED) and user_id:
+            verb = "enabled" if action == audit_actions.ADMIN_2FA_ENABLED else "disabled"
+            await self.create_notification(
+                user_id=user_id,
+                title=f"2FA {verb.capitalize()}",
+                message=f"Two-factor authentication (2FA) was {verb} on your admin account.",
+                category=self.CATEGORY_SECURITY,
+                metadata=metadata,
+            )
         elif action == audit_actions.PASSWORD_CHANGE and user_id:
             await self.create_notification(
                 user_id=user_id,

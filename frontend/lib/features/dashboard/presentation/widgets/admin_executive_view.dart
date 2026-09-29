@@ -44,38 +44,51 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate Gold & Silver sold from customer summaries or recent payments
-    double totalGoldSold = 0.0;
-    double totalSilverSold = 0.0;
-    for (final c in data.customerSummaries) {
-      totalGoldSold += c.goldGrams;
-      totalSilverSold += c.silverGrams;
+    // Calculate Gold & Silver sold and revenue from paymentSummary, customer summaries or recent payments
+    double totalGoldSold = data.paymentSummary?.goldSoldGrams ?? 0.0;
+    double totalSilverSold = data.paymentSummary?.silverSoldGrams ?? 0.0;
+    double goldRevenue = data.paymentSummary?.goldSoldRevenue ?? 0.0;
+    double silverRevenue = data.paymentSummary?.silverSoldRevenue ?? 0.0;
+
+    // Fallback if paymentSummary doesn't have breakdown: compute from customer summaries or recent payments
+    if (totalGoldSold == 0.0 && totalSilverSold == 0.0) {
+      for (final c in data.customerSummaries) {
+        totalGoldSold += c.goldGrams;
+        totalSilverSold += c.silverGrams;
+      }
     }
-    if (totalGoldSold == 0.0) {
+    if (totalGoldSold == 0.0 && totalSilverSold == 0.0) {
       for (final p in data.recentPayments) {
         if ((p.status == 'captured' || p.status == 'paid')) {
           if (p.metal.toLowerCase() == 'silver') {
             totalSilverSold += p.grams;
+            silverRevenue += p.amountInr;
           } else {
             totalGoldSold += p.grams;
+            goldRevenue += p.amountInr;
           }
         }
       }
     }
-    // Fallback to digital inventory if available
-    if (totalGoldSold == 0.0 && (data.appMetrics?.goldAvailableGrams ?? 0) > 0) {
-      totalGoldSold = data.appMetrics!.goldAvailableGrams;
-    }
-    if (totalSilverSold == 0.0 && (data.appMetrics?.silverAvailableGrams ?? 0) > 0) {
-      totalSilverSold = data.appMetrics!.silverAvailableGrams;
-    }
 
     final totalRevenue = data.paymentSummary?.totalCapturedRevenue ??
-        data.appMetrics?.totalRevenue ??
-        0.0;
-    final totalCustomers = data.customerMetrics?.totalCustomers ??
-        data.appMetrics?.memberCount ??
-        data.customerSummaries.length;
+        (goldRevenue + silverRevenue > 0
+            ? (goldRevenue + silverRevenue)
+            : (data.appMetrics?.totalRevenue ?? 0.0));
+
+    // Accurate Customers count: prioritize paying customers and active members
+    int customersCount = data.paymentSummary?.payingCustomersCount ?? 0;
+    if (customersCount == 0 && data.customerSummaries.isNotEmpty) {
+      customersCount = data.customerSummaries.length;
+    }
+    if ((data.customerMetrics?.totalCustomers ?? 0) > customersCount) {
+      customersCount = data.customerMetrics!.totalCustomers;
+    }
+    if ((data.appMetrics?.memberCount ?? 0) > customersCount) {
+      customersCount = data.appMetrics!.memberCount;
+    }
+    final totalCustomers = customersCount;
+    final payingCustomers = data.paymentSummary?.payingCustomersCount ?? data.customerSummaries.length;
 
     // Payment methods aggregated stats
     final methodStats = _computeMethodStats(data.recentPayments, data.paymentSummary);
@@ -168,8 +181,11 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
           // 2. 2x2 Metric Cards Grid (Total Customers, Gold Sold, Silver Sold, Total Collections)
           _KpiMetricGrid(
             totalCustomers: totalCustomers,
+            payingCustomersCount: payingCustomers,
             goldSoldGrams: totalGoldSold,
+            goldSoldRevenue: goldRevenue,
             silverSoldGrams: totalSilverSold,
+            silverSoldRevenue: silverRevenue,
             totalCollectionsInr: totalRevenue,
           ),
           const SizedBox(height: 20),
@@ -496,14 +512,20 @@ class _AdminHeader extends StatelessWidget {
 // -----------------------------------------------------------------------------
 class _KpiMetricGrid extends StatelessWidget {
   final int totalCustomers;
+  final int payingCustomersCount;
   final double goldSoldGrams;
+  final double goldSoldRevenue;
   final double silverSoldGrams;
+  final double silverSoldRevenue;
   final double totalCollectionsInr;
 
   const _KpiMetricGrid({
     required this.totalCustomers,
+    required this.payingCustomersCount,
     required this.goldSoldGrams,
+    required this.goldSoldRevenue,
     required this.silverSoldGrams,
+    required this.silverSoldRevenue,
     required this.totalCollectionsInr,
   });
 
@@ -524,6 +546,7 @@ class _KpiMetricGrid extends StatelessWidget {
               child: _MetricCard(
                 label: 'Total Customers',
                 value: countFmt.format(totalCustomers),
+                subtitle: payingCustomersCount > 0 ? '$payingCustomersCount paying' : 'Active users',
                 badgeText: '+12%',
                 icon: Icons.people_alt_rounded,
                 iconBg: const Color(0xFFFFF7ED),
@@ -536,6 +559,7 @@ class _KpiMetricGrid extends StatelessWidget {
               child: _MetricCard(
                 label: 'Gold Sold',
                 value: AdminExecutiveView.formatGrams(goldSoldGrams),
+                subtitle: 'Rev: ${currency.format(goldSoldRevenue)}',
                 badgeText: '+8%',
                 icon: Icons.workspace_premium_rounded,
                 iconBg: const Color(0xFFFFFBEB),
@@ -552,6 +576,7 @@ class _KpiMetricGrid extends StatelessWidget {
               child: _MetricCard(
                 label: 'Silver Sold',
                 value: AdminExecutiveView.formatGrams(silverSoldGrams),
+                subtitle: 'Rev: ${currency.format(silverSoldRevenue)}',
                 badgeText: '+10%',
                 icon: Icons.toll_rounded,
                 iconBg: const Color(0xFFF1F5F9),
@@ -564,6 +589,7 @@ class _KpiMetricGrid extends StatelessWidget {
               child: _MetricCard(
                 label: 'Total Collections',
                 value: currency.format(totalCollectionsInr),
+                subtitle: 'Total revenue',
                 badgeText: '+15%',
                 icon: Icons.currency_rupee_rounded,
                 iconBg: const Color(0xFFECFDF5),
@@ -581,6 +607,7 @@ class _KpiMetricGrid extends StatelessWidget {
 class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
+  final String? subtitle;
   final String badgeText;
   final IconData icon;
   final Color iconBg;
@@ -590,6 +617,7 @@ class _MetricCard extends StatelessWidget {
   const _MetricCard({
     required this.label,
     required this.value,
+    this.subtitle,
     required this.badgeText,
     required this.icon,
     required this.iconBg,
@@ -682,12 +710,26 @@ class _MetricCard extends StatelessWidget {
                 color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
               ),
             ),
+            if (subtitle != null && subtitle!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFC59A27),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
+
 
 // -----------------------------------------------------------------------------
 // 3. "Today's Overview" Segmented Chart Card
@@ -1473,7 +1515,9 @@ class _CustomerPaidCard extends StatelessWidget {
                       Text(
                         customer.name?.isNotEmpty == true
                             ? customer.name!
-                            : 'Customer ${customer.mobile}',
+                            : (customer.email?.isNotEmpty == true
+                                ? customer.email!
+                                : 'Customer ${customer.mobile}'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1870,7 +1914,9 @@ class _TransactionItemTile extends StatelessWidget {
                   Text(
                     payment.customerName?.isNotEmpty == true
                         ? payment.customerName!
-                        : (isGold ? 'Digital Gold' : 'Digital Silver'),
+                        : (payment.customerMobile?.isNotEmpty == true
+                            ? 'Customer (${payment.customerMobile})'
+                            : (isGold ? 'Digital Gold' : 'Digital Silver')),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1879,6 +1925,19 @@ class _TransactionItemTile extends StatelessWidget {
                       color: Color(0xFF1E1B18),
                     ),
                   ),
+                  if (payment.customerName?.isNotEmpty == true &&
+                      payment.customerMobile?.isNotEmpty == true) ...[
+                    Text(
+                      payment.customerMobile!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1E1B18).withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 2),
                   Row(
                     children: [

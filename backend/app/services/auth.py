@@ -100,7 +100,7 @@ class AuthService:
                     "No account found for this mobile number."
                 )
             await bind_device_for_mobile_login(
-                self.user_repo, user, normalized_device_id
+                self.user_repo, user, normalized_device_id, audit_service=self.audit_service
             )
             return user
         except AuthenticationException as e:

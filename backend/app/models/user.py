@@ -72,6 +72,9 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     has_completed_mobile_login: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    # Admin 2FA via TOTP (Google Authenticator / Authy)
+    totp_secret_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
     roles: Mapped[List["Role"]] = relationship(

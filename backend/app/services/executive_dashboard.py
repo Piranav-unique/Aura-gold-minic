@@ -70,9 +70,36 @@ def resolve_executive_role(user: User) -> ExecutiveRole:
     return "employee"
 
 
-def _display_name(user: User) -> str:
+def _clean_phone(phone: Optional[str]) -> str:
+    if not phone:
+        return ""
+    digits = "".join(filter(str.isdigit, str(phone)))
+    return digits[-10:] if len(digits) >= 10 else digits
+
+
+def _display_name(user: Optional[User]) -> str:
+    if not user:
+        return "Customer"
     parts = [p for p in (user.first_name, user.last_name) if p]
-    return " ".join(parts) if parts else user.email
+    if parts:
+        return " ".join(parts).strip()
+    if getattr(user, "kyc_profile", None):
+        try:
+            import json
+            kd = json.loads(user.kyc_profile)
+            if isinstance(kd, dict) and (kd.get("full_name") or kd.get("name")):
+                return str(kd.get("full_name") or kd.get("name")).strip()
+        except Exception:
+            pass
+    if getattr(user, "email", None) and "@" in str(user.email):
+        import re
+        cleaned = re.sub(r"[\d_.]+", " ", str(user.email).split("@")[0]).strip()
+        if len(cleaned) >= 3 and not cleaned.isdigit():
+            return cleaned.title()
+        return str(user.email)
+    if getattr(user, "mobile_number", None):
+        return str(user.mobile_number)
+    return "Customer"
 
 
 class ExecutiveDashboardService:
@@ -265,9 +292,46 @@ class ExecutiveDashboardService:
         customer_summaries: list[CustomerPaymentSummary] = []
 
         if self.payment_order_repo and (can_view_wallet or can_view_transactions):
-
             try:
-                orders = await self.payment_order_repo.list_orders(limit=50)
+                orders = await self.payment_order_repo.list_orders(limit=100)
+
+                # Pre-fetch registered customer names from Customer table to enrich orders
+                customer_names_by_phone: dict[str, str] = {}
+                customer_names_by_email: dict[str, str] = {}
+                try:
+                    all_custs = await self.customer_repo.list_customers(limit=100)
+                    for c in all_custs:
+                        if c.full_name:
+                            if c.mobile_number:
+                                k = _clean_phone(c.mobile_number)
+                                if k:
+                                    customer_names_by_phone[k] = c.full_name
+                            if c.email:
+                                customer_names_by_email[c.email.strip().lower()] = c.full_name
+                except Exception as exc:
+                    logger.warning("customer_lookup_preload_error", error=str(exc))
+
+                def _resolve_order_customer_name(o) -> Optional[str]:
+                    # 1. Check User name (first_name/last_name/kyc_profile/email)
+                    if o.user:
+                        nm = _display_name(o.user)
+                        if nm and nm != "Customer" and not nm.startswith("+91") and not nm.isdigit():
+                            return nm
+                    # 2. Check Customer table by phone
+                    contact = o.customer_contact or (o.user.mobile_number if o.user else None)
+                    p_key = _clean_phone(contact)
+                    if p_key and p_key in customer_names_by_phone:
+                        return customer_names_by_phone[p_key]
+                    # 3. Check Customer table by email
+                    email = (o.user.email if o.user else None)
+                    if email and email.strip().lower() in customer_names_by_email:
+                        return customer_names_by_email[email.strip().lower()]
+                    # 4. Fallback to user display name or None
+                    if o.user:
+                        nm = _display_name(o.user)
+                        return nm if nm != "Customer" else None
+                    return None
+
                 recent_payments = [
                     AdminPaymentItem(
                         id=order.id,
@@ -275,7 +339,7 @@ class ExecutiveDashboardService:
                         razorpay_payment_id=order.razorpay_payment_id,
                         bank_rrn=order.bank_rrn,
                         payment_method=order.payment_method,
-                        customer_name=_display_name(order.user) if order.user else None,
+                        customer_name=_resolve_order_customer_name(order),
                         customer_mobile=order.customer_contact
                         or (order.user.mobile_number if order.user else None),
                         customer_email=order.user.email if order.user else None,
@@ -313,6 +377,11 @@ class ExecutiveDashboardService:
                             "silver_grams": Decimal("0"),
                             "payment_methods": [],
                         }
+                    # Update name if previously null
+                    if p.customer_name and (not cust_map[contact]["name"] or cust_map[contact]["name"] == contact):
+                        cust_map[contact]["name"] = p.customer_name
+                    if p.customer_email and not cust_map[contact]["email"]:
+                        cust_map[contact]["email"] = p.customer_email
                     if p.status in ("captured", "paid"):
                         cust_map[contact]["total_paid_inr"] += p.amount_inr
                         cust_map[contact]["success_count"] += 1
@@ -324,12 +393,21 @@ class ExecutiveDashboardService:
                         if p.payment_method and p.payment_method not in cust_map[contact]["payment_methods"]:
                             cust_map[contact]["payment_methods"].append(p.payment_method)
 
+                # Final fallback for any customer without a name in cust_map
+                for contact, item in cust_map.items():
+                    if not item["name"]:
+                        p_key = _clean_phone(contact)
+                        if p_key and p_key in customer_names_by_phone:
+                            item["name"] = customer_names_by_phone[p_key]
+                        elif item["email"] and item["email"].strip().lower() in customer_names_by_email:
+                            item["name"] = customer_names_by_email[item["email"].strip().lower()]
+
                 customer_summaries = [
                     CustomerPaymentSummary(**c) for c in cust_map.values()
                 ]
                 customer_summaries.sort(key=lambda x: x.total_paid_inr, reverse=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.error("executive_dashboard_payment_processing_error", error=str(exc), exc_info=True)
 
         return ExecutiveDashboardResponse(
             role="admin",

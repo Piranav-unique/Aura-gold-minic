@@ -41,6 +41,7 @@ from app.api.organization_profile import router as organization_profile_router
 from app.api.admin_account_deletion import router as admin_account_deletion_router
 from app.api.razorpay_webhooks import router as razorpay_webhooks_router
 from app.api.legal import router as legal_router
+from app.api.admin_2fa import router as admin_2fa_router
 from app.database.session import verify_db_connection, async_session_maker
 from app.database import base as db_base  # noqa: F401
 from app.repositories.token_blacklist import TokenBlacklistRepository
@@ -236,6 +237,11 @@ app.include_router(
     admin_account_deletion_router,
     prefix=f"{settings.API_V1_STR}/admin/account-deletion-requests",
     tags=["admin-account-deletion"],
+)
+app.include_router(
+    admin_2fa_router,
+    prefix=f"{settings.API_V1_STR}/admin/2fa",
+    tags=["admin-2fa"],
 )
 app.include_router(
     razorpay_webhooks_router,

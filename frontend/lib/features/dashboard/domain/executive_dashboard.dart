@@ -304,6 +304,11 @@ class AdminPaymentSummary {
   final int totalFailedCount;
   final double todayCapturedRevenue;
   final int todayCapturedCount;
+  final double goldSoldGrams;
+  final double goldSoldRevenue;
+  final double silverSoldGrams;
+  final double silverSoldRevenue;
+  final int payingCustomersCount;
   final DateTime? lastSyncedAt;
   final Map<String, int> paymentMethodsBreakdown;
 
@@ -314,6 +319,11 @@ class AdminPaymentSummary {
     required this.totalFailedCount,
     required this.todayCapturedRevenue,
     required this.todayCapturedCount,
+    this.goldSoldGrams = 0.0,
+    this.goldSoldRevenue = 0.0,
+    this.silverSoldGrams = 0.0,
+    this.silverSoldRevenue = 0.0,
+    this.payingCustomersCount = 0,
     this.lastSyncedAt,
     this.paymentMethodsBreakdown = const {},
   });
@@ -326,6 +336,11 @@ class AdminPaymentSummary {
       totalFailedCount: json['total_failed_count'] as int? ?? 0,
       todayCapturedRevenue: _parseDecimal(json['today_captured_revenue']),
       todayCapturedCount: json['today_captured_count'] as int? ?? 0,
+      goldSoldGrams: _parseDecimal(json['gold_sold_grams']),
+      goldSoldRevenue: _parseDecimal(json['gold_sold_revenue']),
+      silverSoldGrams: _parseDecimal(json['silver_sold_grams']),
+      silverSoldRevenue: _parseDecimal(json['silver_sold_revenue']),
+      payingCustomersCount: json['paying_customers_count'] as int? ?? 0,
       lastSyncedAt: json['last_synced_at'] != null
           ? DateTime.parse(json['last_synced_at'] as String)
           : null,

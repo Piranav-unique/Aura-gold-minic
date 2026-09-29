@@ -94,6 +94,26 @@ class RazorpayClient:
         items = data.get("items")
         return items if isinstance(items, list) else []
 
+    async def fetch_payment(self, payment_id: str) -> dict[str, Any]:
+        """Fetch a single Razorpay payment entity by ID (for server-side amount verification)."""
+        if not self.is_configured:
+            return {}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.BASE_URL}/payments/{payment_id}",
+                auth=(self.key_id, self.key_secret),
+            )
+        data = response.json() if response.content else {}
+        if response.status_code >= 400:
+            logger.error(
+                "razorpay_fetch_payment_failed",
+                status=response.status_code,
+                body=data,
+                extra={"payment_id": payment_id},
+            )
+            return {}
+        return data
+
     def verify_payment_signature(
         self,
         *,
@@ -110,3 +130,24 @@ class RazorpayClient:
             hashlib.sha256,
         ).hexdigest()
         return hmac.compare_digest(expected, razorpay_signature)
+
+    async def list_payments(self, count: int = 100) -> list[dict[str, Any]]:
+        """Fetch the latest N payments for admin reconciliation."""
+        if not self.is_configured:
+            return []
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.BASE_URL}/payments",
+                params={"count": min(count, 100)},
+                auth=(self.key_id, self.key_secret),
+            )
+        data = response.json() if response.content else {}
+        if response.status_code >= 400:
+            logger.error(
+                "razorpay_list_payments_failed",
+                status=response.status_code,
+                body=data,
+            )
+            return []
+        items = data.get("items")
+        return items if isinstance(items, list) else []

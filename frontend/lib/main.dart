@@ -12,6 +12,7 @@ import 'package:ags_gold/features/app_update/presentation/app_update_listener.da
 import 'package:ags_gold/routes/app_routes.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/locale_preference_provider.dart';
+import 'package:ags_gold/core/widgets/security_guard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,10 +40,12 @@ class AGSGoldApp extends ConsumerWidget {
     final locale = ref.watch(localePreferenceProvider);
 
     return MaterialApp.router(
-      builder: (context, child) => AppExitGuard(
-        child: BiometricGuard(
-          child: AppUpdateListener(
-            child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => SecurityGuard(
+        child: AppExitGuard(
+          child: BiometricGuard(
+            child: AppUpdateListener(
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         ),
       ),

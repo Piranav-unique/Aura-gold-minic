@@ -41,6 +41,10 @@ class PaymentOrder(Base):
         Numeric(18, 2), nullable=True
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="created")
+    payment_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    bank_rrn: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    customer_contact: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    failure_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

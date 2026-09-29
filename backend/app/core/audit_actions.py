@@ -58,6 +58,29 @@ ACCOUNT_DELETION_APPROVED = "account_deletion_approved"
 ACCOUNT_DELETION_REJECTED = "account_deletion_rejected"
 ACCOUNT_DELETION_CANCELLED = "account_deletion_cancelled"
 
+# Financial transaction audit events
+PAYMENT_CAPTURED = "payment_captured"
+PAYMENT_FAILED = "payment_failed"
+PAYMENT_AMOUNT_MISMATCH = "payment_amount_mismatch"
+
+# KYC lifecycle events
+KYC_VERIFIED = "kyc_verified"
+KYC_REJECTED = "kyc_rejected"
+KYC_STARTED = "kyc_started"
+
+# Referral reward events
+REFERRAL_REWARD_CREDITED = "referral_reward_credited"
+
+# Admin 2FA events
+ADMIN_2FA_ENABLED = "admin_2fa_enabled"
+ADMIN_2FA_DISABLED = "admin_2fa_disabled"
+ADMIN_2FA_VERIFIED = "admin_2fa_verified"
+ADMIN_2FA_FAILED = "admin_2fa_failed"
+
+# Device / session events
+NEW_DEVICE_LOGIN = "new_device_login"
+SESSION_REVOKED = "session_revoked"
+
 ALL_ACTIONS = [
     LOGIN_SUCCESS,
     LOGIN_FAILURE,

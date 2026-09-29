@@ -5,8 +5,10 @@ from typing import Optional
 import uuid
 
 from app.core.config import settings
+from app.core import audit_actions
 from app.core.email_utils import is_placeholder_email
 from app.core.exceptions import NotFoundException, ValidationException
+from app.core.logging import logger
 
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
@@ -28,7 +30,14 @@ from app.services.referral import ReferralService
 from app.services.invoice import generate_invoice_pdf
 from app.services.email_service import send_invoice_email_async
 
+# Avoid circular import — AuditService is only needed for type hints at runtime
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.services.audit import AuditService
+
 _MIN_GRAMS = Decimal("0.0001")
+# Tolerance for Razorpay amount cross-check (1 paisa allowed for rounding)
+_AMOUNT_TOLERANCE_PAISE = 1
 
 
 class GoldPaymentService:
@@ -40,6 +49,7 @@ class GoldPaymentService:
         razorpay: RazorpayClient,
         digital_inventory_service: DigitalMetalInventoryService | None = None,
         referral_service: ReferralService | None = None,
+        audit_service: Optional["AuditService"] = None,
     ):
         self.user_repo = user_repo
         self.payment_repo = payment_repo
@@ -47,6 +57,7 @@ class GoldPaymentService:
         self.razorpay = razorpay
         self.digital_inventory_service = digital_inventory_service
         self.referral_service = referral_service
+        self.audit_service = audit_service
 
     async def create_buy_order(
         self,
@@ -165,7 +176,7 @@ class GoldPaymentService:
             metal=metal,
             purchase_mode=mode,
             currency="INR",
-            user_email=user.email,
+            user_email=user.email or "",
             user_name=self._display_name(user),
         )
 
@@ -206,7 +217,9 @@ class GoldPaymentService:
             await self.user_repo.db.commit()
             raise ValidationException("Payment verification failed.")
 
-        return await self._mark_order_paid(user, order, razorpay_payment_id)
+        return await self._mark_order_paid(
+            user, order, razorpay_payment_id, _verify_amount=True
+        )
 
     async def sync_payment(
         self,
@@ -283,12 +296,122 @@ class GoldPaymentService:
         payment_method: str | None = None,
         customer_contact: str | None = None,
         customer_email: str | None = None,
+        # When called from verify_payment (SDK callback), we have the payment ID
+        # so we can cross-check the actual charged amount with Razorpay's server.
+        _verify_amount: bool = False,
     ) -> VerifyPaymentResponse:
         if order.status == "paid":
             fresh_user = await self.user_repo.get(user.id)
             if fresh_user:
                 user = fresh_user
             return self._build_verify_response(user, order)
+
+        # ------------------------------------------------------------------ #
+        # SECURITY: Cross-check amount with Razorpay server (prevents         #
+        # tampering where someone submits a valid signature for a different    #
+        # order amount or alters the payment before capture).                  #
+        # Only runs for real Razorpay payments (not dev-mock), and only when   #
+        # we have a payment ID to look up.                                     #
+        # ------------------------------------------------------------------ #
+        is_dev_mock_payment = RazorpayClient.is_dev_mock_order(
+            order.razorpay_order_id or ""
+        )
+        if (
+            _verify_amount
+            and not is_dev_mock_payment
+            and razorpay_payment_id
+            and not razorpay_payment_id.startswith("dev_")
+        ):
+            try:
+                rz_payment = await self.razorpay.fetch_payment(razorpay_payment_id)
+                rz_amount_paise = int(rz_payment.get("amount") or 0)
+                rz_status = str(rz_payment.get("status") or "").lower()
+                # Payment must be captured and amount must match within tolerance
+                amount_diff = abs(rz_amount_paise - int(order.amount_paise))
+                if rz_status != "captured":
+                    logger.warning(
+                        "payment_not_captured",
+                        payment_id=razorpay_payment_id,
+                        order_id=str(order.id),
+                        rz_status=rz_status,
+                    )
+                    order.status = "failed"
+                    order.failure_reason = f"Payment status is '{rz_status}', not captured"
+                    await self.user_repo.db.commit()
+                    if self.audit_service:
+                        await self.audit_service.log_action(
+                            user_id=user.id,
+                            action=audit_actions.PAYMENT_FAILED,
+                            entity_type="PaymentOrder",
+                            entity_id=str(order.id),
+                            metadata={
+                                "razorpay_payment_id": razorpay_payment_id,
+                                "rz_status": rz_status,
+                                "metal": order.metal,
+                                "amount_paise": int(order.amount_paise),
+                            },
+                        )
+                    raise ValidationException(
+                        "Payment has not been captured by Razorpay. Please contact support."
+                    )
+                if amount_diff > _AMOUNT_TOLERANCE_PAISE:
+                    logger.error(
+                        "payment_amount_mismatch",
+                        payment_id=razorpay_payment_id,
+                        order_id=str(order.id),
+                        stored_paise=int(order.amount_paise),
+                        rz_paise=rz_amount_paise,
+                        diff_paise=amount_diff,
+                    )
+                    order.status = "failed"
+                    order.failure_reason = (
+                        f"Amount mismatch: stored={order.amount_paise} paise, "
+                        f"Razorpay={rz_amount_paise} paise"
+                    )
+                    await self.user_repo.db.commit()
+                    if self.audit_service:
+                        await self.audit_service.log_action(
+                            user_id=user.id,
+                            action=audit_actions.PAYMENT_AMOUNT_MISMATCH,
+                            entity_type="PaymentOrder",
+                            entity_id=str(order.id),
+                            metadata={
+                                "razorpay_payment_id": razorpay_payment_id,
+                                "stored_paise": int(order.amount_paise),
+                                "rz_paise": rz_amount_paise,
+                                "diff_paise": amount_diff,
+                                "metal": order.metal,
+                            },
+                        )
+                    raise ValidationException(
+                        "Payment amount mismatch detected. Please contact support."
+                    )
+                # Enrich from Razorpay response if not already supplied
+                if not bank_rrn:
+                    acquirer = rz_payment.get("acquirer_data") or {}
+                    bank_rrn = (
+                        acquirer.get("rrn")
+                        or acquirer.get("upi_transaction_id")
+                        or acquirer.get("bank_transaction_id")
+                    )
+                if not payment_method:
+                    payment_method = str(rz_payment.get("method") or "").lower() or None
+                if not customer_contact:
+                    customer_contact = str(rz_payment.get("contact") or "").strip() or None
+                if not customer_email:
+                    customer_email = str(rz_payment.get("email") or "").strip() or None
+            except ValidationException:
+                raise
+            except Exception as exc:
+                # Network/API failure — log and proceed without blocking gold credit.
+                # Amount was already verified by Razorpay signature; this is a defence-
+                # in-depth layer, not the primary verification.
+                logger.error(
+                    "razorpay_amount_verify_failed",
+                    payment_id=razorpay_payment_id,
+                    order_id=str(order.id),
+                    error=str(exc),
+                )
 
         if (
             customer_email
@@ -298,7 +421,6 @@ class GoldPaymentService:
             and is_placeholder_email(user.email)
         ):
             user.email = str(customer_email).strip().lower()
-
 
         if self.digital_inventory_service:
             await self.digital_inventory_service.consume_for_paid_order(
@@ -334,6 +456,31 @@ class GoldPaymentService:
 
         await self.user_repo.db.commit()
         await self.user_repo.db.refresh(user)
+
+        # ------------------------------------------------------------------ #
+        # AUDIT: Log successful payment capture with full financial details.   #
+        # ------------------------------------------------------------------ #
+        if self.audit_service:
+            try:
+                await self.audit_service.log_action(
+                    user_id=user.id,
+                    action=audit_actions.PAYMENT_CAPTURED,
+                    entity_type="PaymentOrder",
+                    entity_id=str(order.id),
+                    metadata={
+                        "razorpay_order_id": order.razorpay_order_id,
+                        "razorpay_payment_id": razorpay_payment_id,
+                        "metal": order.metal,
+                        "grams": str(order.grams),
+                        "amount_inr": str(gross_inr),
+                        "rate_per_gram": str(order.rate_per_gram),
+                        "bank_rrn": bank_rrn,
+                        "payment_method": payment_method,
+                    },
+                )
+            except Exception as exc:
+                logger.error(f"Failed to write payment audit log for order {order.id}: {exc}")
+
         if self.digital_inventory_service:
             await self.digital_inventory_service.notify_metal_status(order.metal)
         if order.metal == "gold" and self.referral_service:
@@ -344,7 +491,6 @@ class GoldPaymentService:
                     purchase_amount_inr=gross_inr,
                 )
             except Exception as e:
-                from app.core.logging import logger
                 logger.error(f"Failed to credit referral reward for referee {user.id}: {e}", exc_info=True)
         clear_personal_dashboard_cache(str(user.id))
 
@@ -352,7 +498,6 @@ class GoldPaymentService:
         try:
             asyncio.create_task(send_invoice_email_async(user, order))
         except Exception as e:
-            from app.core.logging import logger
             logger.error(f"Failed to dispatch invoice email for order {order.id}: {e}", exc_info=True)
 
         return self._build_verify_response(user, order)
@@ -395,7 +540,25 @@ class GoldPaymentService:
     @staticmethod
     def _display_name(user: User) -> str:
         parts = [p for p in (user.first_name, user.last_name) if p]
-        return " ".join(parts) if parts else user.email
+        if parts:
+            return " ".join(parts).strip()
+        if getattr(user, "kyc_profile", None):
+            try:
+                import json
+                kd = json.loads(user.kyc_profile)
+                if isinstance(kd, dict) and (kd.get("full_name") or kd.get("name")):
+                    return str(kd.get("full_name") or kd.get("name")).strip()
+            except Exception:
+                pass
+        if getattr(user, "email", None) and "@" in str(user.email):
+            import re
+            cleaned = re.sub(r"[\d_.]+", " ", str(user.email).split("@")[0]).strip()
+            if len(cleaned) >= 3 and not cleaned.isdigit():
+                return cleaned.title()
+            return str(user.email)
+        if getattr(user, "mobile_number", None):
+            return str(user.mobile_number)
+        return "Customer"
 
     async def list_settlements(
         self,
