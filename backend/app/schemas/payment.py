@@ -69,6 +69,9 @@ class VerifyPaymentResponse(BaseModel):
 class PaymentSettlementItem(BaseModel):
   id: UUID
   user_email: str
+  user_name: Optional[str] = None
+  user_mobile: Optional[str] = None
+  payment_method: Optional[str] = None
   metal: str
   gross_amount_inr: Decimal
   gst_percent: Decimal

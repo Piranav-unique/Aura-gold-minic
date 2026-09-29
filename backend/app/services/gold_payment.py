@@ -574,6 +574,10 @@ class GoldPaymentService:
                 PaymentSettlementItem(
                     id=order.id,
                     user_email=order.user.email if order.user else "",
+                    user_name=self._display_name(order.user) if order.user else None,
+                    user_mobile=order.customer_contact
+                    or (order.user.mobile_number if order.user else None),
+                    payment_method=order.payment_method,
                     metal=order.metal,
                     gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
                     gst_percent=Decimal(str(order.gst_percent or 0)),

@@ -83,11 +83,77 @@ class PaymentSettlementsScreen extends ConsumerWidget {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        row['user_email'] as String? ?? '',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            (row['user_name'] as String?)
+                                                        ?.isNotEmpty ==
+                                                    true
+                                                ? row['user_name'] as String
+                                                : (row['user_email'] as String? ??
+                                                    'Customer'),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          if ((row['user_email'] as String?)
+                                                  ?.isNotEmpty ==
+                                              true)
+                                            Text(
+                                              row['user_email'] as String,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.6),
+                                              ),
+                                            ),
+                                          if ((row['user_mobile'] as String?)
+                                                  ?.isNotEmpty ==
+                                              true)
+                                            Text(
+                                              row['user_mobile'] as String,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.6),
+                                              ),
+                                            ),
+                                          if ((row['payment_method']
+                                                      as String?)
+                                                  ?.isNotEmpty ==
+                                              true)
+                                            Container(
+                                              margin: const EdgeInsets.only(
+                                                  top: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFE0E7FF),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                (row['payment_method']
+                                                        as String)
+                                                    .toUpperCase(),
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: Color(0xFF3730A3),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
                                     Text(

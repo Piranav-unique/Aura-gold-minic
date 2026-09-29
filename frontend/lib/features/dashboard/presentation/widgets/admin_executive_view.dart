@@ -8,11 +8,12 @@ import 'package:ags_gold/features/dashboard/presentation/providers/executive_das
 
 /// Admin Executive Dashboard matching the AURA design system.
 /// Focuses on:
-/// 1. 2x2 KPI metrics (Total Customers, Gold Sold, Silver Sold, Total Collections).
-/// 2. "Today's Overview" segmented chart (Sales dual-bar Gold vs Silver, Customers, Transactions).
+/// 1. What Customers Have Paid FIRST (customer name, mobile, email, total ₹ paid,
+///    gold/silver grams, payment modes used).
+/// 2. User Payments list (who paid, how much, which mode, with customer details).
 /// 3. Payment Methods Breakdown (UPI, Cards, Net Banking, Wallets) with interactive filtering.
-/// 4. What Customers Have Paid (customer identity, total ₹ paid, gold/silver grams, payment methods used).
-/// 5. Recent Transactions list with metal badges, payment method chips, and receipt modal.
+/// 4. 2x2 KPI metrics (Total Customers, Gold Sold, Silver Sold, Total Collections).
+/// NOTE: Daily revenue graph (Today's Overview) removed per requirement.
 class AdminExecutiveView extends ConsumerStatefulWidget {
   final ExecutiveDashboard data;
 
@@ -20,21 +21,21 @@ class AdminExecutiveView extends ConsumerStatefulWidget {
 
   static String formatGrams(double grams) {
     final kg = grams / 1000;
-    final fmt = NumberFormat('#,##0.##');
     if (kg >= 1) {
-      return '${fmt.format(kg)} KG';
+      return '${NumberFormat('#,##0.##').format(kg)} KG';
     }
-    return '${fmt.format(grams)} g';
+    if (grams > 0 && grams < 0.01) {
+      // Sub-centigram holdings (e.g. ₹1 ≈ 0.0001 g) — don't round to "0 g".
+      return '${NumberFormat('0.0000').format(grams)} g';
+    }
+    return '${NumberFormat('#,##0.##').format(grams)} g';
   }
 
   @override
   ConsumerState<AdminExecutiveView> createState() => _AdminExecutiveViewState();
 }
 
-enum _OverviewTab { sales, customers, transactions }
-
 class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
-  _OverviewTab _activeTab = _OverviewTab.sales;
   String? _selectedPaymentMethod; // 'upi', 'card', 'netbanking', 'wallet'
   String? _selectedCustomerFilter; // mobile
   String _customerSearch = '';
@@ -178,48 +179,8 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
           ),
           const SizedBox(height: 18),
 
-          // 2. 2x2 Metric Cards Grid (Total Customers, Gold Sold, Silver Sold, Total Collections)
-          _KpiMetricGrid(
-            totalCustomers: totalCustomers,
-            payingCustomersCount: payingCustomers,
-            goldSoldGrams: totalGoldSold,
-            goldSoldRevenue: goldRevenue,
-            silverSoldGrams: totalSilverSold,
-            silverSoldRevenue: silverRevenue,
-            totalCollectionsInr: totalRevenue,
-          ),
-          const SizedBox(height: 20),
-
-          // 3. "Today's Overview" Segmented Chart (Sales, Customers, Transactions)
-          _TodaysOverviewSection(
-            activeTab: _activeTab,
-            onTabChanged: (tab) => setState(() => _activeTab = tab),
-            revenueTrend: data.revenueTrend,
-            totalRevenue: totalRevenue,
-            totalTxns: data.appMetrics?.totalTransactions ?? data.recentPayments.length,
-            totalMembers: totalCustomers,
-          ),
-          const SizedBox(height: 22),
-
-          // 4. Payment Methods Breakdown (CRITICAL REQUIREMENT)
-          _PaymentMethodsSection(
-            methodStats: methodStats,
-            selectedMethod: _selectedPaymentMethod,
-            totalOrders: data.paymentSummary?.totalCapturedCount ?? data.recentPayments.length,
-            onSelectMethod: (method) {
-              setState(() {
-                if (_selectedPaymentMethod == method) {
-                  _selectedPaymentMethod = null;
-                } else {
-                  _selectedPaymentMethod = method;
-                }
-              });
-            },
-            onClearFilter: () => setState(() => _selectedPaymentMethod = null),
-          ),
-          const SizedBox(height: 22),
-
-          // 5. What Customers Have Paid (CRITICAL REQUIREMENT)
+          // 2. FIRST: What Customers Have Paid — who paid, how much, which mode,
+          // with customer name + mobile + email + metal details.
           _PayingCustomersSection(
             customers: filteredCustomers,
             selectedCustomerMobile: _selectedCustomerFilter,
@@ -239,7 +200,7 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
           ),
           const SizedBox(height: 22),
 
-          // 6. Recent Transactions List
+          // 3. User Payments — each payment shows customer name, amount, mode.
           _RecentTransactionsSection(
             payments: filteredPayments,
             activeFilter: _transactionFilter,
@@ -250,9 +211,39 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
                 setState(() => _selectedCustomerFilter = null),
             onViewAll: () => context.go('/admin/payment-settlements'),
           ),
+          const SizedBox(height: 22),
+
+          // 4. Payment Methods Breakdown
+          _PaymentMethodsSection(
+            methodStats: methodStats,
+            selectedMethod: _selectedPaymentMethod,
+            totalOrders: data.paymentSummary?.totalCapturedCount ?? data.recentPayments.length,
+            onSelectMethod: (method) {
+              setState(() {
+                if (_selectedPaymentMethod == method) {
+                  _selectedPaymentMethod = null;
+                } else {
+                  _selectedPaymentMethod = method;
+                }
+              });
+            },
+            onClearFilter: () => setState(() => _selectedPaymentMethod = null),
+          ),
+          const SizedBox(height: 22),
+
+          // 5. 2x2 Metric Cards Grid (Total Customers, Gold Sold, Silver Sold, Total Collections)
+          _KpiMetricGrid(
+            totalCustomers: totalCustomers,
+            payingCustomersCount: payingCustomers,
+            goldSoldGrams: totalGoldSold,
+            goldSoldRevenue: goldRevenue,
+            silverSoldGrams: totalSilverSold,
+            silverSoldRevenue: silverRevenue,
+            totalCollectionsInr: totalRevenue,
+          ),
           const SizedBox(height: 24),
 
-          // 7. Quick Admin Hub Navigation
+          // 6. Quick Admin Hub Navigation
           const _AdminQuickHub(),
           const SizedBox(height: 36),
         ],
@@ -732,247 +723,8 @@ class _MetricCard extends StatelessWidget {
 
 
 // -----------------------------------------------------------------------------
-// 3. "Today's Overview" Segmented Chart Card
+// Daily revenue graph removed per requirement (Todays Overview deleted).
 // -----------------------------------------------------------------------------
-class _TodaysOverviewSection extends StatelessWidget {
-  final _OverviewTab activeTab;
-  final ValueChanged<_OverviewTab> onTabChanged;
-  final List<RevenueTrendPoint> revenueTrend;
-  final double totalRevenue;
-  final int totalTxns;
-  final int totalMembers;
-
-  const _TodaysOverviewSection({
-    required this.activeTab,
-    required this.onTabChanged,
-    required this.revenueTrend,
-    required this.totalRevenue,
-    required this.totalTxns,
-    required this.totalMembers,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEDE8DF)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header + Segmented Tabs
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              const Text(
-                "Today's Overview",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E1B18),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F0E6),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTabPill('Sales', _OverviewTab.sales),
-                    _buildTabPill('Users', _OverviewTab.customers),
-                    _buildTabPill('Txns', _OverviewTab.transactions),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Legend for Sales tab
-          if (activeTab == _OverviewTab.sales) ...[
-            Wrap(
-              spacing: 12,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _buildLegendItem(const Color(0xFFC59A27), 'Gold Sales'),
-                _buildLegendItem(const Color(0xFFB0BEC5), 'Silver Sales'),
-              ],
-            ),
-            const SizedBox(height: 14),
-          ],
-
-          // Bar Chart Visualization
-          SizedBox(
-            height: 160,
-            child: _DualBarChartWidget(
-              activeTab: activeTab,
-              revenueTrend: revenueTrend,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabPill(String title, _OverviewTab tab) {
-    final isSelected = activeTab == tab;
-    return GestureDetector(
-      onTap: () => onTabChanged(tab),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E1B18) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : const Color(0xFF706E6B),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1E1B18),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DualBarChartWidget extends StatelessWidget {
-  final _OverviewTab activeTab;
-  final List<RevenueTrendPoint> revenueTrend;
-
-  const _DualBarChartWidget({
-    required this.activeTab,
-    required this.revenueTrend,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Generate 7 days labels
-    final now = DateTime.now();
-    final dayLabels = List.generate(7, (i) {
-      final d = now.subtract(Duration(days: 6 - i));
-      return DateFormat('dd').format(d);
-    });
-
-    // Sample/normalized heights for the 7 bars
-    final goldRatios = [0.45, 0.65, 0.50, 0.85, 0.70, 0.95, 0.60];
-    final silverRatios = [0.35, 0.40, 0.60, 0.55, 0.40, 0.75, 0.50];
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(7, (index) {
-        final label = dayLabels[index];
-        final gH = goldRatios[index];
-        final sH = silverRatios[index];
-
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (activeTab == _OverviewTab.sales) ...[
-                    // Gold bar
-                    Container(
-                      width: 10,
-                      height: 120 * gH,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFC59A27),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    // Silver bar
-                    Container(
-                      width: 10,
-                      height: 120 * sH,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFD1C7B7),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                      ),
-                    ),
-                  ] else if (activeTab == _OverviewTab.customers) ...[
-                    // Customer onboarding bar
-                    Container(
-                      width: 14,
-                      height: 120 * ((gH + sH) / 2),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0D9488),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                      ),
-                    ),
-                  ] else ...[
-                    // Transactions bar
-                    Container(
-                      width: 14,
-                      height: 120 * gH,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1E1B18),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-}
 
 // -----------------------------------------------------------------------------
 // 4. Payment Methods Breakdown (CRITICAL USER REQUIREMENT)
@@ -1348,7 +1100,7 @@ class _PayingCustomersSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Paying Customers',
+                      'Customer Payments',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -1356,7 +1108,7 @@ class _PayingCustomersSection extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Amounts paid, metals & methods',
+                      'Who paid • How much • Which mode',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1515,9 +1267,7 @@ class _CustomerPaidCard extends StatelessWidget {
                       Text(
                         customer.name?.isNotEmpty == true
                             ? customer.name!
-                            : (customer.email?.isNotEmpty == true
-                                ? customer.email!
-                                : 'Customer ${customer.mobile}'),
+                            : 'Customer ${customer.mobile}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1526,12 +1276,65 @@ class _CustomerPaidCard extends StatelessWidget {
                           color: Color(0xFF1E1B18),
                         ),
                       ),
-                      Text(
-                        customer.mobile,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone_rounded, size: 11, color: Color(0xFF7E7A75)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              customer.mobile,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1E1B18).withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (customer.email?.isNotEmpty == true) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.email_outlined, size: 11, color: Color(0xFF7E7A75)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                customer.email!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                      ],
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.payment_rounded, size: 11, color: Color(0xFF059669)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              customer.paymentMethods.isNotEmpty
+                                  ? 'Paid via: ${customer.paymentMethods.map((m) => m.toUpperCase()).join(" • ")}'
+                                  : 'Paid via: —',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF059669),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

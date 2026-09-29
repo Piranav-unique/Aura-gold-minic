@@ -13,8 +13,8 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Enforce screenshot and screen recording protection (FLAG_SECURE)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        // Screenshot protection removed per user request
+        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

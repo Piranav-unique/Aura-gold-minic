@@ -95,13 +95,50 @@ class RazorpayLiveService {
           (amountInr > 0 ? (amountInr / 9200.0) : 0.0);
       final metal = notes?['metal']?.toString() ?? 'gold';
 
+      // Robust payment-method extraction — Razorpay returns method like
+      // 'upi' / 'card' / 'netbanking' / 'wallet' / 'emi', but it can be null
+      // for failed/created payments. Fall back to wallet/bank details.
+      String? rawMethod = (raw['method'] as String?)?.toLowerCase().trim();
+      if (rawMethod == null || rawMethod.isEmpty) {
+        if (raw['card'] is Map) {
+          rawMethod = 'card';
+        } else if (raw['upi'] is Map) {
+          rawMethod = 'upi';
+        } else if (raw['netbanking'] is Map) {
+          rawMethod = 'netbanking';
+        } else if (raw['wallet'] is Map) {
+          rawMethod = 'wallet';
+        } else if (raw['emi'] is Map) {
+          rawMethod = 'emi';
+        }
+      }
+
+      // Try to resolve a display name from Razorpay payload itself.
+      // Payments created via orders carry notes; cards may carry holder name.
+      String? liveName;
+      if (notes != null) {
+        for (final k in ['customer_name', 'name', 'full_name']) {
+          final v = notes[k]?.toString().trim();
+          if (v != null && v.isNotEmpty) {
+            liveName = v;
+            break;
+          }
+        }
+      }
+      if ((liveName == null || liveName.isEmpty) && raw['card'] is Map) {
+        final cardName = (raw['card'] as Map)['name']?.toString().trim();
+        if (cardName != null && cardName.isNotEmpty) {
+          liveName = cardName;
+        }
+      }
+
       final item = AdminPaymentItem(
         id: raw['id'] as String? ?? '',
         razorpayOrderId: raw['order_id'] as String? ?? '',
         razorpayPaymentId: raw['id'] as String?,
         bankRrn: rrn,
-        paymentMethod: raw['method'] as String? ?? 'upi',
-        customerName: null,
+        paymentMethod: (rawMethod != null && rawMethod.isNotEmpty) ? rawMethod : null,
+        customerName: (liveName != null && liveName.isNotEmpty) ? liveName : null,
         customerMobile: contact,
         customerEmail: email != 'void@razorpay.com' ? email : null,
         metal: metal,
@@ -130,22 +167,52 @@ class RazorpayLiveService {
       double userCapturedTotal = 0.0;
       int userCapturedCount = 0;
       double userGrams = 0.0;
+      double userGoldGrams = 0.0;
+      double userSilverGrams = 0.0;
+      final methodsSet = <String>{};
+      String? resolvedName;
+      String? resolvedEmail;
 
       for (final p in userPayments) {
+        // Keep first non-empty name/email seen across this user's payments.
+        if ((resolvedName == null || resolvedName.isEmpty) &&
+            p.customerName != null &&
+            p.customerName!.isNotEmpty) {
+          resolvedName = p.customerName;
+        }
+        if ((resolvedEmail == null || resolvedEmail.isEmpty) &&
+            p.customerEmail != null &&
+            p.customerEmail!.isNotEmpty) {
+          resolvedEmail = p.customerEmail;
+        }
         if (p.status == 'captured' || p.status == 'paid') {
           userCapturedTotal += p.amountInr;
           userCapturedCount++;
           userGrams += p.grams;
+          if (p.metal.toLowerCase() == 'silver') {
+            userSilverGrams += p.grams;
+          } else {
+            userGoldGrams += p.grams;
+          }
+          final m = p.paymentMethod?.trim().toLowerCase();
+          if (m != null && m.isNotEmpty) {
+            methodsSet.add(m);
+          }
         }
       }
+      // Fallback email from any payment (even failed) if still missing.
+      resolvedEmail ??= userPayments.first.customerEmail;
 
       summaries.add(CustomerPaymentSummary(
         mobile: userKey,
-        name: null,
-        email: userPayments.first.customerEmail,
+        name: resolvedName,
+        email: resolvedEmail,
         totalPaidInr: userCapturedTotal,
         successCount: userCapturedCount,
         totalGrams: userGrams,
+        goldGrams: userGoldGrams,
+        silverGrams: userSilverGrams,
+        paymentMethods: methodsSet.toList(),
         payments: userPayments,
       ));
     });
