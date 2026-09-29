@@ -484,6 +484,7 @@ def get_executive_dashboard_service(
     metal_price_service: MetalPriceService = Depends(get_metal_price_service),
     inventory_service: InventoryService = Depends(get_inventory_service),
     transaction_service: TransactionService = Depends(get_transaction_service),
+    payment_repo: PaymentOrderRepository = Depends(get_payment_order_repository),
 ) -> ExecutiveDashboardService:
     """Dependency injecting the ExecutiveDashboardService."""
     return ExecutiveDashboardService(
@@ -498,6 +499,7 @@ def get_executive_dashboard_service(
         metal_price_service,
         inventory_service,
         transaction_service,
+        payment_order_repo=payment_repo,
     )
 
 
