@@ -53,6 +53,10 @@ SELL_REJECTED = "sell_rejected"
 SELL_PAYMENT_PROCESSED = "sell_payment_processed"
 SELL_PAYOUT_FAILED = "sell_payout_failed"
 ADMIN_PROFILE_UPDATED = "admin_profile_updated"
+ACCOUNT_DELETION_REQUESTED = "account_deletion_requested"
+ACCOUNT_DELETION_APPROVED = "account_deletion_approved"
+ACCOUNT_DELETION_REJECTED = "account_deletion_rejected"
+ACCOUNT_DELETION_CANCELLED = "account_deletion_cancelled"
 
 ALL_ACTIONS = [
     LOGIN_SUCCESS,
@@ -107,4 +111,8 @@ ALL_ACTIONS = [
     SELL_PAYMENT_PROCESSED,
     SELL_PAYOUT_FAILED,
     ADMIN_PROFILE_UPDATED,
+    ACCOUNT_DELETION_REQUESTED,
+    ACCOUNT_DELETION_APPROVED,
+    ACCOUNT_DELETION_REJECTED,
+    ACCOUNT_DELETION_CANCELLED,
 ]

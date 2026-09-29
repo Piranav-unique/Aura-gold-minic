@@ -305,6 +305,7 @@ class AdminPaymentSummary {
   final double todayCapturedRevenue;
   final int todayCapturedCount;
   final DateTime? lastSyncedAt;
+  final Map<String, int> paymentMethodsBreakdown;
 
   const AdminPaymentSummary({
     required this.totalCapturedRevenue,
@@ -314,6 +315,7 @@ class AdminPaymentSummary {
     required this.todayCapturedRevenue,
     required this.todayCapturedCount,
     this.lastSyncedAt,
+    this.paymentMethodsBreakdown = const {},
   });
 
   factory AdminPaymentSummary.fromJson(Map<String, dynamic> json) {
@@ -327,6 +329,11 @@ class AdminPaymentSummary {
       lastSyncedAt: json['last_synced_at'] != null
           ? DateTime.parse(json['last_synced_at'] as String)
           : null,
+      paymentMethodsBreakdown:
+          (json['payment_methods_breakdown'] as Map<String, dynamic>?)?.map(
+                (k, v) => MapEntry(k, (v as num).toInt()),
+              ) ??
+              const {},
     );
   }
 }
@@ -338,6 +345,9 @@ class CustomerPaymentSummary {
   final double totalPaidInr;
   final int successCount;
   final double totalGrams;
+  final double goldGrams;
+  final double silverGrams;
+  final List<String> paymentMethods;
   final List<AdminPaymentItem> payments;
 
   const CustomerPaymentSummary({
@@ -347,6 +357,9 @@ class CustomerPaymentSummary {
     required this.totalPaidInr,
     required this.successCount,
     this.totalGrams = 0.0,
+    this.goldGrams = 0.0,
+    this.silverGrams = 0.0,
+    this.paymentMethods = const [],
     this.payments = const [],
   });
 
@@ -358,6 +371,12 @@ class CustomerPaymentSummary {
       totalPaidInr: _parseDecimal(json['total_paid_inr']),
       successCount: json['success_count'] as int? ?? 0,
       totalGrams: _parseDecimal(json['total_grams']),
+      goldGrams: _parseDecimal(json['gold_grams']),
+      silverGrams: _parseDecimal(json['silver_grams']),
+      paymentMethods: (json['payment_methods'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       payments: (json['payments'] as List<dynamic>?)
               ?.map((e) => AdminPaymentItem.fromJson(e as Map<String, dynamic>))
               .toList() ??

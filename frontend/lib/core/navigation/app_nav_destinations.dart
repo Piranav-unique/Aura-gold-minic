@@ -166,7 +166,6 @@ List<AppNavDestination> buildNavDestinations(
       const hiddenForStaffAdmin = {
         '/user-dashboard',
         '/portfolio',
-        '/customers',
         '/audit-logs',
         '/workflows',
       };

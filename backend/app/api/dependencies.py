@@ -73,6 +73,8 @@ from app.repositories.digital_metal_inventory import (
     DigitalMetalInventoryRepository,
 )
 from app.services.digital_metal_inventory import DigitalMetalInventoryService
+from app.repositories.account_deletion import AccountDeletionRepository
+from app.services.account_deletion import AccountDeletionService
 
 # Setup oauth2 scheme for bearer tokens
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
@@ -616,3 +618,18 @@ def get_admin_wallet_service(
     audit_service: AuditService = Depends(get_audit_service),
 ) -> AdminWalletService:
     return AdminWalletService(wallet_repo, audit_service)
+
+
+def get_account_deletion_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> AccountDeletionRepository:
+    return AccountDeletionRepository(db)
+
+
+def get_account_deletion_service(
+    deletion_repo: AccountDeletionRepository = Depends(get_account_deletion_repository),
+    user_repo: UserRepository = Depends(get_user_repository),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> AccountDeletionService:
+    return AccountDeletionService(deletion_repo, user_repo, audit_service)
+

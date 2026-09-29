@@ -38,6 +38,7 @@ from app.api.admin_wallet import router as admin_wallet_router
 from app.api.admin_digital_inventory import router as admin_digital_inventory_router
 from app.api.admin_organization_profile import router as admin_organization_profile_router
 from app.api.organization_profile import router as organization_profile_router
+from app.api.admin_account_deletion import router as admin_account_deletion_router
 from app.api.razorpay_webhooks import router as razorpay_webhooks_router
 from app.api.legal import router as legal_router
 from app.database.session import verify_db_connection, async_session_maker
@@ -230,6 +231,11 @@ app.include_router(
     admin_organization_profile_router,
     prefix=f"{settings.API_V1_STR}/admin/organization-profile",
     tags=["admin-organization-profile"],
+)
+app.include_router(
+    admin_account_deletion_router,
+    prefix=f"{settings.API_V1_STR}/admin/account-deletion-requests",
+    tags=["admin-account-deletion"],
 )
 app.include_router(
     razorpay_webhooks_router,

@@ -154,25 +154,26 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
 
     const staffMobileTabPrefixes = [
       '/dashboard',
-      '/inventory',
+      '/customers',
+      '/admin/payment-settlements',
+      '/reports',
       '/profile',
     ];
     // Routes that are launched via context.push() from Profile page —
     // keep the bottom nav highlighted on Profile for all of them.
-    // NOTE: /inventory is a real tab — do NOT include it here.
+    // NOTE: /inventory is a standalone screen — not in bottom nav.
     const profileSubRoutes = {
       '/admin/users',
       '/admin/roles',
       '/admin/permissions',
       '/admin/user-wallets',
-      '/admin/payment-settlements',
       '/admin/sell-inquiries',
       '/audit-logs',
       '/settings',
       '/bank-accounts',
       '/kyc',
     };
-    // Sort destinations to enforce the display order: Overview · Inventory · Profile
+    // Enforce the display order: Home · Customers · Payments · Reports · More
     final staffMobileDestinations = isStaffMobile
         ? staffMobileTabPrefixes
             .map((prefix) => destinations.where((d) => d.routePrefix == prefix).firstOrNull)
@@ -250,6 +251,23 @@ class _MobileBottomNav extends StatelessWidget {
     required this.currentIndex,
   });
 
+  static String _formatTabLabel(AppNavDestination dest) {
+    switch (dest.routePrefix) {
+      case '/dashboard':
+        return 'Home';
+      case '/customers':
+        return 'Customers';
+      case '/admin/payment-settlements':
+        return 'Payments';
+      case '/reports':
+        return 'Reports';
+      case '/profile':
+        return 'More';
+      default:
+        return dest.label;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -266,7 +284,7 @@ class _MobileBottomNav extends StatelessWidget {
               for (var i = 0; i < destinations.length; i++)
                 Expanded(
                   child: _NavItem(
-                    label: destinations[i].label,
+                    label: _formatTabLabel(destinations[i]),
                     icon: destinations[i].icon,
                     selectedIcon: destinations[i].selectedIcon,
                     selected: currentIndex == i,

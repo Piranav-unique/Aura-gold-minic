@@ -29,3 +29,4 @@ from app.models.digital_metal_inventory import (  # noqa: F401
     DigitalMetalInventoryMovement,
 )
 from app.models.organization_profile import OrganizationProfile  # noqa: F401
+from app.models.account_deletion_request import AccountDeletionRequest  # noqa: F401

@@ -148,6 +148,16 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
         )
         today_count, today_paise = today_res.one()
 
+        # Payment methods breakdown across paid orders
+        methods_res = await self.db.execute(
+            select(PaymentOrder.payment_method, func.count())
+            .where(PaymentOrder.status == "paid")
+            .group_by(PaymentOrder.payment_method)
+        )
+        methods_breakdown = {
+            (row[0] or "other").lower(): int(row[1]) for row in methods_res.all()
+        }
+
         return {
             "total_captured_revenue": Decimal(captured_paise) / Decimal("100"),
             "total_captured_count": int(captured_count),
@@ -155,4 +165,6 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
             "total_failed_count": failed_count,
             "today_captured_revenue": Decimal(today_paise) / Decimal("100"),
             "today_captured_count": int(today_count),
+            "payment_methods_breakdown": methods_breakdown,
         }
+

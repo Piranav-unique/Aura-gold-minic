@@ -118,6 +118,7 @@ class AdminPaymentSummary(BaseModel):
   today_captured_revenue: Decimal
   today_captured_count: int
   last_synced_at: Optional[datetime] = None
+  payment_methods_breakdown: dict[str, int] = {}
 
 
 class AdminPaymentListResponse(BaseModel):
@@ -144,3 +145,6 @@ class CustomerPaymentSummary(BaseModel):
   total_paid_inr: Decimal
   success_count: int
   total_grams: Decimal = Decimal("0")
+  gold_grams: Decimal = Decimal("0")
+  silver_grams: Decimal = Decimal("0")
+  payment_methods: List[str] = []

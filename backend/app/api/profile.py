@@ -5,11 +5,17 @@ from fastapi.responses import Response
 
 
 from app.api.dependencies import (
+    get_account_deletion_service,
     get_admin_wallet_service,
     get_current_user,
     get_kyc_service,
     get_profile_service,
 )
+from app.schemas.account_deletion import (
+    AccountDeletionRequestResponse,
+    CreateAccountDeletionRequest,
+)
+from app.services.account_deletion import AccountDeletionService
 
 from app.models.user import User
 
@@ -187,19 +193,73 @@ async def update_settings(
     return await profile_service.update_settings(current_user.id, settings_in)
 
 
+@router.post(
+    "/account-deletion-request",
+    response_model=AccountDeletionRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit account deletion request for administrator approval",
+)
+async def request_account_deletion(
+    body: Optional[CreateAccountDeletionRequest] = None,
+    current_user: User = Depends(get_current_user),
+    account_deletion_service: AccountDeletionService = Depends(
+        get_account_deletion_service
+    ),
+) -> AccountDeletionRequestResponse:
+    return await account_deletion_service.create_deletion_request(
+        current_user,
+        body or CreateAccountDeletionRequest(),
+    )
+
+
+@router.get(
+    "/account-deletion-request",
+    response_model=Optional[AccountDeletionRequestResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get current user's active or latest account deletion request",
+)
+async def get_account_deletion_request(
+    current_user: User = Depends(get_current_user),
+    account_deletion_service: AccountDeletionService = Depends(
+        get_account_deletion_service
+    ),
+) -> Optional[AccountDeletionRequestResponse]:
+    return await account_deletion_service.get_current_user_request(current_user.id)
+
+
+@router.delete(
+    "/account-deletion-request",
+    response_model=AccountDeletionRequestResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel pending account deletion request",
+)
+async def cancel_account_deletion_request(
+    current_user: User = Depends(get_current_user),
+    account_deletion_service: AccountDeletionService = Depends(
+        get_account_deletion_service
+    ),
+) -> AccountDeletionRequestResponse:
+    return await account_deletion_service.cancel_deletion_request(current_user)
+
+
 @router.delete(
     "/account",
     response_model=MessageResponse,
     status_code=status.HTTP_200_OK,
-    summary="Delete current consumer account and personal data",
+    summary="Request deletion of consumer account and personal data",
 )
 async def delete_account(
     current_user: User = Depends(get_current_user),
-    profile_service: ProfileService = Depends(get_profile_service),
+    account_deletion_service: AccountDeletionService = Depends(
+        get_account_deletion_service
+    ),
 ) -> MessageResponse:
-    await profile_service.delete_own_account(current_user.id)
+    await account_deletion_service.create_deletion_request(
+        current_user,
+        CreateAccountDeletionRequest(),
+    )
     return MessageResponse(
-        message="Your account and personal data have been permanently deleted."
+        message="Your account deletion request has been submitted to the administrator for review and approval."
     )
 
 

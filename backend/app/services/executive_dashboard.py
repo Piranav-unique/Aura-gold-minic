@@ -267,7 +267,7 @@ class ExecutiveDashboardService:
         if self.payment_order_repo and (can_view_wallet or can_view_transactions):
 
             try:
-                orders = await self.payment_order_repo.list_orders(limit=25)
+                orders = await self.payment_order_repo.list_orders(limit=50)
                 recent_payments = [
                     AdminPaymentItem(
                         id=order.id,
@@ -309,11 +309,20 @@ class ExecutiveDashboardService:
                             "total_paid_inr": Decimal("0"),
                             "success_count": 0,
                             "total_grams": Decimal("0"),
+                            "gold_grams": Decimal("0"),
+                            "silver_grams": Decimal("0"),
+                            "payment_methods": [],
                         }
                     if p.status in ("captured", "paid"):
                         cust_map[contact]["total_paid_inr"] += p.amount_inr
                         cust_map[contact]["success_count"] += 1
                         cust_map[contact]["total_grams"] += p.grams
+                        if (p.metal or "").lower() == "silver":
+                            cust_map[contact]["silver_grams"] += p.grams
+                        else:
+                            cust_map[contact]["gold_grams"] += p.grams
+                        if p.payment_method and p.payment_method not in cust_map[contact]["payment_methods"]:
+                            cust_map[contact]["payment_methods"].append(p.payment_method)
 
                 customer_summaries = [
                     CustomerPaymentSummary(**c) for c in cust_map.values()
