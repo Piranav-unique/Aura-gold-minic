@@ -139,6 +139,13 @@ List<AppNavDestination> buildNavDestinations(
       requiredPermission: 'user.view',
     ),
     AppNavDestination(
+      routePrefix: '/admin/account-deletions',
+      label: 'Account Deletions',
+      icon: Icons.person_remove_outlined,
+      selectedIcon: Icons.person_remove,
+      requiredPermission: 'user.view',
+    ),
+    AppNavDestination(
       routePrefix: '/admin/roles',
       label: l10n.navRoles,
       icon: Icons.admin_panel_settings_outlined,
@@ -185,6 +192,7 @@ List<AppNavDestination> buildNavDestinations(
         '/reports',
         '/workflows',
         '/admin/users',
+        '/admin/account-deletions',
         '/admin/roles',
         '/admin/permissions',
         '/settings',

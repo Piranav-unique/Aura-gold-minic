@@ -76,7 +76,10 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
         body: Row(
           children: [
             NavigationRail(
-              selectedIndex: selectedIndex,
+              selectedIndex:
+                  (selectedIndex >= 0 && selectedIndex < destinations.length)
+                      ? selectedIndex
+                      : null,
               onDestinationSelected: (index) =>
                   navigateToIndex(context, index, destinations),
               labelType: NavigationRailLabelType.selected,
@@ -164,6 +167,7 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     // NOTE: /inventory is a standalone screen — not in bottom nav.
     const profileSubRoutes = {
       '/admin/users',
+      '/admin/account-deletions',
       '/admin/roles',
       '/admin/permissions',
       '/admin/user-wallets',

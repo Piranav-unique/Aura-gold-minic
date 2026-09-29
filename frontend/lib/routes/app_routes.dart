@@ -39,6 +39,7 @@ import 'package:ags_gold/features/admin/presentation/admin_organization_profile_
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/admin/presentation/roles_screen.dart';
 import 'package:ags_gold/features/admin/presentation/permissions_screen.dart';
+import 'package:ags_gold/features/admin/presentation/account_deletion_requests_screen.dart';
 import 'package:ags_gold/features/audit_logs/presentation/audit_logs_screen.dart';
 import 'package:ags_gold/features/settings/presentation/settings_screen.dart';
 import 'package:ags_gold/features/legal/presentation/digi_gold_terms_screen.dart';
@@ -534,6 +535,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PermissionGate(
           requiredPermission: 'user.view',
           child: UsersScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/account-deletions',
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'user.view',
+          child: AccountDeletionRequestsScreen(),
         ),
       ),
       GoRoute(

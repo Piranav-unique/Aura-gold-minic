@@ -17,7 +17,6 @@ import 'package:ags_gold/features/settings/presentation/providers/settings_provi
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
-import 'package:ags_gold/features/profile/presentation/widgets/nominee_details_sheet.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
 import 'package:ags_gold/l10n/locale_preference_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -225,23 +224,8 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 title: l10n.statements,
                 onTap: () => context.push('/user-transactions'),
               ),
-              ProfileSettingsTile(
-                icon: Icons.family_restroom_rounded,
-                title: l10n.nomineeDetails,
-                trailing: Text(
-                  l10n.nomineeActiveVerified,
-                  style: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-                onTap: () => showNomineeDetailsSheet(context, ref),
-              ),
             ],
           ),
-          ProfileSectionHeader(title: l10n.nomineeDetails),
-          const ProfileNomineeCard(),
           ProfileSectionHeader(title: l10n.general),
           ProfileSettingsGroup(
             children: [

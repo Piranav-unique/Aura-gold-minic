@@ -7,6 +7,7 @@ import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
 import 'package:ags_gold/features/settings/presentation/providers/settings_provider.dart';
 import 'package:ags_gold/features/settings/domain/user_settings.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
+import 'package:ags_gold/l10n/app_localizations.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import '../mocks/mock_services.dart';
 
@@ -40,6 +41,7 @@ void main() {
             AsyncValue.data(
               UserProfile(
                 id: '11111111-1111-1111-1111-111111111111',
+                email: 'user@example.com',
                 mobileNumber: '9876543210',
                 firstName: 'Test',
                 lastName: 'User',
@@ -52,7 +54,11 @@ void main() {
           ),
           profileActivityProvider.overrideWithValue(const AsyncValue.data([]))
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
       ),
     );
 
