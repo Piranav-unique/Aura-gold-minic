@@ -64,3 +64,8 @@ class UserDetailResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("mobile_verified", mode="before")
+    @classmethod
+    def coerce_mobile_verified(cls, v: Optional[bool]) -> bool:
+        return bool(v) if v is not None else False

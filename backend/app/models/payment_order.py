@@ -27,8 +27,11 @@ class PaymentOrder(Base):
     razorpay_order_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     razorpay_payment_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     metal: Mapped[str] = mapped_column(String(16), nullable=False)
+    purchase_mode: Mapped[str] = mapped_column(
+        String(16), default="amount", server_default="amount", nullable=False
+    )
     amount_paise: Mapped[int] = mapped_column(Integer, nullable=False)
-    grams: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    grams: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     rate_per_gram: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     gst_percent: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
     metal_value_inr: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)

@@ -16,6 +16,7 @@ from app.schemas.payment import CreatePaymentOrderResponse, SyncPaymentResponse,
 from app.services.metal_prices import MetalPriceService
 from app.services.gold_scheme import GoldSchemeService
 from app.services.payment_settlement import (
+    compute_grams_purchase_settlement,
     compute_purchase_settlement,
     grams_from_payment_amount,
     payment_amount_from_grams,
@@ -52,6 +53,7 @@ class GoldPaymentService:
         user: User,
         *,
         metal: str,
+        purchase_mode: str | None = None,
         grams: Decimal | None = None,
         amount_inr: Decimal | None = None,
     ) -> CreatePaymentOrderResponse:
@@ -68,30 +70,51 @@ class GoldPaymentService:
         if metal not in {"gold", "silver"}:
             raise ValidationException("Only gold and silver purchases are supported.")
 
-
         prices = await self.metal_prices.get_prices()
         quote = prices.gold if metal == "gold" else prices.silver
         rate = Decimal(str(quote.retail_price))
 
-        if grams is None and amount_inr is None:
-            raise ValidationException("Enter gold weight or amount in rupees.")
-        if grams is not None and grams < _MIN_GRAMS:
-            raise ValidationException("Enter a valid gold weight.")
-        if amount_inr is not None and amount_inr < Decimal("1"):
-            raise ValidationException("Minimum purchase amount is ₹1.")
+        # Determine explicit purchase mode
+        mode = (purchase_mode or "").lower().strip()
+        if not mode:
+            if amount_inr is not None and amount_inr > 0 and (grams is None or grams <= 0):
+                mode = "amount"
+            elif grams is not None and grams > 0 and (amount_inr is None or amount_inr <= 0):
+                mode = "grams"
+            elif amount_inr is not None and amount_inr > 0:
+                mode = "amount"
+            else:
+                mode = "grams"
 
-        if grams is not None:
-            amount = payment_amount_from_grams(grams, rate, metal=metal)
-            grams = grams_from_payment_amount(amount, rate, metal=metal)
+        if mode == "amount":
+            if amount_inr is None or amount_inr <= Decimal("0"):
+                raise ValidationException("Enter an amount in rupees.")
+            if amount_inr < Decimal("1"):
+                raise ValidationException("Minimum purchase amount is ₹1.")
+
+            # MODE A: Exact INR amount is strictly authoritative.
+            final_amount = amount_inr.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            settlement = compute_purchase_settlement(final_amount, metal=metal)
+            final_grams = grams_from_payment_amount(final_amount, rate, metal=metal)
+
+        elif mode == "grams":
+            if grams is None or grams <= Decimal("0"):
+                raise ValidationException("Enter gold weight.")
+            if grams < _MIN_GRAMS:
+                raise ValidationException(f"Minimum purchase weight is {_MIN_GRAMS} g.")
+
+            # MODE B: Exact grams quantity is strictly authoritative.
+            final_grams = grams.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+            settlement = compute_grams_purchase_settlement(final_grams, rate, metal=metal)
+            final_amount = settlement.gross_amount_inr
+
         else:
-            amount = amount_inr.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            grams = grams_from_payment_amount(amount, rate, metal=metal)
+            raise ValidationException("Invalid purchase mode.")
 
         if self.digital_inventory_service:
-            await self.digital_inventory_service.ensure_available(metal, grams)
+            await self.digital_inventory_service.ensure_available(metal, final_grams)
 
-        amount_paise = int((amount * 100).to_integral_value(rounding=ROUND_HALF_UP))
-        settlement = compute_purchase_settlement(amount, metal=metal)
+        amount_paise = int((final_amount * 100).to_integral_value(rounding=ROUND_HALF_UP))
 
         receipt = f"{metal}_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"[:40]
         if self.razorpay.use_dev_mock:
@@ -104,7 +127,9 @@ class GoldPaymentService:
                 notes={
                     "user_id": str(user.id),
                     "metal": metal,
-                    "grams": str(grams),
+                    "purchase_mode": mode,
+                    "grams": str(final_grams),
+                    "amount_inr": str(final_amount),
                 },
             )
             key_id = self.razorpay.key_id
@@ -115,8 +140,9 @@ class GoldPaymentService:
                 "user_id": user.id,
                 "razorpay_order_id": rz_order["id"],
                 "metal": metal,
+                "purchase_mode": mode,
                 "amount_paise": amount_paise,
-                "grams": grams,
+                "grams": final_grams,
                 "rate_per_gram": rate,
                 "gst_percent": settlement.gst_percent,
                 "metal_value_inr": settlement.metal_value_inr,
@@ -133,10 +159,11 @@ class GoldPaymentService:
             order_id=rz_order["id"],
             key_id=key_id,
             amount_paise=amount_paise,
-            amount_inr=amount,
-            grams=grams,
+            amount_inr=final_amount,
+            grams=final_grams,
             rate_per_gram=rate,
             metal=metal,
+            purchase_mode=mode,
             currency="INR",
             user_email=user.email,
             user_name=self._display_name(user),

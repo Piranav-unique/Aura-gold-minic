@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class CreatePaymentOrderRequest(BaseModel):
   metal: str = Field(default="gold", pattern=r"^(gold|silver)$")
+  purchase_mode: Optional[str] = Field(default=None, pattern=r"^(amount|grams)$")
   grams: Optional[Decimal] = Field(default=None, gt=0)
   amount_inr: Optional[Decimal] = Field(default=None, gt=0)
 
@@ -25,6 +26,7 @@ class CreatePaymentOrderResponse(BaseModel):
   grams: Decimal
   rate_per_gram: Decimal
   metal: str
+  purchase_mode: str = "amount"
   currency: str = "INR"
   user_email: str
   user_name: str

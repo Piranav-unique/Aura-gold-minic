@@ -27,6 +27,22 @@ def _format_inr(val) -> str:
         return "0.00"
 
 
+def _format_grams(val) -> str:
+    if val is None:
+        return "0.0000"
+    try:
+        d = Decimal(str(val))
+        s = f"{d:.6f}".rstrip("0")
+        if s.endswith("."):
+            s += "0000"
+        parts = s.split(".")
+        if len(parts) == 2 and len(parts[1]) < 4:
+            s = f"{parts[0]}.{parts[1].ljust(4, '0')}"
+        return s
+    except Exception:
+        return "0.0000"
+
+
 def _user_display_name(user: User) -> str:
     first = getattr(user, "first_name", "") or ""
     last = getattr(user, "last_name", "") or ""
@@ -218,7 +234,7 @@ def generate_invoice_pdf(order: PaymentOrder, user: User) -> bytes:
                 f"<font size='7' color='#6C757D'>Insured Custody Vault</font>",
                 td_style,
             ),
-            Paragraph(f"{grams:.4f} g", td_style),
+            Paragraph(f"{_format_grams(grams)} g", td_style),
             Paragraph(f"INR {_format_inr(rate)}", td_style),
             Paragraph(f"INR {_format_inr(metal_value)}", td_style),
             Paragraph(f"INR {_format_inr(gst_amount)}", td_style),

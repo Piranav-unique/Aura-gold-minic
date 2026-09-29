@@ -249,8 +249,10 @@ class ExecutiveDashboardService:
 
         recent_payments: list[AdminPaymentItem] = []
         payment_summary: Optional[AdminPaymentSummary] = None
+        customer_summaries: list[CustomerPaymentSummary] = []
 
         if self.payment_order_repo and (can_view_wallet or can_view_transactions):
+
             try:
                 orders = await self.payment_order_repo.list_orders(limit=25)
                 recent_payments = [

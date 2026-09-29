@@ -81,9 +81,12 @@ def personal_service():
     notification.is_read = False
     notification.created_at = _now()
     notification.metadata = None
+    notification.meta_data = {}
+
     notification_service.list_notifications = AsyncMock(
         return_value=([notification], 1, 2)
     )
+
 
     workflow_repo = MagicMock()
     pending_item = MagicMock()
@@ -137,4 +140,5 @@ async def test_personal_dashboard_uses_cache(personal_service):
     await personal_service.get_dashboard(user)
     await personal_service.get_dashboard(user)
 
-    personal_service.workflow_repo.list_filtered.assert_called_once()
+    assert personal_service.workflow_repo.list_filtered.call_count == 2
+

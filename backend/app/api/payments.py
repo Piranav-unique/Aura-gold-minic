@@ -34,6 +34,7 @@ async def create_razorpay_order(
   return await payment_service.create_buy_order(
     current_user,
     metal=body.metal,
+    purchase_mode=body.purchase_mode,
     grams=body.grams,
     amount_inr=body.amount_inr,
   )

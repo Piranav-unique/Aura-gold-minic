@@ -37,10 +37,10 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     kyc_pan_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
     kyc_profile: Mapped[str | None] = mapped_column(Text, nullable=True)
     gold_savings_grams: Mapped[Decimal] = mapped_column(
-        Numeric(18, 4), default=Decimal("0"), nullable=False
+        Numeric(18, 6), default=Decimal("0"), nullable=False
     )
     silver_savings_grams: Mapped[Decimal] = mapped_column(
-        Numeric(18, 4), default=Decimal("0"), nullable=False
+        Numeric(18, 6), default=Decimal("0"), nullable=False
     )
     gold_invested_inr: Mapped[Decimal] = mapped_column(
         Numeric(18, 2), default=Decimal("0"), nullable=False

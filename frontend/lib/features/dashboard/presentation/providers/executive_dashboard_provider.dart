@@ -17,10 +17,16 @@ final executiveDashboardProvider =
             response.data as Map<String, dynamic>,
           );
 
-          // For Admin role: Synchronize with live Razorpay payments
+          // Yield immediate backend data so user sees dashboard without delay
+          yield dashboard;
+          isFirst = false;
+
+          // For Admin role: Synchronize with live Razorpay payments in background
           if (dashboard.role == 'admin') {
             try {
-              final live = await razorpayLive.fetchLivePayments();
+              final live = await razorpayLive.fetchLivePayments().timeout(
+                const Duration(seconds: 8),
+              );
               final updatedApp =
                   dashboard.appMetrics ??
                   const AppDashboardMetrics(
@@ -58,18 +64,18 @@ final executiveDashboardProvider =
                 recentPayments: live.allPayments,
                 customerSummaries: live.customerSummaries,
               );
+
+              yield dashboard;
             } catch (_) {
-              // If Razorpay live call fails, keep backend data
+              // If Razorpay live call fails or times out, keep backend data
             }
           }
-
-          yield dashboard;
-          isFirst = false;
         } catch (error) {
           if (isFirst) rethrow;
         }
         await Future<void>.delayed(_refreshInterval);
       }
+
     });
 
 class RazorpaySyncNotifier

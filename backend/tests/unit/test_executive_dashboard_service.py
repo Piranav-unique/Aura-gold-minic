@@ -138,6 +138,8 @@ def executive_service():
     app_metrics_repo.count_wallet_transactions = AsyncMock(return_value=42)
     app_metrics_repo.count_app_members = AsyncMock(return_value=120)
     app_metrics_repo.count_new_members_this_month = AsyncMock(return_value=8)
+    app_metrics_repo.count_pending_sell_inquiries = AsyncMock(return_value=1)
+    app_metrics_repo.count_sell_inquiries = AsyncMock(return_value=3)
     app_metrics_repo.payment_revenue_trend = AsyncMock(
         return_value=[
             {
@@ -150,6 +152,7 @@ def executive_service():
     app_metrics_repo.payment_revenue_growth_percent = AsyncMock(
         return_value=Decimal("5.5")
     )
+
 
     digital_inventory_repo = MagicMock()
     metal_row = MagicMock()

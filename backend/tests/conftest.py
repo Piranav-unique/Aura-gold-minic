@@ -10,6 +10,13 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
+import typing
+try:
+    import sqlalchemy.util.typing
+    sqlalchemy.util.typing.make_union_type = lambda *typ: typing.Union[typ]
+except Exception:
+    pass
+
 
 # Load environment variables from .env file
 def _load_env_file():

@@ -91,16 +91,18 @@ final goldPaymentProvider = Provider((ref) {
 
   return ({
     required String metal,
+    String? purchaseMode,
     double? grams,
     double? amountInr,
   }) async {
+    final data = <String, dynamic>{'metal': metal};
+    if (purchaseMode != null) data['purchase_mode'] = purchaseMode;
+    if (grams != null) data['grams'] = grams;
+    if (amountInr != null) data['amount_inr'] = amountInr;
+
     final response = await api.post(
       '/payments/razorpay/order',
-      data: {
-        'metal': metal,
-        'grams': ?grams,
-        'amount_inr': ?amountInr,
-      },
+      data: data,
     );
     return RazorpayOrderDetails.fromJson(response.data as Map<String, dynamic>);
   };

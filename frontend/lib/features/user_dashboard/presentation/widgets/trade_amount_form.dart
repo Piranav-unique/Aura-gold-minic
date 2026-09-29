@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
 import 'package:ags_gold/features/user_dashboard/domain/gold_scheme.dart';
@@ -19,6 +20,7 @@ import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+enum PurchaseMode { amount, grams }
 
 class TradeAmountForm extends ConsumerStatefulWidget {
   final bool isBuy;
@@ -41,6 +43,8 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
   final _gramsController = TextEditingController();
   final _amountController = TextEditingController();
   final _checkout = RazorpayCheckout();
+
+  PurchaseMode _purchaseMode = PurchaseMode.amount;
   bool _syncing = false;
   bool _paying = false;
   bool _syncingPendingPayment = false;
@@ -52,6 +56,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _purchaseMode = PurchaseMode.amount;
       _amountController.text = widget.initialAmount!.toStringAsFixed(0);
     }
   }
@@ -76,41 +81,101 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
     }
   }
 
-  void _syncFromGrams(double rate) {
-    if (_syncing) return;
-    _syncing = true;
-    final grams = double.tryParse(_gramsController.text) ?? 0;
-    final gstMultiplier = _gstMultiplier();
-    _amountController.text =
-        grams > 0 ? (grams * rate * gstMultiplier).toStringAsFixed(2) : '';
-    _syncing = false;
-  }
-
-  void _syncFromAmount(double rate) {
-    if (_syncing || rate <= 0) return;
-    _syncing = true;
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    final gstMultiplier = _gstMultiplier();
-    _gramsController.text =
-        amount > 0 ? (amount / gstMultiplier / rate).toStringAsFixed(4) : '';
-    _syncing = false;
-  }
-
   double _gstMultiplier() {
     // Matches backend METAL_*_GST_PERCENT (3%)
     return 1.03;
   }
 
-  Future<void> _startPayment(double rate) async {
+  String _formatGramsForDisplay(double grams) {
+    if (grams <= 0) return '';
+    if (grams < 0.0001) {
+      return grams.toStringAsFixed(6).replaceAll(RegExp(r'0+$'), '');
+    }
+    return grams.toStringAsFixed(4);
+  }
+
+  void _syncFromGrams(double rate) {
+    if (_syncing || rate <= 0) return;
+    _syncing = true;
+    _purchaseMode = PurchaseMode.grams;
+    final grams = double.tryParse(_gramsController.text) ?? 0;
+    if (grams > 0) {
+      final metalValue = grams * rate;
+      final total = metalValue * _gstMultiplier();
+      _amountController.text = total.toStringAsFixed(2);
+    } else {
+      _amountController.text = '';
+    }
+    _syncing = false;
+    setState(() {});
+  }
+
+  void _syncFromAmount(double rate) {
+    if (_syncing || rate <= 0) return;
+    _syncing = true;
+    _purchaseMode = PurchaseMode.amount;
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    if (amount > 0) {
+      final metalValue = amount / _gstMultiplier();
+      final grams = metalValue / rate;
+      _gramsController.text = _formatGramsForDisplay(grams);
+    } else {
+      _gramsController.text = '';
+    }
+    _syncing = false;
+    setState(() {});
+  }
+
+  void _onModeChanged(PurchaseMode mode, double rate) {
+    if (_purchaseMode == mode) return;
+    setState(() {
+      _purchaseMode = mode;
+    });
+    if (rate > 0) {
+      if (mode == PurchaseMode.amount && _amountController.text.isNotEmpty) {
+        _syncFromAmount(rate);
+      } else if (mode == PurchaseMode.grams && _gramsController.text.isNotEmpty) {
+        _syncFromGrams(rate);
+      }
+    }
+  }
+
+  void _showConfirmationSummary({
+    required double rate,
+    required NumberFormat currency,
+    required dynamic l10n,
+  }) {
     if (_paying || !widget.isBuy) return;
 
-    final grams = double.tryParse(_gramsController.text);
-    final amount = double.tryParse(_amountController.text);
-    if ((grams == null || grams <= 0) && (amount == null || amount <= 0)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.enterValidTradeAmount)),
-      );
-      return;
+    final gramsInput = double.tryParse(_gramsController.text);
+    final amountInput = double.tryParse(_amountController.text);
+
+    if (_purchaseMode == PurchaseMode.amount) {
+      if (amountInput == null || amountInput <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.enterValidTradeAmount)),
+        );
+        return;
+      }
+      if (amountInput < 1.0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Minimum purchase amount is ₹1.')),
+        );
+        return;
+      }
+    } else {
+      if (gramsInput == null || gramsInput <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.enterValidTradeAmount)),
+        );
+        return;
+      }
+      if (gramsInput < 0.0001) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Minimum gold quantity is 0.0001 g.')),
+        );
+        return;
+      }
     }
 
     // Verify personal email is added for official tax invoice delivery
@@ -124,12 +189,61 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
         currentEmail: userEmail,
         onEmailSaved: () {
           if (mounted) {
-            _startPayment(rate);
+            _showConfirmationSummary(
+              rate: rate,
+              currency: currency,
+              l10n: l10n,
+            );
           }
         },
       );
       return;
     }
+
+    double finalAmount = 0;
+    double metalValue = 0;
+    double gstAmount = 0;
+    double finalGrams = 0;
+
+    if (_purchaseMode == PurchaseMode.amount) {
+      finalAmount = amountInput!;
+      metalValue = finalAmount / 1.03;
+      gstAmount = finalAmount - metalValue;
+      finalGrams = metalValue / rate;
+    } else {
+      finalGrams = gramsInput!;
+      metalValue = finalGrams * rate;
+      gstAmount = metalValue * 0.03;
+      finalAmount = metalValue + gstAmount;
+    }
+
+    final formattedGrams = _formatGramsForDisplay(finalGrams);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _PurchaseConfirmationSheet(
+        metal: widget.metal == MetalType.silver ? 'Pure Silver' : '24K Pure Gold',
+        purchaseMode: _purchaseMode,
+        formattedGrams: formattedGrams,
+        rateLabel: currency.format(rate),
+        metalValue: currency.format(metalValue),
+        gstAmount: currency.format(gstAmount),
+        totalPayable: currency.format(finalAmount),
+        onConfirm: () {
+          Navigator.of(sheetContext).pop();
+          _startPayment(rate);
+        },
+      ),
+    );
+  }
+
+  Future<void> _startPayment(double rate) async {
+    if (_paying || !widget.isBuy) return;
+
+    final gramsInput = double.tryParse(_gramsController.text);
+    final amountInput = double.tryParse(_amountController.text);
 
     setState(() => _paying = true);
     try {
@@ -138,10 +252,15 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
             ref.read(personalDashboardProvider).value?.goldScheme.status;
       }
 
+      // CRITICAL: Strictly separate inputs based on selected purchaseMode.
+      // In AMOUNT mode: pass only amountInr (grams is null).
+      // In GRAMS mode: pass only grams (amountInr is null).
+      final isAmountMode = _purchaseMode == PurchaseMode.amount;
       final order = await ref.read(goldPaymentProvider)(
         metal: widget.metal == MetalType.silver ? 'silver' : 'gold',
-        grams: grams != null && grams > 0 ? grams : null,
-        amountInr: amount != null && amount > 0 ? amount : null,
+        purchaseMode: isAmountMode ? 'amount' : 'grams',
+        amountInr: isAmountMode ? amountInput : null,
+        grams: isAmountMode ? null : gramsInput,
       );
 
       if (!mounted) return;
@@ -167,22 +286,10 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       );
     } on ApiException catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
         setState(() => _paying = false);
-        if (e.message.toLowerCase().contains('email')) {
-          showAddEmailDialog(
-            context,
-            ref,
-            onEmailSaved: () {
-              if (mounted) {
-                _startPayment(rate);
-              }
-            },
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message)),
-          );
-        }
       }
     } catch (_) {
       if (mounted) {
@@ -193,7 +300,6 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       }
     }
   }
-
 
   Future<void> _syncPendingPayment() async {
     final orderId = _pendingOrderId;
@@ -256,8 +362,8 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
     try {
       final result = await ref.read(verifyGoldPaymentProvider)(
         orderId: orderId,
-        paymentId: 'pay_dev_mock',
-        signature: 'dev_mock',
+        paymentId: 'pay_mock_${DateTime.now().millisecondsSinceEpoch}',
+        signature: 'sig_mock',
       );
       await _finishSuccessfulPayment(result.message);
     } on ApiException catch (e) {
@@ -272,16 +378,15 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
   }
 
   Future<void> _onPaymentSuccess(PaymentSuccessResponse response) async {
-    final paymentId = response.paymentId;
     final orderId = response.orderId;
+    final paymentId = response.paymentId;
     final signature = response.signature;
 
-    if (paymentId == null || orderId == null || signature == null) {
+    if (orderId == null || paymentId == null || signature == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.paymentFailed)),
         );
-        setState(() => _paying = false);
       }
       return;
     }
@@ -425,7 +530,10 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
         ? l10n.buyRatePerGram(currency.format(rate))
         : l10n.sellRatePerGram(currency.format(rate));
 
-    if (_amountController.text.isNotEmpty && _gramsController.text.isEmpty && rate > 0 && !_syncing) {
+    if (_amountController.text.isNotEmpty &&
+        _gramsController.text.isEmpty &&
+        rate > 0 &&
+        !_syncing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _gramsController.text.isEmpty) {
           _syncFromAmount(rate);
@@ -433,11 +541,17 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       });
     }
 
+    final gramsInput = double.tryParse(_gramsController.text) ?? 0;
+    final amountInput = double.tryParse(_amountController.text) ?? 0;
+    final hasValidInput = (_purchaseMode == PurchaseMode.amount && amountInput >= 1.0) ||
+        (_purchaseMode == PurchaseMode.grams && gramsInput >= 0.0001);
+
     return Stack(
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 1. Live Market Rate Card
             AurumSurfaceCard(
               child: Row(
                 children: [
@@ -462,26 +576,105 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            _Field(
-              label: l10n.goldWeightGrams,
-              controller: _gramsController,
-              hint: '0.0000',
-              onChanged: (_) => _syncFromGrams(rate),
-            ),
             const SizedBox(height: 16),
-            _Field(
-              label: l10n.amountInr,
-              controller: _amountController,
-              hint: '0.00',
-              onChanged: (_) => _syncFromAmount(rate),
+
+            // 2. Mode Selector: Pay by Amount vs Buy by Weight
+            if (widget.isBuy) ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  ),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _ModeTabButton(
+                        label: 'Enter Amount (₹)',
+                        icon: Icons.currency_rupee_rounded,
+                        isSelected: _purchaseMode == PurchaseMode.amount,
+                        onTap: () => _onModeChanged(PurchaseMode.amount, rate),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _ModeTabButton(
+                        label: 'Enter Weight (g)',
+                        icon: Icons.scale_rounded,
+                        isSelected: _purchaseMode == PurchaseMode.grams,
+                        onTap: () => _onModeChanged(PurchaseMode.grams, rate),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // 3. Input Fields: Display in selected order with clear indication of authoritative field
+            if (_purchaseMode == PurchaseMode.amount) ...[
+              _Field(
+                label: '${l10n.amountInr} (Exact Payable)',
+                controller: _amountController,
+                hint: '100.00',
+                prefixText: '₹ ',
+                badgeText: 'AUTHORITATIVE',
+                helperText: 'You will be charged this exact amount via Razorpay.',
+                onChanged: (_) => _syncFromAmount(rate),
+              ),
+              const SizedBox(height: 16),
+              _Field(
+                label: '${l10n.goldWeightGrams} (Calculated Quantity)',
+                controller: _gramsController,
+                hint: '0.0000',
+                suffixText: ' g',
+                badgeText: 'ESTIMATED WEIGHT',
+                helperText: 'Pure metal allocated to your vault after 3% GST.',
+                onChanged: (_) => _syncFromGrams(rate),
+              ),
+            ] else ...[
+              _Field(
+                label: '${l10n.goldWeightGrams} (Exact Quantity)',
+                controller: _gramsController,
+                hint: '1.0000',
+                suffixText: ' g',
+                badgeText: 'AUTHORITATIVE',
+                helperText: 'Your vault will be credited with this exact weight.',
+                onChanged: (_) => _syncFromGrams(rate),
+              ),
+              const SizedBox(height: 16),
+              _Field(
+                label: '${l10n.amountInr} (Payable Amount)',
+                controller: _amountController,
+                hint: '0.00',
+                prefixText: '₹ ',
+                badgeText: 'CALCULATED PAYABLE',
+                helperText: 'Includes live metal value + 3% GST.',
+                onChanged: (_) => _syncFromAmount(rate),
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // 4. Live Breakdown Card
+            _buildLiveBreakdownCard(
+              rate: rate,
+              currency: currency,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
+
+            // 5. Action Button
             FilledButton(
-              onPressed: _paying
+              onPressed: (_paying || (widget.isBuy && !hasValidInput))
                   ? null
                   : widget.isBuy
-                      ? () => _startPayment(rate)
+                      ? () => _showConfirmationSummary(
+                            rate: rate,
+                            currency: currency,
+                            l10n: l10n,
+                          )
                       : () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(l10n.paymentComingSoon)),
@@ -493,7 +686,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(l10n.continueToPayment),
+                  : Text(widget.isBuy ? 'Review & Pay' : l10n.continueToPayment),
             ),
           ],
         ),
@@ -529,18 +722,212 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       ],
     );
   }
+
+  Widget _buildLiveBreakdownCard({
+    required double rate,
+    required NumberFormat currency,
+  }) {
+    if (rate <= 0) return const SizedBox.shrink();
+
+    final gramsInput = double.tryParse(_gramsController.text) ?? 0;
+    final amountInput = double.tryParse(_amountController.text) ?? 0;
+
+    if (gramsInput <= 0 && amountInput <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    double finalAmount = 0;
+    double metalValue = 0;
+    double gstAmount = 0;
+    double finalGrams = 0;
+
+    if (_purchaseMode == PurchaseMode.amount) {
+      if (amountInput <= 0) return const SizedBox.shrink();
+      finalAmount = amountInput;
+      metalValue = amountInput / 1.03;
+      gstAmount = amountInput - metalValue;
+      finalGrams = metalValue / rate;
+    } else {
+      if (gramsInput <= 0) return const SizedBox.shrink();
+      finalGrams = gramsInput;
+      metalValue = gramsInput * rate;
+      gstAmount = metalValue * 0.03;
+      finalAmount = metalValue + gstAmount;
+    }
+
+    final formattedGrams = _formatGramsForDisplay(finalGrams);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryGold.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryGold.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'PAYMENT BREAKDOWN',
+                style: TextStyle(
+                  color: AppTheme.primaryGold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              Text(
+                _purchaseMode == PurchaseMode.amount
+                    ? 'Mode: INR Amount'
+                    : 'Mode: Metal Weight',
+                style: TextStyle(
+                  color: AurumConsumerTheme.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _breakdownRow(
+            label: 'Gold to be Credited',
+            value: '$formattedGrams g',
+            isBold: true,
+          ),
+          const SizedBox(height: 6),
+          _breakdownRow(
+            label: 'Net Metal Value',
+            value: currency.format(metalValue),
+          ),
+          const SizedBox(height: 6),
+          _breakdownRow(
+            label: 'GST Included (3%)',
+            value: currency.format(gstAmount),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1),
+          ),
+          _breakdownRow(
+            label: 'TOTAL PAYABLE (RAZORPAY)',
+            value: currency.format(finalAmount),
+            isTotal: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _breakdownRow({
+    required String label,
+    required String value,
+    bool isBold = false,
+    bool isTotal = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: isTotal
+                ? AurumConsumerTheme.textPrimary
+                : AurumConsumerTheme.textMuted,
+            fontSize: isTotal ? 13 : 12,
+            fontWeight: isTotal
+                ? FontWeight.w800
+                : (isBold ? FontWeight.w600 : FontWeight.w500),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: isTotal
+                ? AppTheme.primaryGold
+                : AurumConsumerTheme.textPrimary,
+            fontSize: isTotal ? 15 : 12,
+            fontWeight: isTotal ? FontWeight.w900 : FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModeTabButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ModeTabButton({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primaryGold
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? Colors.white : AurumConsumerTheme.textMuted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AurumConsumerTheme.textMuted,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _Field extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final String hint;
+  final String? prefixText;
+  final String? suffixText;
+  final String? badgeText;
+  final String? helperText;
   final ValueChanged<String> onChanged;
 
   const _Field({
     required this.label,
     required this.controller,
     required this.hint,
+    this.prefixText,
+    this.suffixText,
+    this.badgeText,
+    this.helperText,
     required this.onChanged,
   });
 
@@ -549,13 +936,35 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AurumConsumerTheme.textMuted,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: AurumConsumerTheme.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (badgeText != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  badgeText!,
+                  style: TextStyle(
+                    color: AppTheme.primaryGold,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         TextField(
@@ -569,8 +978,242 @@ class _Field extends StatelessWidget {
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
-          decoration: InputDecoration(hintText: hint),
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixText: prefixText,
+            suffixText: suffixText,
+            prefixStyle: TextStyle(
+              color: AurumConsumerTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+            suffixStyle: TextStyle(
+              color: AurumConsumerTheme.textMuted,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           onChanged: onChanged,
+        ),
+        if (helperText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            helperText!,
+            style: TextStyle(
+              color: AurumConsumerTheme.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PurchaseConfirmationSheet extends StatelessWidget {
+  final String metal;
+  final PurchaseMode purchaseMode;
+  final String formattedGrams;
+  final String rateLabel;
+  final String metalValue;
+  final String gstAmount;
+  final String totalPayable;
+  final VoidCallback onConfirm;
+
+  const _PurchaseConfirmationSheet({
+    required this.metal,
+    required this.purchaseMode,
+    required this.formattedGrams,
+    required this.rateLabel,
+    required this.metalValue,
+    required this.gstAmount,
+    required this.totalPayable,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGold.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.receipt_long_rounded,
+                  color: AppTheme.primaryGold,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'PURCHASE SUMMARY',
+                      style: TextStyle(
+                        color: AurumConsumerTheme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Review before opening secure payment gateway',
+                      style: TextStyle(
+                        color: AurumConsumerTheme.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGold.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.primaryGold.withValues(alpha: 0.22),
+              ),
+            ),
+            child: Column(
+              children: [
+                _summaryRow('Asset Type', metal),
+                const SizedBox(height: 8),
+                _summaryRow('Live Market Rate', '$rateLabel / g'),
+                const SizedBox(height: 8),
+                _summaryRow(
+                  'Gold Quantity to Credit',
+                  '$formattedGrams g',
+                  isBold: true,
+                ),
+                const SizedBox(height: 8),
+                _summaryRow('Metal Value', metalValue),
+                const SizedBox(height: 8),
+                _summaryRow('GST (3%)', gstAmount),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Divider(height: 1),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'TOTAL PAYABLE',
+                      style: TextStyle(
+                        color: AurumConsumerTheme.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      totalPayable,
+                      style: TextStyle(
+                        color: AppTheme.primaryGold,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.shield_outlined,
+                size: 15,
+                color: AurumConsumerTheme.textMuted,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Insured vault storage. Razorpay will charge exactly $totalPayable.',
+                  style: TextStyle(
+                    color: AurumConsumerTheme.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          FilledButton(
+            onPressed: onConfirm,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Pay $totalPayable with Razorpay',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: AurumConsumerTheme.textMuted,
+            fontSize: 12.5,
+            fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: AurumConsumerTheme.textPrimary,
+            fontSize: 13,
+            fontWeight: isBold ? FontWeight.w800 : FontWeight.w700,
+          ),
         ),
       ],
     );
