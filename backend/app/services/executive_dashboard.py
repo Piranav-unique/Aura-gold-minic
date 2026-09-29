@@ -147,105 +147,118 @@ class ExecutiveDashboardService:
         can_view_transactions = user_has_permission(user, "transaction.view")
 
         if can_view_wallet or can_view_transactions:
-            now = datetime.now(timezone.utc)
-            day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            day_end = day_start.replace(hour=23, minute=59, second=59, microsecond=999999)
-            month_start = day_start.replace(day=1)
+            try:
+                now = datetime.now(timezone.utc)
+                day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+                month_start = day_start.replace(day=1)
 
-            (
-                total_revenue,
-                monthly_revenue,
-                daily_revenue,
-                total_transactions,
-                monthly_transactions,
-                member_count,
-                members_new,
-                pending_sell_requests,
-                sell_requests_this_month,
-                trend_rows,
-                growth,
-            ) = await asyncio.gather(
-                self.app_metrics_repo.paid_revenue_sum(),
-                self.app_metrics_repo.paid_revenue_sum(start=month_start, end=day_end),
-                self.app_metrics_repo.paid_revenue_sum(start=day_start, end=day_end),
-                self.app_metrics_repo.count_wallet_transactions(),
-                self.app_metrics_repo.count_wallet_transactions(
+                total_revenue = await self.app_metrics_repo.paid_revenue_sum()
+                monthly_revenue = await self.app_metrics_repo.paid_revenue_sum(start=month_start, end=day_end)
+                daily_revenue = await self.app_metrics_repo.paid_revenue_sum(start=day_start, end=day_end)
+                total_transactions = await self.app_metrics_repo.count_wallet_transactions()
+                monthly_transactions = await self.app_metrics_repo.count_wallet_transactions(
                     start=month_start, end=day_end
-                ),
-                self.app_metrics_repo.count_app_members(),
-                self.app_metrics_repo.count_new_members_this_month(),
-                self.app_metrics_repo.count_pending_sell_inquiries(),
-                self.app_metrics_repo.count_sell_inquiries(
-                    start=month_start, end=day_end
-                ),
-                self.app_metrics_repo.payment_revenue_trend(days=30),
-                self.app_metrics_repo.payment_revenue_growth_percent(),
-            )
-
-            metal_inventory_value = Decimal("0")
-            gold_available = Decimal("0")
-            silver_available = Decimal("0")
-            low_stock_metal_count = 0
-
-            if user_has_permission(user, "inventory.view"):
-                metals = await self.digital_inventory_repo.list_all()
-                prices = await self.metal_price_service.get_prices()
-                price_by_metal = {
-                    "gold": prices.gold.retail_price,
-                    "silver": prices.silver.retail_price,
-                }
-                for row in metals:
-                    available = row.available_weight_grams
-                    rate = price_by_metal.get(row.metal_type, Decimal("0"))
-                    metal_inventory_value += available * rate
-                    if row.metal_type == "gold":
-                        gold_available = available
-                    elif row.metal_type == "silver":
-                        silver_available = available
-                    status = compute_stock_status(
-                        available, row.low_stock_threshold_grams
-                    )
-                    if status in {"low_stock", "out_of_stock"}:
-                        low_stock_metal_count += 1
-
-            app_metrics = AppDashboardMetrics(
-                total_revenue=total_revenue,
-                monthly_revenue=monthly_revenue,
-                daily_revenue=daily_revenue,
-                total_transactions=total_transactions,
-                monthly_transactions=monthly_transactions,
-                member_count=member_count,
-                members_new_this_month=members_new,
-                metal_inventory_value=metal_inventory_value,
-                gold_available_grams=gold_available,
-                silver_available_grams=silver_available,
-                low_stock_metal_count=low_stock_metal_count,
-                pending_sell_requests=pending_sell_requests,
-                sell_requests_this_month=sell_requests_this_month,
-            )
-            revenue_trend = [
-                RevenueTrendPoint(
-                    label=row["label"],
-                    revenue=row["revenue"],
-                    transaction_count=row.get("transaction_count", 0),
                 )
-                for row in trend_rows
-            ]
-            revenue_growth = growth
+                member_count = await self.app_metrics_repo.count_app_members()
+                members_new = await self.app_metrics_repo.count_new_members_this_month()
+                pending_sell_requests = await self.app_metrics_repo.count_pending_sell_inquiries()
+                sell_requests_this_month = await self.app_metrics_repo.count_sell_inquiries(
+                    start=month_start, end=day_end
+                )
+                trend_rows = await self.app_metrics_repo.payment_revenue_trend(days=30)
+                growth = await self.app_metrics_repo.payment_revenue_growth_percent()
+
+                metal_inventory_value = Decimal("0")
+                gold_available = Decimal("0")
+                silver_available = Decimal("0")
+                low_stock_metal_count = 0
+
+                if user_has_permission(user, "inventory.view"):
+                    try:
+                        metals = await self.digital_inventory_repo.list_all()
+                        prices = await self.metal_price_service.get_prices()
+                        price_by_metal = {
+                            "gold": prices.gold.retail_price,
+                            "silver": prices.silver.retail_price,
+                        }
+                        for row in metals:
+                            available = row.available_weight_grams
+                            rate = price_by_metal.get(row.metal_type, Decimal("0"))
+                            metal_inventory_value += available * rate
+                            if row.metal_type == "gold":
+                                gold_available = available
+                            elif row.metal_type == "silver":
+                                silver_available = available
+                            status = compute_stock_status(
+                                available, row.low_stock_threshold_grams
+                            )
+                            if status in {"low_stock", "out_of_stock"}:
+                                low_stock_metal_count += 1
+                    except Exception as e:
+                        logger.warning("digital_inventory_fetch_error", error=str(e))
+
+                app_metrics = AppDashboardMetrics(
+                    total_revenue=total_revenue,
+                    monthly_revenue=monthly_revenue,
+                    daily_revenue=daily_revenue,
+                    total_transactions=total_transactions,
+                    monthly_transactions=monthly_transactions,
+                    member_count=member_count,
+                    members_new_this_month=members_new,
+                    metal_inventory_value=metal_inventory_value,
+                    gold_available_grams=gold_available,
+                    silver_available_grams=silver_available,
+                    low_stock_metal_count=low_stock_metal_count,
+                    pending_sell_requests=pending_sell_requests,
+                    sell_requests_this_month=sell_requests_this_month,
+                )
+                revenue_trend = [
+                    RevenueTrendPoint(
+                        label=row["label"],
+                        revenue=row["revenue"],
+                        transaction_count=row.get("transaction_count", 0),
+                    )
+                    for row in trend_rows
+                ]
+                revenue_growth = growth
+            except Exception as exc:
+                logger.exception("app_metrics_calculation_error", error=str(exc))
+                app_metrics = AppDashboardMetrics(
+                    total_revenue=Decimal("0"),
+                    monthly_revenue=Decimal("0"),
+                    daily_revenue=Decimal("0"),
+                    total_transactions=0,
+                    monthly_transactions=0,
+                    member_count=0,
+                    members_new_this_month=0,
+                    metal_inventory_value=Decimal("0"),
+                    gold_available_grams=Decimal("0"),
+                    silver_available_grams=Decimal("0"),
+                    low_stock_metal_count=0,
+                    pending_sell_requests=0,
+                    sell_requests_this_month=0,
+                )
 
         if user_has_permission(user, "customer.view"):
-            customer_metrics = CustomerDashboardMetrics(
-                **(await self.customer_repo.dashboard_metrics())
-            )
+            try:
+                customer_metrics = CustomerDashboardMetrics(
+                    **(await self.customer_repo.dashboard_metrics())
+                )
+            except Exception as e:
+                logger.warning("customer_metrics_error", error=str(e))
 
         if self.inventory_service and user_has_permission(user, "inventory.view"):
-            inv = await self.inventory_service.get_metrics(low_stock_limit=5)
-            inventory_metrics = InventoryDashboardMetrics(
-                total_stock=inv.total_stock,
-                inventory_value=inv.inventory_value,
-                low_stock_count=inv.low_stock_count,
-                low_stock_items=inv.low_stock_items,
-            )
+            try:
+                inv = await self.inventory_service.get_metrics(low_stock_limit=5)
+                inventory_metrics = InventoryDashboardMetrics(
+                    total_stock=inv.total_stock,
+                    inventory_value=inv.inventory_value,
+                    low_stock_count=inv.low_stock_count,
+                    low_stock_items=inv.low_stock_items,
+                )
+            except Exception as e:
+                logger.warning("inventory_metrics_error", error=str(e))
 
         recent_payments: list[AdminPaymentItem] = []
         payment_summary: Optional[AdminPaymentSummary] = None
@@ -415,7 +428,7 @@ class ExecutiveDashboardService:
     async def _build_employee_dashboard(
         self, user: User, unread: int, refreshed_at: datetime
     ) -> ExecutiveDashboardResponse:
-        assigned_coro = self.workflow_repo.list_filtered(
+        assigned_items = await self.workflow_repo.list_filtered(
             skip=0,
             limit=10,
             assignee_id=user.id,
@@ -423,29 +436,17 @@ class ExecutiveDashboardService:
             sort_by="pending_since",
             sort_order="asc",
         )
-        my_requests_coro = self.workflow_repo.list_filtered(
+        my_requests = await self.workflow_repo.list_filtered(
             skip=0,
             limit=5,
             requester_id=user.id,
             sort_by="created_at",
             sort_order="desc",
         )
-        activity_coro = self.audit_service.list_audit_logs(
+        activity_result = await self.audit_service.list_audit_logs(
             skip=0, limit=12, user_id=user.id
         )
-        trend_coro = self.audit_service.get_activity_trend(days=7, user_id=user.id)
-
-        (
-            assigned_items,
-            my_requests,
-            activity_result,
-            activity_trend,
-        ) = await asyncio.gather(
-            assigned_coro,
-            my_requests_coro,
-            activity_coro,
-            trend_coro,
-        )
+        activity_trend = await self.audit_service.get_activity_trend(days=7, user_id=user.id)
         activity_logs, _ = activity_result
 
         assigned_tasks = [
