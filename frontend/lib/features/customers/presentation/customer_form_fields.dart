@@ -10,6 +10,7 @@ class CustomerFormFields extends StatelessWidget {
   final TextEditingController gstController;
   final String customerType;
   final String status;
+  final bool isEdit;
   final bool isLoading;
   final ValueChanged<String> onCustomerTypeChanged;
   final ValueChanged<String> onStatusChanged;
@@ -24,6 +25,7 @@ class CustomerFormFields extends StatelessWidget {
     required this.gstController,
     required this.customerType,
     required this.status,
+    this.isEdit = false,
     required this.isLoading,
     required this.onCustomerTypeChanged,
     required this.onStatusChanged,
@@ -55,11 +57,14 @@ class CustomerFormFields extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: fullNameController,
-            decoration: const InputDecoration(
-              labelText: 'Full Name',
-              prefixIcon: Icon(Icons.person_outline),
+            decoration: InputDecoration(
+              labelText: 'Full Name (Read Only)',
+              prefixIcon: const Icon(Icons.person_outline),
+              helperText: isEdit ? 'Customer name cannot be modified' : null,
+              helperStyle: const TextStyle(color: Colors.orange),
             ),
-            enabled: !isLoading,
+            enabled: !isEdit && !isLoading,
+            readOnly: isEdit,
             validator: (v) =>
                 v == null || v.trim().isEmpty ? 'Full name is required' : null,
           ),

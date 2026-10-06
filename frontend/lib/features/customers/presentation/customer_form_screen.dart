@@ -176,6 +176,7 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               gstController: _gstController,
               customerType: _customerType,
               status: _status,
+              isEdit: widget.isEdit,
               isLoading: _isLoading,
               onCustomerTypeChanged: (v) => setState(() => _customerType = v),
               onStatusChanged: (v) => setState(() => _status = v),

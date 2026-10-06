@@ -197,20 +197,27 @@ class WalletTransactionItem {
   });
 
   factory WalletTransactionItem.fromJson(Map<String, dynamic> json) {
+    final type = json['transaction_type'] as String? ?? '';
     return WalletTransactionItem(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       userName: json['user_name'] as String?,
       userMobile: json['user_mobile'] as String?,
       occurredAt: DateTime.parse(json['occurred_at'] as String),
-      transactionType: json['transaction_type'] as String? ?? '',
-      metal: json['metal'] as String?,
+      transactionType: type,
+      metal: json['metal'] as String? ?? (type.toUpperCase() == 'SELL' ? 'GOLD' : null),
       quantityGrams: json['quantity_grams'] != null
           ? parseWalletDecimal(json['quantity_grams'])
-          : null,
+          : (json['quantity'] != null
+              ? parseWalletDecimal(json['quantity'])
+              : (json['grams'] != null ? parseWalletDecimal(json['grams']) : null)),
       amountInr: json['amount_inr'] != null
           ? parseWalletDecimal(json['amount_inr'])
-          : null,
+          : (json['net_payable_inr'] != null
+              ? parseWalletDecimal(json['net_payable_inr'])
+              : (json['gross_amount_inr'] != null
+                  ? parseWalletDecimal(json['gross_amount_inr'])
+                  : (json['amount'] != null ? parseWalletDecimal(json['amount']) : null))),
       status: json['status'] as String? ?? '',
       referenceId: json['reference_id'] as String?,
     );
@@ -288,6 +295,7 @@ class WalletTransactionDetail {
 
   factory WalletTransactionDetail.fromJson(Map<String, dynamic> json) {
     final history = json['status_history'] as List<dynamic>? ?? [];
+    final type = json['transaction_type'] as String? ?? '';
     return WalletTransactionDetail(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -295,26 +303,34 @@ class WalletTransactionDetail {
       userEmail: json['user_email'] as String? ?? '',
       userMobile: json['user_mobile'] as String?,
       occurredAt: DateTime.parse(json['occurred_at'] as String),
-      transactionType: json['transaction_type'] as String? ?? '',
-      metal: json['metal'] as String?,
+      transactionType: type,
+      metal: json['metal'] as String? ?? (type.toUpperCase() == 'SELL' ? 'GOLD' : null),
       quantityGrams: json['quantity_grams'] != null
           ? parseWalletDecimal(json['quantity_grams'])
-          : null,
+          : (json['quantity'] != null
+              ? parseWalletDecimal(json['quantity'])
+              : (json['grams'] != null ? parseWalletDecimal(json['grams']) : null)),
       amountInr: json['amount_inr'] != null
           ? parseWalletDecimal(json['amount_inr'])
-          : null,
+          : (json['net_payable_inr'] != null
+              ? parseWalletDecimal(json['net_payable_inr'])
+              : (json['gross_amount_inr'] != null
+                  ? parseWalletDecimal(json['gross_amount_inr'])
+                  : (json['amount'] != null ? parseWalletDecimal(json['amount']) : null))),
       ratePerGram: json['rate_per_gram'] != null
           ? parseWalletDecimal(json['rate_per_gram'])
-          : null,
+          : (json['sell_rate_per_gram'] != null
+              ? parseWalletDecimal(json['sell_rate_per_gram'])
+              : (json['rate'] != null ? parseWalletDecimal(json['rate']) : null)),
       gstAmountInr: json['gst_amount_inr'] != null
           ? parseWalletDecimal(json['gst_amount_inr'])
-          : null,
+          : (json['tax_amount_inr'] != null ? parseWalletDecimal(json['tax_amount_inr']) : null),
       platformFeeInr: json['platform_fee_inr'] != null
           ? parseWalletDecimal(json['platform_fee_inr'])
-          : null,
+          : (json['platform_charge_inr'] != null ? parseWalletDecimal(json['platform_charge_inr']) : null),
       totalAmountInr: json['total_amount_inr'] != null
           ? parseWalletDecimal(json['total_amount_inr'])
-          : null,
+          : (json['gross_amount_inr'] != null ? parseWalletDecimal(json['gross_amount_inr']) : null),
       status: json['status'] as String? ?? '',
       referenceId: json['reference_id'] as String?,
       paymentDetails: json['payment_details'] as Map<String, dynamic>?,

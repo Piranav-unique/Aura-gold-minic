@@ -247,22 +247,7 @@ class AdminWalletService:
         full_name: Optional[str] = None,
         admin_user_id: Optional[uuid.UUID] = None,
     ) -> WalletUserDetailResponse:
-        user = await self.wallet_repo.get_wallet_user(user_id)
-        if not user:
-            raise NotFoundException("User not found")
-
-        if full_name and not first_name:
-            fn_parts = full_name.strip().split(None, 1)
-            first_name = fn_parts[0] if fn_parts else ""
-            last_name = fn_parts[1] if len(fn_parts) > 1 else None
-
-        if first_name is not None:
-            user.first_name = first_name.strip() if first_name else None
-        if last_name is not None:
-            user.last_name = last_name.strip() if last_name else None
-
-        await self.wallet_repo.db.commit()
-        await self.wallet_repo.db.refresh(user)
+        raise ValidationException("Customer name modification is not permitted by admins.")
 
         if admin_user_id and self.audit_service:
             await self.audit_service.log_action(
@@ -485,6 +470,10 @@ class AdminWalletService:
                 )
             )
 
+        amount = inquiry.net_payable_inr or inquiry.gross_amount_inr
+        if amount is None and inquiry.quantity_grams and inquiry.sell_rate_per_gram:
+            amount = inquiry.quantity_grams * inquiry.sell_rate_per_gram
+
         return WalletTransactionDetailResponse(
             id=txn_id,
             user_id=user.id,
@@ -494,8 +483,12 @@ class AdminWalletService:
             occurred_at=inquiry.created_at,
             transaction_type="SELL",
             metal="GOLD",
-            quantity_grams=None,
-            amount_inr=None,
+            quantity_grams=inquiry.quantity_grams,
+            amount_inr=amount,
+            rate_per_gram=inquiry.sell_rate_per_gram,
+            gst_amount_inr=inquiry.tax_amount_inr,
+            platform_fee_inr=inquiry.platform_charge_inr,
+            total_amount_inr=inquiry.gross_amount_inr,
             status=inquiry.status,
             reference_id=str(inquiry.id),
             sell_details=WalletSellDetails(

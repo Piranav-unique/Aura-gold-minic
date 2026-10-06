@@ -134,6 +134,8 @@ class CustomerService:
             raise NotFoundException("Customer not found")
 
         update_data = customer_in.model_dump(exclude_unset=True)
+        # Enforce name immutability: customer name cannot be modified by admin
+        update_data.pop("full_name", None)
 
         if "mobile_number" in update_data:
             update_data["mobile_number"] = normalize_mobile(

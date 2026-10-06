@@ -27,7 +27,6 @@ class CustomersScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomersScreenState extends ConsumerState<CustomersScreen> {
-  int _selectedTab = 0; // 0: App Customers, 1: Wholesale B2B
   bool _isSyncingRazorpay = false;
 
   // Search controllers
@@ -308,7 +307,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     WalletUserSearchItem user,
     DateFormat dateFormat,
   ) {
-    final hasName = user.hasAssignedName;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -378,28 +376,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       ],
                     ),
                   ),
-                  if (!hasName)
-                    FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        backgroundColor: AppTheme.primaryGold.withValues(alpha: 0.18),
-                        foregroundColor: AppTheme.primaryGold,
-                      ),
-                      icon: const Icon(Icons.person_add_alt_1, size: 16),
-                      label: const Text(
-                        'Add Name',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: () => _showEditNameDialog(context, user),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      tooltip: 'Edit Name',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => _showEditNameDialog(context, user),
-                    ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -465,24 +441,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       u.fullName,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(width: 6),
-                    if (!u.hasAssignedName)
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        ),
-                        icon: const Icon(Icons.add, size: 14),
-                        label: const Text('Add Name', style: TextStyle(fontSize: 11)),
-                        onPressed: () => _showEditNameDialog(context, u),
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 16),
-                        tooltip: 'Edit Name',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => _showEditNameDialog(context, u),
-                      ),
                   ],
                 ),
               ),
@@ -568,151 +526,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     );
   }
 
-  // ==========================================
-  // ADD / EDIT CUSTOMER NAME DIALOG
-  // ==========================================
 
-  void _showEditNameDialog(BuildContext context, WalletUserSearchItem user) {
-    final hasName = user.hasAssignedName;
-    String initFirst = user.firstName ?? '';
-    String initLast = user.lastName ?? '';
-    if (initFirst.isEmpty && hasName) {
-      final parts = user.fullName.trim().split(RegExp(r'\s+'));
-      initFirst = parts.isNotEmpty ? parts.first : '';
-      initLast = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    }
-
-    final firstController = TextEditingController(text: initFirst);
-    final lastController = TextEditingController(text: initLast);
-    final formKey = GlobalKey<FormState>();
-    bool isSaving = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(hasName ? 'Edit Customer Name' : 'Add Customer Name'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.mobileNumber != null
-                          ? 'Customer Mobile: ${user.mobileNumber}'
-                          : 'Customer: ${user.email}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.65),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: firstController,
-                      decoration: const InputDecoration(
-                        labelText: 'First Name *',
-                        hintText: 'e.g. Rahul',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'First name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: lastController,
-                      decoration: const InputDecoration(
-                        labelText: 'Last Name',
-                        hintText: 'e.g. Sharma (optional)',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isSaving ? null : () => Navigator.of(dialogCtx).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGold,
-                  foregroundColor: Colors.black,
-                ),
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        if (!formKey.currentState!.validate()) return;
-                        setDialogState(() => isSaving = true);
-                        try {
-                          final fn = firstController.text.trim();
-                          final ln = lastController.text.trim();
-                          await ref.read(updateCustomerNameProvider)(
-                            userId: user.id,
-                            firstName: fn,
-                            lastName: ln.isNotEmpty ? ln : null,
-                          );
-                          if (dialogCtx.mounted) {
-                            Navigator.of(dialogCtx).pop();
-                          }
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Customer name set to "$fn${ln.isNotEmpty ? ' $ln' : ''}".',
-                                ),
-                                backgroundColor: Colors.green,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          setDialogState(() => isSaving = false);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to update name: $e'),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                child: isSaving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
-                    : const Text(
-                        'Save Name',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 
   String _avatarInitials(WalletUserSearchItem user) {
     if (user.hasAssignedName) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
@@ -63,25 +64,12 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
               Row(
                 children: [
                   Expanded(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            detail.fullName,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                            overflow: TextOverflow.ellipsis,
+                    child: Text(
+                      detail.fullName,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, size: 20),
-                          tooltip: 'Edit Customer Name',
-                          onPressed: () => _showEditNameDialog(context, detail),
-                        ),
-                      ],
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   OutlinedButton.icon(
@@ -313,17 +301,96 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                           return _txnPager(page);
                         }
                         final txn = page.items[index];
-                        return ListTile(
-                          title: Text(
-                            '${txn.transactionType} • ${txn.metal ?? ''}',
+                        final displayId = (txn.referenceId != null && txn.referenceId!.isNotEmpty) ? txn.referenceId! : txn.id;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
                           ),
-                          subtitle: Text(
-                            dateFormat.format(txn.occurredAt.toLocal()),
+                          child: InkWell(
+                            onTap: () => openWalletTransactionDetail(context, txn.id),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${txn.transactionType.toUpperCase()} ${txn.metal != null ? '• ${txn.metal!.toUpperCase()}' : ''}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          color: Color(0xFF1E1B18),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF3C7),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          txn.status.toUpperCase(),
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF92400E),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    dateFormat.format(txn.occurredAt.toLocal()),
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        txn.amountInr != null ? currency.format(txn.amountInr) : '—',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF1E1B18),
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () {
+                                          Clipboard.setData(ClipboardData(text: displayId));
+                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Transaction ID copied'),
+                                              duration: Duration(seconds: 2),
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        },
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'ID: ${displayId.length > 10 ? '${displayId.substring(0, 8)}...' : displayId}',
+                                              style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(Icons.copy_rounded, size: 12, color: Color(0xFFC59A27)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          trailing: txn.amountInr != null
-                              ? Text(currency.format(txn.amountInr))
-                              : null,
-                          onTap: () => openWalletTransactionDetail(context, txn.id),
                         );
                       },
                     );
@@ -408,147 +475,6 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
           icon: const Icon(Icons.chevron_right),
         ),
       ],
-    );
-  }
-
-  void _showEditNameDialog(BuildContext context, WalletUserDetail detail) {
-    String initFirst = detail.firstName ?? '';
-    String initLast = detail.lastName ?? '';
-    if (initFirst.isEmpty && detail.hasAssignedName) {
-      final parts = detail.fullName.trim().split(RegExp(r'\s+'));
-      initFirst = parts.isNotEmpty ? parts.first : '';
-      initLast = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    }
-
-    final firstController = TextEditingController(text: initFirst);
-    final lastController = TextEditingController(text: initLast);
-    final formKey = GlobalKey<FormState>();
-    bool isSaving = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Edit Customer Name'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      detail.mobileNumber != null
-                          ? 'Customer Mobile: ${detail.mobileNumber}'
-                          : 'Customer: ${detail.email}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.65),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: firstController,
-                      decoration: const InputDecoration(
-                        labelText: 'First Name *',
-                        hintText: 'e.g. Rahul',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'First name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: lastController,
-                      decoration: const InputDecoration(
-                        labelText: 'Last Name',
-                        hintText: 'e.g. Sharma (optional)',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isSaving ? null : () => Navigator.of(dialogCtx).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGold,
-                  foregroundColor: Colors.black,
-                ),
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        if (!formKey.currentState!.validate()) return;
-                        setDialogState(() => isSaving = true);
-                        try {
-                          final fn = firstController.text.trim();
-                          final ln = lastController.text.trim();
-                          await ref.read(updateCustomerNameProvider)(
-                            userId: detail.id,
-                            firstName: fn,
-                            lastName: ln.isNotEmpty ? ln : null,
-                          );
-                          if (dialogCtx.mounted) {
-                            Navigator.of(dialogCtx).pop();
-                          }
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Customer name set to "$fn${ln.isNotEmpty ? ' $ln' : ''}".',
-                                ),
-                                backgroundColor: Colors.green,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          setDialogState(() => isSaving = false);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to update name: $e'),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                child: isSaving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
-                    : const Text(
-                        'Save Name',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 }

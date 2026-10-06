@@ -19,7 +19,6 @@ class WalletTransactionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detailAsync = ref.watch(walletTransactionDetailProvider(transactionId));
-    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return ResponsiveNavigationWrapper(
       title: 'Transaction Detail',
@@ -35,24 +34,7 @@ class WalletTransactionDetailScreen extends ConsumerWidget {
           actionLabel: 'Back',
           onAction: () => handleAppBack(context, '/transactions/$transactionId'),
         ),
-        data: (detail) => Padding(
-          padding: EdgeInsets.all(isDesktop ? 24 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                detail.transactionType,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: WalletTransactionDetailContent(detail: detail),
-              ),
-            ],
-          ),
-        ),
+        data: (detail) => WalletTransactionDetailContent(detail: detail),
       ),
     );
   }
