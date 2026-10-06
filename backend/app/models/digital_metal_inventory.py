@@ -30,8 +30,8 @@ class DigitalMetalInventory(Base, UUIDPrimaryKeyMixin, TimestampMixin):
             name="ck_digital_metal_inventory_used_nonneg",
         ),
         CheckConstraint(
-            "used_weight_grams <= total_weight_grams",
-            name="ck_digital_metal_inventory_used_lte_total",
+            "reserved_weight_grams >= 0",
+            name="ck_digital_metal_inventory_reserved_nonneg",
         ),
     )
 
@@ -40,6 +40,9 @@ class DigitalMetalInventory(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         Numeric(18, 4), nullable=False, default=Decimal("0")
     )
     used_weight_grams: Mapped[Decimal] = mapped_column(
+        Numeric(18, 4), nullable=False, default=Decimal("0")
+    )
+    reserved_weight_grams: Mapped[Decimal] = mapped_column(
         Numeric(18, 4), nullable=False, default=Decimal("0")
     )
     low_stock_threshold_grams: Mapped[Decimal] = mapped_column(
@@ -51,21 +54,17 @@ class DigitalMetalInventory(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     @property
     def available_weight_grams(self) -> Decimal:
-        return Decimal(str(self.total_weight_grams or 0)) - Decimal(
-            str(self.used_weight_grams or 0)
-        )
+        total = Decimal(str(self.total_weight_grams or 0))
+        used = Decimal(str(self.used_weight_grams or 0))
+        reserved = Decimal(str(self.reserved_weight_grams or 0))
+        avail = total - reserved - used
+        return max(Decimal("0"), avail)
 
 
 class DigitalMetalInventoryMovement(Base, UUIDPrimaryKeyMixin):
     """Ledger of admin stock updates and purchase debits."""
 
     __tablename__ = "digital_metal_inventory_movements"
-    __table_args__ = (
-        CheckConstraint(
-            "movement_type IN ('admin_update', 'purchase_debit')",
-            name="ck_digital_metal_inventory_movement_type",
-        ),
-    )
 
     metal_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     movement_type: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -87,3 +86,22 @@ class DigitalMetalInventoryMovement(Base, UUIDPrimaryKeyMixin):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
+
+
+class DigitalMetalStockSubscription(Base, UUIDPrimaryKeyMixin):
+    """User subscriptions to receive alerts when gold/silver becomes available again."""
+
+    __tablename__ = "digital_metal_stock_subscriptions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "metal_type", name="uq_user_metal_stock_sub"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    metal_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+

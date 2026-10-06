@@ -17,6 +17,8 @@ import 'package:ags_gold/core/utils/email_validator.dart';
 import 'package:ags_gold/features/profile/presentation/widgets/add_email_dialog.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
+import 'package:ags_gold/features/admin/domain/metal_inventory_models.dart';
+import 'package:ags_gold/features/admin/presentation/providers/admin_metal_inventory_provider.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
@@ -546,11 +548,102 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
     final hasValidInput = (_purchaseMode == PurchaseMode.amount && amountInput >= 1.0) ||
         (_purchaseMode == PurchaseMode.grams && gramsInput >= 0.0001);
 
+    final metalStr = widget.metal == MetalType.silver ? 'silver' : 'gold';
+    final inventoryAsync = ref.watch(digitalMetalInventoryProvider);
+    final metalItem = inventoryAsync.asData?.value.firstWhere(
+      (item) => item.metalType == metalStr,
+      orElse: () => DigitalMetalInventory(
+        id: '',
+        metalType: metalStr,
+        metalLabel: metalStr.toUpperCase(),
+        totalWeightGrams: 999999,
+        usedWeightGrams: 0,
+        reservedWeightGrams: 0,
+        availableWeightGrams: 999999,
+        lowStockThresholdGrams: 1000,
+        stockStatus: MetalStockStatus.available,
+        updatedAt: DateTime.now(),
+      ),
+    );
+    final isStockUnavailable = widget.isBuy && metalItem != null && metalItem.availableWeightGrams <= 0;
+
     return Stack(
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isStockUnavailable) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.rose.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.rose.withValues(alpha: 0.4)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.pause_circle_outline, color: AppTheme.rose, size: 24),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${widget.metal == MetalType.silver ? 'Silver' : 'Gold'} is temporarily unavailable.',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                              color: AppTheme.rose,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Purchasing is temporarily paused as sellable inventory is out of stock.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          try {
+                            await ref.read(subscribeStockNotificationProvider)(metalType: metalStr);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('We will notify you when ${widget.metal == MetalType.silver ? 'Silver' : 'Gold'} is available again!'),
+                                  backgroundColor: const Color(0xFF16A34A),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Notification note: $e')),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                        label: const Text('Notify Me When Available', style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryGold,
+                          side: const BorderSide(color: AppTheme.primaryGold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             // 1. Live Market Rate Card
             AurumSurfaceCard(
               child: Row(
@@ -667,7 +760,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
 
             // 5. Action Button
             FilledButton(
-              onPressed: (_paying || (widget.isBuy && !hasValidInput))
+              onPressed: (_paying || (widget.isBuy && (!hasValidInput || isStockUnavailable)))
                   ? null
                   : widget.isBuy
                       ? () => _showConfirmationSummary(

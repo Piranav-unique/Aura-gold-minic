@@ -45,6 +45,13 @@ import 'package:ags_gold/features/referral/presentation/refer_and_earn_screen.da
 import 'package:ags_gold/features/customers/presentation/customers_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_detail_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_form_screen.dart';
+import 'package:ags_gold/features/admin/presentation/metal_inventory_screen.dart';
+import 'package:ags_gold/features/inventory/presentation/inventory_screen.dart';
+import 'package:ags_gold/features/inventory/presentation/inventory_permission_gate.dart';
+import 'package:ags_gold/features/inventory/presentation/inventory_form_screen.dart';
+import 'package:ags_gold/features/inventory/presentation/inventory_detail_screen.dart';
+import 'package:ags_gold/features/inventory/presentation/stock_movements_screen.dart';
+import 'package:ags_gold/features/inventory/presentation/suppliers_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transactions_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_form_screen.dart';
@@ -354,24 +361,46 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/inventory/new',
+        builder: (context, state) => const InventoryPermissionGate(
+          requiredPermission: 'inventory.create',
+          child: InventoryFormScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/inventory/movements',
-        redirect: (context, state) => '/dashboard',
+        builder: (context, state) => const InventoryPermissionGate(
+          requiredPermission: 'inventory.view',
+          child: StockMovementsScreen(),
+        ),
       ),
       GoRoute(
         path: '/inventory',
-        redirect: (context, state) => '/dashboard',
+        builder: (context, state) => const InventoryPermissionGate(
+          requiredPermission: 'inventory.view',
+          child: MetalInventoryScreen(),
+        ),
       ),
       GoRoute(
-        path: '/inventory/:subpath',
-        redirect: (context, state) => '/dashboard',
+        path: '/inventory/:id',
+        builder: (context, state) => InventoryPermissionGate(
+          requiredPermission: 'inventory.view',
+          child: InventoryDetailScreen(itemId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/suppliers',
-        redirect: (context, state) => '/dashboard',
+        builder: (context, state) => const InventoryPermissionGate(
+          requiredPermission: 'inventory.view',
+          child: SuppliersScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin/metal-inventory',
-        redirect: (context, state) => '/dashboard',
+        builder: (context, state) => const InventoryPermissionGate(
+          requiredPermission: 'inventory.view',
+          child: MetalInventoryScreen(),
+        ),
       ),
       GoRoute(
         path: '/transactions',

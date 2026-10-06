@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.digital_metal_inventory import (
     DigitalMetalInventory,
     DigitalMetalInventoryMovement,
+    DigitalMetalStockSubscription,
 )
 from app.repositories.base import BaseRepository
 
@@ -82,3 +83,55 @@ class DigitalMetalInventoryMovementRepository(
             )
         )
         return int(result.scalar_one() or 0) > 0
+
+
+class DigitalMetalStockSubscriptionRepository(
+    BaseRepository[DigitalMetalStockSubscription]
+):
+    def __init__(self, db_session: AsyncSession):
+        super().__init__(DigitalMetalStockSubscription, db_session)
+
+    async def subscribe(
+        self, user_id: uuid.UUID, metal_type: str
+    ) -> DigitalMetalStockSubscription:
+        metal = metal_type.lower()
+        stmt = select(DigitalMetalStockSubscription).where(
+            DigitalMetalStockSubscription.user_id == user_id,
+            DigitalMetalStockSubscription.metal_type == metal,
+        )
+        res = await self.db.execute(stmt)
+        sub = res.scalars().first()
+        if sub:
+            sub.is_active = True
+        else:
+            sub = DigitalMetalStockSubscription(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                metal_type=metal,
+                is_active=True,
+            )
+            self.db.add(sub)
+        await self.db.commit()
+        await self.db.refresh(sub)
+        return sub
+
+    async def get_active_subscribers(
+        self, metal_type: str
+    ) -> list[DigitalMetalStockSubscription]:
+        stmt = select(DigitalMetalStockSubscription).where(
+            DigitalMetalStockSubscription.metal_type == metal_type.lower(),
+            DigitalMetalStockSubscription.is_active == True,
+        )
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
+    async def deactivate_subscriptions(self, metal_type: str) -> None:
+        stmt = select(DigitalMetalStockSubscription).where(
+            DigitalMetalStockSubscription.metal_type == metal_type.lower(),
+            DigitalMetalStockSubscription.is_active == True,
+        )
+        res = await self.db.execute(stmt)
+        for sub in res.scalars().all():
+            sub.is_active = False
+        await self.db.commit()
+

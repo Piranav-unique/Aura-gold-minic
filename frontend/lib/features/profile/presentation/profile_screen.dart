@@ -435,6 +435,12 @@ class _AdminProfileBody extends ConsumerWidget {
               onTap: () => context.push('/admin/payment-settlements'),
             ),
             ProfileSettingsTile(
+              icon: Icons.inventory_2_outlined,
+              title: 'Inventory',
+              subtitle: 'Track physical gold & silver stock',
+              onTap: () => context.push('/inventory'),
+            ),
+            ProfileSettingsTile(
               icon: Icons.flash_on_outlined,
               title: 'Quick Operations',
               subtitle: 'Fast administrative operations & shortcuts',

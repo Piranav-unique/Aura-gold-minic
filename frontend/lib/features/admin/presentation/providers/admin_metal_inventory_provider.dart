@@ -83,3 +83,58 @@ final updateDigitalMetalInventoryProvider = Provider((ref) {
     );
   };
 });
+
+final addDigitalMetalStockProvider = Provider((ref) {
+  final api = ref.read(apiClientProvider);
+
+  return ({
+    required String metalType,
+    required double addWeightGrams,
+  }) async {
+    final response = await api.post(
+      '/admin/inventory/metals/$metalType/add-stock',
+      data: {
+        'add_weight_grams': addWeightGrams,
+      },
+    );
+    ref.invalidate(digitalMetalInventoryProvider);
+    ref.invalidate(digitalMetalInventoryAlertsProvider);
+    ref.invalidate(digitalMetalMovementsProvider);
+    return DigitalMetalInventory.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  };
+});
+
+final adjustDigitalMetalReserveProvider = Provider((ref) {
+  final api = ref.read(apiClientProvider);
+
+  return ({
+    required String metalType,
+    required double reservedWeightGrams,
+  }) async {
+    final response = await api.post(
+      '/admin/inventory/metals/$metalType/adjust-reserve',
+      data: {
+        'reserved_weight_grams': reservedWeightGrams,
+      },
+    );
+    ref.invalidate(digitalMetalInventoryProvider);
+    ref.invalidate(digitalMetalInventoryAlertsProvider);
+    ref.invalidate(digitalMetalMovementsProvider);
+    return DigitalMetalInventory.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  };
+});
+
+final subscribeStockNotificationProvider = Provider((ref) {
+  final api = ref.read(apiClientProvider);
+
+  return ({required String metalType}) async {
+    await api.post(
+      '/payments/inventory-stock-notifications/subscribe',
+      data: {'metal_type': metalType},
+    );
+  };
+});

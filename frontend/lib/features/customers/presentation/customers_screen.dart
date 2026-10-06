@@ -152,46 +152,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       title: 'Customers',
       child: Padding(
         padding: EdgeInsets.all(isDesktop ? 24 : 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tab Switcher between App Customers and Wholesale B2B
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SegmentedButton<int>(
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: AppTheme.primaryGold.withValues(alpha: 0.18),
-                  selectedForegroundColor: AppTheme.primaryGold,
-                ),
-                segments: const [
-                  ButtonSegment<int>(
-                    value: 0,
-                    label: Text(
-                      'App Customers',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    icon: Icon(Icons.people_alt_outlined),
-                  ),
-                  ButtonSegment<int>(
-                    value: 1,
-                    label: Text('Wholesale (B2B)'),
-                    icon: Icon(Icons.storefront_outlined),
-                  ),
-                ],
-                selected: {_selectedTab},
-                onSelectionChanged: (set) {
-                  setState(() => _selectedTab = set.first);
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _selectedTab == 0
-                  ? _buildAppCustomersTab(isDesktop, currency, dateFormat)
-                  : _buildWholesaleTab(isDesktop, currency, dateFormat),
-            ),
-          ],
-        ),
+        child: _buildAppCustomersTab(isDesktop, currency, dateFormat),
       ),
     );
   }

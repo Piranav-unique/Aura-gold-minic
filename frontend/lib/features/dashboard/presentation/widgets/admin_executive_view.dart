@@ -964,7 +964,7 @@ class AdminQuickHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -978,49 +978,55 @@ class AdminQuickHub extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Quick Operations',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: FontWeight.w800,
               color: Color(0xFF1E1B18),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _HubTile(
-                  icon: Icons.people_outline_rounded,
-                  label: 'Customers',
-                  route: '/customers',
-                ),
+          const SizedBox(height: 14),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.5,
+            children: const [
+              _HubTile(
+                icon: Icons.people_outline_rounded,
+                label: 'Customers',
+                route: '/customers',
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _HubTile(
-                  icon: Icons.payments_outlined,
-                  label: 'Payments',
-                  route: '/admin/payment-settlements',
-                ),
+              _HubTile(
+                icon: Icons.payments_outlined,
+                label: 'Payments',
+                route: '/admin/payment-settlements',
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _HubTile(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: 'Wallets',
-                  route: '/admin/user-wallets',
-                ),
+              _HubTile(
+                icon: Icons.account_balance_wallet_outlined,
+                label: 'Wallets',
+                route: '/admin/user-wallets',
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _HubTile(
-                  icon: Icons.sell_outlined,
-                  label: 'Sell Orders',
-                  route: '/admin/sell-inquiries',
-                ),
+              _HubTile(
+                icon: Icons.sell_outlined,
+                label: 'Sell Orders',
+                route: '/admin/sell-inquiries',
+              ),
+              _HubTile(
+                icon: Icons.inventory_2_outlined,
+                label: 'Inventory',
+                route: '/inventory',
+              ),
+              _HubTile(
+                icon: Icons.wallet_outlined,
+                label: 'User Wallets',
+                route: '/admin/user-wallets',
               ),
             ],
           ),
@@ -1044,25 +1050,41 @@ class _HubTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.go(route),
-      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        context.push(route);
+      },
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: const Color(0xFFFAF8F5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFEDE8DF)),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFC59A27), size: 22),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E1B18),
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFC59A27).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: const Color(0xFFC59A27), size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E1B18),
+                ),
               ),
             ),
           ],

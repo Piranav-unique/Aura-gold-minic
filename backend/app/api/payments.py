@@ -1,9 +1,14 @@
 import uuid
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from app.api.dependencies import get_current_user, get_gold_payment_service
+from app.api.dependencies import (
+  get_current_user,
+  get_digital_metal_inventory_service,
+  get_gold_payment_service,
+)
 from app.core.authorization import PermissionChecker
 from app.models.user import User
+from app.schemas.digital_metal_inventory import StockNotificationSubscribeRequest
 from app.schemas.payment import (
   AdminPaymentListResponse,
   CreatePaymentOrderRequest,
@@ -15,6 +20,7 @@ from app.schemas.payment import (
   VerifyPaymentRequest,
   VerifyPaymentResponse,
 )
+from app.services.digital_metal_inventory import DigitalMetalInventoryService
 from app.services.gold_payment import GoldPaymentService
 
 router = APIRouter()
@@ -155,5 +161,19 @@ async def resend_order_invoice(
   return await payment_service.resend_order_invoice_email(
     current_user, order_id
   )
+
+
+@router.post(
+  "/inventory-stock-notifications/subscribe",
+  status_code=status.HTTP_200_OK,
+  summary="Subscribe to notification when gold or silver is restocked",
+)
+async def subscribe_stock_notification(
+  body: StockNotificationSubscribeRequest,
+  current_user: User = Depends(get_current_user),
+  inventory_service: DigitalMetalInventoryService = Depends(get_digital_metal_inventory_service),
+):
+  await inventory_service.subscribe_stock_notification(current_user.id, body.metal_type)
+  return {"message": f"We will notify you when {body.metal_type.capitalize()} is back in stock!"}
 
 

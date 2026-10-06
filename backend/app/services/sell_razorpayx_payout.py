@@ -117,7 +117,7 @@ class SellRazorpayXPayoutService:
                 "razorpay_payout_id": ref_id,
                 "payout_status": "processed",
                 "payment_method": "direct_settlement",
-                "payment_destination": "KYC Verified Direct Settlement",
+                "payment_destination": "Direct / Off-Platform Settlement",
                 "reference_number": ref_id,
                 "razorpay_fund_account_id": None,
             }

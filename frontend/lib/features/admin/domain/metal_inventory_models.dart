@@ -18,9 +18,9 @@ String metalStockStatusLabel(MetalStockStatus status) {
     case MetalStockStatus.lowStock:
       return 'Low Stock';
     case MetalStockStatus.outOfStock:
-      return 'Out of Stock';
+      return 'Purchasing Paused';
     case MetalStockStatus.available:
-      return 'Available';
+      return 'In Stock';
   }
 }
 
@@ -30,6 +30,7 @@ class DigitalMetalInventory {
   final String metalLabel;
   final double totalWeightGrams;
   final double usedWeightGrams;
+  final double reservedWeightGrams;
   final double availableWeightGrams;
   final double lowStockThresholdGrams;
   final MetalStockStatus stockStatus;
@@ -41,6 +42,7 @@ class DigitalMetalInventory {
     required this.metalLabel,
     required this.totalWeightGrams,
     required this.usedWeightGrams,
+    required this.reservedWeightGrams,
     required this.availableWeightGrams,
     required this.lowStockThresholdGrams,
     required this.stockStatus,
@@ -54,6 +56,7 @@ class DigitalMetalInventory {
       metalLabel: json['metal_label'] as String? ?? '',
       totalWeightGrams: parseWalletDecimal(json['total_weight_grams']),
       usedWeightGrams: parseWalletDecimal(json['used_weight_grams']),
+      reservedWeightGrams: parseWalletDecimal(json['reserved_weight_grams']),
       availableWeightGrams: parseWalletDecimal(json['available_weight_grams']),
       lowStockThresholdGrams: parseWalletDecimal(json['low_stock_threshold_grams']),
       stockStatus: metalStockStatusFromJson(json['stock_status'] as String),

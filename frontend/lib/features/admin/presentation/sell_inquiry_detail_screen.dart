@@ -32,29 +32,32 @@ class _SellInquiryDetailScreenState
     if (payout == null) return;
 
     final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-    final destination = detail.userPaymentDestination ?? 'Not linked';
+    final hasBank = detail.userPaymentDestination != null && detail.userPaymentDestination!.isNotEmpty;
+    final destination = hasBank ? detail.userPaymentDestination! : 'Direct / Off-Platform Settlement';
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Approve RazorpayX payout'),
+        title: const Text('Approve Sell Request'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Pay ${currency.format(payout.netPayableInr)} via RazorpayX to the customer\'s linked bank account.',
+              'Approve payout of ${currency.format(payout.netPayableInr)} to customer.',
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Bank account:',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            Text(
+              hasBank ? 'Bank account:' : 'Payout method:',
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             Text(destination),
             const SizedBox(height: 8),
-            const Text(
-              'Gold will be debited and RazorpayX will initiate the bank transfer.',
-              style: TextStyle(fontSize: 12),
+            Text(
+              hasBank
+                  ? 'Gold will be debited and RazorpayX will initiate the bank transfer.'
+                  : 'Gold will be debited and the payout will be recorded.',
+              style: const TextStyle(fontSize: 12),
             ),
           ],
         ),
@@ -63,7 +66,7 @@ class _SellInquiryDetailScreenState
             context: ctx,
             cancelLabel: 'Cancel',
             onCancel: () => Navigator.pop(ctx, false),
-            confirmLabel: 'Approve payment',
+            confirmLabel: 'Approve',
             onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
@@ -330,7 +333,7 @@ class _SellInquiryDetailScreenState
                 if (detail.userPaymentDestination != null)
                   _row('Bank account', detail.userPaymentDestination!)
                 else
-                  _row('Payout routing', 'KYC Verified Direct Settlement'),
+                  _row('Payout routing', 'Direct / Off-Platform Settlement'),
               ],
             ),
             if (detail.razorpayPayoutId != null)

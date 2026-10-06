@@ -13,27 +13,12 @@ from app.models.digital_metal_inventory import DigitalMetalInventory
 from app.repositories.digital_metal_inventory import (
     DigitalMetalInventoryMovementRepository,
     DigitalMetalInventoryRepository,
+    DigitalMetalStockSubscriptionRepository,
 )
-from app.schemas.digital_metal_inventory import (
-    DigitalMetalInventoryAlertResponse,
-    DigitalMetalInventoryAlertsResponse,
-    DigitalMetalInventoryListResponse,
-    DigitalMetalInventoryMovementListResponse,
-    DigitalMetalInventoryMovementResponse,
-    DigitalMetalInventoryResponse,
-    DigitalMetalInventoryUpdate,
-    compute_stock_status,
-)
-from app.services.audit import AuditService
-from app.services.notification import NotificationService
 
 
-INSUFFICIENT_STOCK_MESSAGE = (
-    "Gold is currently out of stock / insufficient stock. Please try again later."
-)
-INSUFFICIENT_SILVER_STOCK_MESSAGE = (
-    "Silver is currently out of stock / insufficient stock. Please try again later."
-)
+INSUFFICIENT_STOCK_MESSAGE = "Gold is temporarily unavailable."
+INSUFFICIENT_SILVER_STOCK_MESSAGE = "Silver is temporarily unavailable."
 
 
 class DigitalMetalInventoryService:
@@ -43,11 +28,13 @@ class DigitalMetalInventoryService:
         self,
         inventory_repo: DigitalMetalInventoryRepository,
         movement_repo: DigitalMetalInventoryMovementRepository,
+        subscription_repo: Optional[DigitalMetalStockSubscriptionRepository] = None,
         audit_service: Optional[AuditService] = None,
         notification_service: Optional[NotificationService] = None,
     ):
         self.inventory_repo = inventory_repo
         self.movement_repo = movement_repo
+        self.subscription_repo = subscription_repo
         self.audit_service = audit_service
         self.notification_service = notification_service
 
@@ -66,8 +53,49 @@ class DigitalMetalInventoryService:
             else INSUFFICIENT_STOCK_MESSAGE
         )
 
+    async def _get_or_create_metal_for_update(
+        self, metal: str
+    ) -> DigitalMetalInventory:
+        row = await self.inventory_repo.get_by_metal_for_update(metal)
+        if not row:
+            row = await self.inventory_repo.create(
+                {
+                    "id": uuid.uuid4(),
+                    "metal_type": metal,
+                    "total_weight_grams": Decimal("0"),
+                    "used_weight_grams": Decimal("0"),
+                    "reserved_weight_grams": Decimal("0"),
+                    "low_stock_threshold_grams": Decimal("1000"),
+                    "stock_status": "out_of_stock",
+                },
+                commit=False,
+            )
+            await self.inventory_repo.db.flush()
+        return row
+
     async def list_metals(self) -> DigitalMetalInventoryListResponse:
         rows = await self.inventory_repo.list_all()
+        existing_metals = {r.metal_type for r in rows}
+        needed_commit = False
+        for metal in ("gold", "silver"):
+            if metal not in existing_metals:
+                new_row = await self.inventory_repo.create(
+                    {
+                        "id": uuid.uuid4(),
+                        "metal_type": metal,
+                        "total_weight_grams": Decimal("0"),
+                        "used_weight_grams": Decimal("0"),
+                        "reserved_weight_grams": Decimal("0"),
+                        "low_stock_threshold_grams": Decimal("1000"),
+                        "stock_status": "out_of_stock",
+                    },
+                    commit=False,
+                )
+                rows.append(new_row)
+                needed_commit = True
+        if needed_commit:
+            await self.inventory_repo.db.commit()
+            rows = await self.inventory_repo.list_all()
         return DigitalMetalInventoryListResponse(
             items=[DigitalMetalInventoryResponse.from_model(r) for r in rows]
         )
@@ -76,8 +104,136 @@ class DigitalMetalInventoryService:
         metal = self._normalize_metal(metal_type)
         row = await self.inventory_repo.get_by_metal(metal)
         if not row:
-            raise NotFoundException(f"{metal.upper()} inventory not configured")
+            row = await self._get_or_create_metal_for_update(metal)
+            await self.inventory_repo.db.commit()
+            await self.inventory_repo.db.refresh(row)
         return DigitalMetalInventoryResponse.from_model(row)
+
+    async def add_stock(
+        self,
+        metal_type: str,
+        add_weight_grams: Decimal,
+        *,
+        admin_user_id: uuid.UUID,
+    ) -> DigitalMetalInventoryResponse:
+        metal = self._normalize_metal(metal_type)
+        add_grams = Decimal(str(add_weight_grams))
+        if add_grams <= Decimal("0"):
+            raise ValidationException("Added quantity must be greater than zero.")
+
+        row = await self._get_or_create_metal_for_update(metal)
+
+        available_before = row.available_weight_grams
+        total_before = Decimal(str(row.total_weight_grams or 0))
+        used_before = Decimal(str(row.used_weight_grams or 0))
+
+        new_total = total_before + add_grams
+        row.total_weight_grams = new_total
+        row.updated_by = admin_user_id
+
+        await self.movement_repo.create(
+            {
+                "id": uuid.uuid4(),
+                "metal_type": metal,
+                "movement_type": "restock",
+                "grams_delta": add_grams,
+                "total_weight_before": total_before,
+                "used_weight_before": used_before,
+                "total_weight_after": new_total,
+                "used_weight_after": used_before,
+                "performed_by": admin_user_id,
+                "notes": f"Admin added +{add_grams} g stock",
+            },
+            commit=False,
+        )
+
+        await self.inventory_repo.db.commit()
+        await self.inventory_repo.db.refresh(row)
+        available_after = row.available_weight_grams
+
+        if available_before <= Decimal("0") and available_after > Decimal("0"):
+            await self._notify_subscribers_restocked(metal)
+
+        await self._notify_stock_status(row)
+        return DigitalMetalInventoryResponse.from_model(row)
+
+    async def adjust_reserve(
+        self,
+        metal_type: str,
+        reserved_weight_grams: Decimal,
+        *,
+        admin_user_id: uuid.UUID,
+    ) -> DigitalMetalInventoryResponse:
+        metal = self._normalize_metal(metal_type)
+        reserved_grams = Decimal(str(reserved_weight_grams))
+        if reserved_grams < Decimal("0"):
+            raise ValidationException("Reserved stock cannot be negative.")
+
+        row = await self._get_or_create_metal_for_update(metal)
+
+        available_before = row.available_weight_grams
+        total_before = Decimal(str(row.total_weight_grams or 0))
+        used_before = Decimal(str(row.used_weight_grams or 0))
+        reserved_before = getattr(row, "reserved_weight_grams", Decimal("0")) or Decimal("0")
+
+        row.reserved_weight_grams = reserved_grams
+        row.updated_by = admin_user_id
+
+        await self.movement_repo.create(
+            {
+                "id": uuid.uuid4(),
+                "metal_type": metal,
+                "movement_type": "reserve_adjustment",
+                "grams_delta": reserved_grams - reserved_before,
+                "total_weight_before": total_before,
+                "used_weight_before": used_before,
+                "total_weight_after": total_before,
+                "used_weight_after": used_before,
+                "performed_by": admin_user_id,
+                "notes": f"Adjusted reserve to {reserved_grams} g",
+            },
+            commit=False,
+        )
+
+        await self.inventory_repo.db.commit()
+        await self.inventory_repo.db.refresh(row)
+        available_after = row.available_weight_grams
+
+        if available_before <= Decimal("0") and available_after > Decimal("0"):
+            await self._notify_subscribers_restocked(metal)
+
+        await self._notify_stock_status(row)
+        return DigitalMetalInventoryResponse.from_model(row)
+
+    async def subscribe_stock_notification(self, user_id: uuid.UUID, metal_type: str) -> None:
+        metal = self._normalize_metal(metal_type)
+        if self.subscription_repo:
+            await self.subscription_repo.subscribe(user_id, metal)
+
+    async def _notify_subscribers_restocked(self, metal_type: str) -> None:
+        if not self.subscription_repo or not self.notification_service:
+            return
+        subs = await self.subscription_repo.get_active_subscribers(metal_type)
+        if not subs:
+            return
+
+        metal_cap = metal_type.capitalize()
+        title = f"{metal_cap} is available again!"
+        message = f"{metal_cap} has been restocked. You can purchase now."
+
+        for sub in subs:
+            try:
+                await self.notification_service.create_notification(
+                    user_id=sub.user_id,
+                    title=title,
+                    message=message,
+                    category=NotificationService.CATEGORY_SYSTEM,
+                    metadata={"metal_type": metal_type, "event": "restocked"},
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send restock notification to user {sub.user_id}: {e}")
+
+        await self.subscription_repo.deactivate_subscriptions(metal_type)
 
     async def update_metal(
         self,
@@ -91,19 +247,24 @@ class DigitalMetalInventoryService:
         if not row:
             raise NotFoundException(f"{metal.upper()} inventory not configured")
 
-        new_total = Decimal(str(payload.total_weight_grams))
-        new_threshold = Decimal(str(payload.low_stock_threshold_grams))
-        used = Decimal(str(row.used_weight_grams or 0))
-
-        if new_total < used:
-            raise ValidationException(
-                f"Total stock cannot be less than used stock ({used} g)."
-            )
-
+        available_before = row.available_weight_grams
         total_before = Decimal(str(row.total_weight_grams))
-        used_before = used
-        row.total_weight_grams = new_total
-        row.low_stock_threshold_grams = new_threshold
+        used_before = Decimal(str(row.used_weight_grams or 0))
+
+        if payload.total_weight_grams is not None:
+            new_total = Decimal(str(payload.total_weight_grams))
+            if new_total < used_before:
+                raise ValidationException(
+                    f"Total stock cannot be less than used stock ({used_before} g)."
+                )
+            row.total_weight_grams = new_total
+
+        if payload.reserved_weight_grams is not None:
+            row.reserved_weight_grams = Decimal(str(payload.reserved_weight_grams))
+
+        if payload.low_stock_threshold_grams is not None:
+            row.low_stock_threshold_grams = Decimal(str(payload.low_stock_threshold_grams))
+
         row.updated_by = admin_user_id
 
         await self.movement_repo.create(
@@ -111,34 +272,24 @@ class DigitalMetalInventoryService:
                 "id": uuid.uuid4(),
                 "metal_type": metal,
                 "movement_type": "admin_update",
-                "grams_delta": new_total - total_before,
+                "grams_delta": (row.total_weight_grams or 0) - total_before,
                 "total_weight_before": total_before,
                 "used_weight_before": used_before,
-                "total_weight_after": new_total,
+                "total_weight_after": row.total_weight_grams,
                 "used_weight_after": used_before,
                 "performed_by": admin_user_id,
-                "notes": "Admin updated total stock and threshold",
+                "notes": "Admin updated inventory settings",
             },
             commit=False,
         )
 
-        if self.audit_service:
-            await self.audit_service.log_action(
-                user_id=admin_user_id,
-                action=audit_actions.METAL_INVENTORY_UPDATE,
-                entity_type="DigitalMetalInventory",
-                entity_id=str(row.id),
-                metadata={
-                    "metal_type": metal,
-                    "total_weight_grams": str(new_total),
-                    "used_weight_grams": str(used_before),
-                    "available_weight_grams": str(new_total - used_before),
-                    "low_stock_threshold_grams": str(new_threshold),
-                },
-            )
-
         await self.inventory_repo.db.commit()
         await self.inventory_repo.db.refresh(row)
+        available_after = row.available_weight_grams
+
+        if available_before <= Decimal("0") and available_after > Decimal("0"):
+            await self._notify_subscribers_restocked(metal)
+
         await self._notify_stock_status(row)
         return DigitalMetalInventoryResponse.from_model(row)
 

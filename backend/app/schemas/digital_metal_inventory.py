@@ -27,6 +27,7 @@ class DigitalMetalInventoryResponse(BaseModel):
     metal_label: str
     total_weight_grams: Decimal
     used_weight_grams: Decimal
+    reserved_weight_grams: Decimal
     available_weight_grams: Decimal
     low_stock_threshold_grams: Decimal
     stock_status: StockStatus
@@ -36,12 +37,14 @@ class DigitalMetalInventoryResponse(BaseModel):
     @classmethod
     def from_model(cls, row) -> "DigitalMetalInventoryResponse":
         available = row.available_weight_grams
+        reserved = getattr(row, "reserved_weight_grams", Decimal("0")) or Decimal("0")
         return cls(
             id=row.id,
             metal_type=row.metal_type,
             metal_label=row.metal_type.upper(),
             total_weight_grams=row.total_weight_grams,
             used_weight_grams=row.used_weight_grams,
+            reserved_weight_grams=reserved,
             available_weight_grams=available,
             low_stock_threshold_grams=row.low_stock_threshold_grams,
             stock_status=compute_stock_status(available, row.low_stock_threshold_grams),
@@ -55,8 +58,23 @@ class DigitalMetalInventoryListResponse(BaseModel):
 
 
 class DigitalMetalInventoryUpdate(BaseModel):
-    total_weight_grams: Decimal = Field(..., ge=0)
-    low_stock_threshold_grams: Decimal = Field(..., ge=0)
+    total_weight_grams: Optional[Decimal] = Field(None, ge=0)
+    reserved_weight_grams: Optional[Decimal] = Field(None, ge=0)
+    low_stock_threshold_grams: Optional[Decimal] = Field(None, ge=0)
+
+
+class AddMetalStockRequest(BaseModel):
+    add_weight_grams: Optional[Decimal] = Field(None, gt=0)
+    add_weight_kg: Optional[Decimal] = Field(None, gt=0)
+
+
+class AdjustMetalReserveRequest(BaseModel):
+    reserved_weight_grams: Optional[Decimal] = Field(None, ge=0)
+    reserved_weight_kg: Optional[Decimal] = Field(None, ge=0)
+
+
+class StockNotificationSubscribeRequest(BaseModel):
+    metal_type: str
 
 
 class DigitalMetalInventoryMovementResponse(BaseModel):

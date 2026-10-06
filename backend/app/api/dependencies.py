@@ -71,6 +71,7 @@ from app.services.admin_wallet import AdminWalletService
 from app.repositories.digital_metal_inventory import (
     DigitalMetalInventoryMovementRepository,
     DigitalMetalInventoryRepository,
+    DigitalMetalStockSubscriptionRepository,
 )
 from app.services.digital_metal_inventory import DigitalMetalInventoryService
 from app.repositories.account_deletion import AccountDeletionRepository
@@ -509,6 +510,12 @@ def get_digital_metal_inventory_movement_repository(
     return DigitalMetalInventoryMovementRepository(db)
 
 
+def get_digital_metal_stock_subscription_repository(
+    db: AsyncSession = Depends(get_db_session),
+) -> DigitalMetalStockSubscriptionRepository:
+    return DigitalMetalStockSubscriptionRepository(db)
+
+
 def get_digital_metal_inventory_service(
     inventory_repo: DigitalMetalInventoryRepository = Depends(
         get_digital_metal_inventory_repository
@@ -516,11 +523,14 @@ def get_digital_metal_inventory_service(
     movement_repo: DigitalMetalInventoryMovementRepository = Depends(
         get_digital_metal_inventory_movement_repository
     ),
+    subscription_repo: DigitalMetalStockSubscriptionRepository = Depends(
+        get_digital_metal_stock_subscription_repository
+    ),
     audit_service: AuditService = Depends(get_audit_service),
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> DigitalMetalInventoryService:
     return DigitalMetalInventoryService(
-        inventory_repo, movement_repo, audit_service, notification_service
+        inventory_repo, movement_repo, subscription_repo, audit_service, notification_service
     )
 
 
