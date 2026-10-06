@@ -96,7 +96,28 @@ class AdminWalletRepository:
         self.db = db_session
 
     def _wallet_user_filters(self, search: Optional[str]):
-        clauses = [User.is_deleted.is_(False)]
+        import os
+        from app.models.role import Role
+        from app.models.associations import user_roles
+
+        admin_mobile = os.getenv("ADMIN_MOBILE_NUMBER", "9943795005").strip()
+
+        admin_subq = (
+            select(user_roles.c.user_id)
+            .join(Role, user_roles.c.role_id == Role.id)
+            .where(Role.name.in_(["super_admin", "admin", "superadmin"]))
+        )
+
+        clauses = [
+            User.is_deleted.is_(False),
+            User.is_superuser.is_(False),
+            User.email.not_ilike("%superadmin%"),
+            User.email.not_ilike("%admin@agsgold%"),
+            ~User.id.in_(admin_subq),
+        ]
+        if admin_mobile:
+            clauses.append(or_(User.mobile_number.is_(None), User.mobile_number != admin_mobile))
+
         if not search:
             return clauses
         term = search.strip()

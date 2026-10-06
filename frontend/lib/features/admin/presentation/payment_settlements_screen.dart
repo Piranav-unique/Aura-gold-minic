@@ -112,6 +112,17 @@ class _PaymentSettlementsScreenState
             final email = (row['user_email'] as String?)?.trim() ??
                 (row['customer_email'] as String?)?.trim() ??
                 '';
+
+            // Never include superadmin in customer payments
+            final emailLower = email.toLowerCase();
+            final nameLower = (rawName ?? '').toLowerCase();
+            if (emailLower.contains('superadmin') ||
+                emailLower.contains('admin@agsgold') ||
+                nameLower.contains('super admin') ||
+                mobile == '9943795005') {
+              continue;
+            }
+
             final gross = _num(row['gross_amount_inr'] ?? row['amount_inr'] ?? (row['amount_paise'] != null ? _num(row['amount_paise']) / 100 : 0));
             final status = (row['status'] as String? ?? '').toLowerCase();
             final isPaid = status.isEmpty || status == 'paid' || status == 'captured';
@@ -168,6 +179,16 @@ class _PaymentSettlementsScreenState
             final rawName = (row['user_name'] as String?)?.trim() ??
                 (row['customer_name'] as String?)?.trim() ??
                 '';
+
+            // Never include superadmin in payment records
+            final emailLower = email.toLowerCase();
+            final nameLower = rawName.toLowerCase();
+            if (emailLower.contains('superadmin') ||
+                emailLower.contains('admin@agsgold') ||
+                nameLower.contains('super admin') ||
+                mobile == '9943795005') {
+              return false;
+            }
             final method = (row['payment_method'] as String? ?? '').toLowerCase();
             final metal = (row['metal'] as String? ?? '').toLowerCase();
             final paymentId = (row['razorpay_payment_id'] as String? ?? '').toLowerCase();

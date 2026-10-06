@@ -28,6 +28,7 @@ class CustomersScreen extends ConsumerStatefulWidget {
 
 class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   int _selectedTab = 0; // 0: App Customers, 1: Wholesale B2B
+  bool _isSyncingRazorpay = false;
 
   // Search controllers
   final _appSearchController = TextEditingController();
@@ -35,6 +36,36 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
   final _wholesaleSearchController = TextEditingController();
   Timer? _wholesaleDebounce;
+
+  Future<void> _syncWithRazorpay() async {
+    setState(() => _isSyncingRazorpay = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.post('/payments/razorpay/sync-all');
+      ref.invalidate(walletUsersListProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Customers & payments synchronized from Razorpay!'),
+            backgroundColor: Color(0xFF16A34A),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync note: $e'),
+            backgroundColor: Colors.orange.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncingRazorpay = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -179,28 +210,63 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // App Customer Search Bar
-        TextField(
-          controller: _appSearchController,
-          decoration: InputDecoration(
-            hintText: 'Search customers by name, mobile, email, KYC…',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: _appSearchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _appSearchController.clear();
-                      ref.read(walletUserSearchQueryProvider.notifier).update('');
-                      ref.read(walletUsersPageProvider.notifier).update(1);
-                    },
-                  )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+        // App Customer Search Bar + Sync with Razorpay Button
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _appSearchController,
+                decoration: InputDecoration(
+                  hintText: 'Search customers by name, mobile, email, KYC…',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _appSearchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _appSearchController.clear();
+                            ref.read(walletUserSearchQueryProvider.notifier).update('');
+                            ref.read(walletUsersPageProvider.notifier).update(1);
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: _onAppSearchChanged,
+              ),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          onChanged: _onAppSearchChanged,
+            const SizedBox(width: 10),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryGold,
+                foregroundColor: Colors.black,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 16 : 12,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: _isSyncingRazorpay
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Icon(Icons.sync, size: 18),
+              label: Text(
+                isDesktop ? 'Sync with Razorpay' : 'Sync',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onPressed: _isSyncingRazorpay ? null : _syncWithRazorpay,
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Expanded(
@@ -214,7 +280,23 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
               onAction: () => ref.invalidate(walletUsersListProvider),
             ),
             data: (page) {
-              if (page.items.isEmpty) {
+              final cleanItems = page.items.where((u) {
+                final email = u.email.toLowerCase();
+                final name = u.fullName.toLowerCase();
+                final mobile = u.mobileNumber ?? '';
+                if (email.contains('superadmin') || email.contains('admin@agsgold')) return false;
+                if (name.contains('super admin') || name.contains('superadmin')) return false;
+                if (mobile.contains('9943795005')) return false;
+                return true;
+              }).toList();
+              final filteredPage = PaginatedWalletUsers(
+                items: cleanItems,
+                total: page.total,
+                skip: page.skip,
+                limit: page.limit,
+              );
+
+              if (cleanItems.isEmpty) {
                 return EmptyStateWidget(
                   icon: Icons.people_outline,
                   title: 'No app customers found',
@@ -234,20 +316,26 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
               if (!isDesktop) {
                 return RefreshIndicator(
-                  onRefresh: () => ref.refresh(walletUsersListProvider.future),
+                  onRefresh: () async {
+                    try {
+                      final api = ref.read(apiClientProvider);
+                      await api.post('/payments/razorpay/sync-all');
+                    } catch (_) {}
+                    return ref.refresh(walletUsersListProvider.future);
+                  },
                   child: ListView.builder(
-                    itemCount: page.items.length + 1,
+                    itemCount: cleanItems.length + 1,
                     itemBuilder: (context, index) {
-                      if (index == page.items.length) {
-                        return _buildAppPagination(page);
+                      if (index == cleanItems.length) {
+                        return _buildAppPagination(filteredPage);
                       }
-                      return _buildAppCustomerMobileCard(page.items[index], dateFormat);
+                      return _buildAppCustomerMobileCard(cleanItems[index], dateFormat);
                     },
                   ),
                 );
               }
 
-              return _buildAppCustomersDesktop(page, dateFormat);
+              return _buildAppCustomersDesktop(filteredPage, dateFormat);
             },
           ),
         ),

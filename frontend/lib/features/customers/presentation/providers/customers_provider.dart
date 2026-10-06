@@ -100,7 +100,24 @@ final customersListProvider = FutureProvider.autoDispose<PaginatedCustomers>((
   if (status != null) params['status'] = status;
 
   final response = await apiClient.get('/customers/', queryParameters: params);
-  return PaginatedCustomers.fromJson(response.data as Map<String, dynamic>);
+  final paginated = PaginatedCustomers.fromJson(response.data as Map<String, dynamic>);
+  final filteredItems = paginated.items.where((c) {
+    final email = c.email.toLowerCase();
+    final name = c.fullName.toLowerCase();
+    final phone = c.mobileNumber;
+    if (email.contains('superadmin') || email.contains('admin@agsgold')) return false;
+    if (name.contains('super admin') || name.contains('superadmin')) return false;
+    if (phone.contains('9943795005')) return false;
+    return true;
+  }).toList();
+  return PaginatedCustomers(
+    items: filteredItems,
+    total: filteredItems.length < paginated.items.length
+        ? (paginated.total - (paginated.items.length - filteredItems.length))
+        : paginated.total,
+    skip: paginated.skip,
+    limit: paginated.limit,
+  );
 });
 
 final customerDetailProvider = FutureProvider.autoDispose

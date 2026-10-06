@@ -32,6 +32,8 @@ class CustomerRepository(BaseRepository[Customer]):
         status: Optional[str] = None,
     ):
         query = query.where(Customer.is_deleted.is_(False))
+        query = query.where(Customer.email.not_ilike("%superadmin%"))
+        query = query.where(Customer.email.not_ilike("%admin@agsgold%"))
 
         if search:
             pattern = f"%{search}%"

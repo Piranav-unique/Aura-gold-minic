@@ -43,7 +43,25 @@ final walletUsersListProvider =
       'limit': limit,
     },
   );
-  return PaginatedWalletUsers.fromJson(response.data as Map<String, dynamic>);
+  final paginated = PaginatedWalletUsers.fromJson(response.data as Map<String, dynamic>);
+  final filteredItems = paginated.items.where((u) {
+    final email = u.email.toLowerCase();
+    final name = u.fullName.toLowerCase();
+    final mobile = u.mobileNumber ?? '';
+    if (email.contains('superadmin') || email.contains('admin@agsgold')) return false;
+    if (name.contains('super admin') || name.contains('superadmin')) return false;
+    if (mobile.contains('9943795005')) return false;
+    return true;
+  }).toList();
+
+  return PaginatedWalletUsers(
+    items: filteredItems,
+    total: filteredItems.length < paginated.items.length
+        ? (paginated.total - (paginated.items.length - filteredItems.length))
+        : paginated.total,
+    skip: paginated.skip,
+    limit: paginated.limit,
+  );
 });
 
 final walletUserDetailProvider = FutureProvider.autoDispose

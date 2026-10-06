@@ -104,7 +104,23 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
         onAction: () => ref.invalidate(walletUsersListProvider),
       ),
       data: (page) {
-        if (page.items.isEmpty) {
+        final cleanItems = page.items.where((u) {
+          final email = u.email.toLowerCase();
+          final name = u.fullName.toLowerCase();
+          final mobile = u.mobileNumber ?? '';
+          if (email.contains('superadmin') || email.contains('admin@agsgold')) return false;
+          if (name.contains('super admin') || name.contains('superadmin')) return false;
+          if (mobile.contains('9943795005')) return false;
+          return true;
+        }).toList();
+        final filteredPage = PaginatedWalletUsers(
+          items: cleanItems,
+          total: page.total,
+          skip: page.skip,
+          limit: page.limit,
+        );
+
+        if (cleanItems.isEmpty) {
           return EmptyStateWidget(
             icon: Icons.account_balance_wallet_outlined,
             title: 'No users found',
@@ -115,12 +131,12 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
           return RefreshIndicator(
             onRefresh: () => ref.refresh(walletUsersListProvider.future),
             child: ListView.builder(
-              itemCount: page.items.length + 1,
+              itemCount: cleanItems.length + 1,
               itemBuilder: (context, index) {
-                if (index == page.items.length) {
-                  return _userPagination(page);
+                if (index == cleanItems.length) {
+                  return _userPagination(filteredPage);
                 }
-                return _userMobileCard(page.items[index], currency);
+                return _userMobileCard(cleanItems[index], currency);
               },
             ),
           );
@@ -129,7 +145,7 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
           children: [
             Expanded(
               child: PremiumDataTable<WalletUserSearchItem>(
-                items: page.items,
+                items: cleanItems,
                 columns: [
                   DataTableColumn(
                     label: 'Name',

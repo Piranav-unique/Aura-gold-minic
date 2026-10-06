@@ -50,14 +50,36 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
         skip: int = 0,
         limit: int = 50,
     ) -> list[PaymentOrder]:
+        import os
+        from app.models.user import User
+        from sqlalchemy import or_
+
+        admin_mobile = os.getenv("ADMIN_MOBILE_NUMBER", "9943795005").strip()
+
         query = (
             select(PaymentOrder)
             .options(selectinload(PaymentOrder.user))
-            .where(PaymentOrder.status == "paid")
-            .order_by(PaymentOrder.paid_at.desc())
-            .offset(skip)
-            .limit(limit)
+            .outerjoin(PaymentOrder.user)
+            .where(
+                PaymentOrder.status == "paid",
+                or_(User.id.is_(None), User.is_superuser.is_(False)),
+                or_(User.id.is_(None), User.email.not_ilike("%superadmin%")),
+                or_(User.id.is_(None), User.email.not_ilike("%admin@agsgold%")),
+            )
         )
+        if admin_mobile:
+            query = query.where(
+                or_(
+                    PaymentOrder.customer_contact.is_(None),
+                    PaymentOrder.customer_contact != admin_mobile,
+                ),
+                or_(
+                    User.id.is_(None),
+                    User.mobile_number.is_(None),
+                    User.mobile_number != admin_mobile,
+                ),
+            )
+        query = query.order_by(PaymentOrder.paid_at.desc()).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
@@ -69,15 +91,35 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
         status: Optional[str] = None,
         search: Optional[str] = None,
     ) -> list[PaymentOrder]:
+        import os
         from app.models.user import User
         from sqlalchemy import or_
 
+        admin_mobile = os.getenv("ADMIN_MOBILE_NUMBER", "9943795005").strip()
         ts_col = func.coalesce(PaymentOrder.paid_at, PaymentOrder.created_at)
         query = (
             select(PaymentOrder)
             .options(selectinload(PaymentOrder.user))
-            .order_by(ts_col.desc())
+            .outerjoin(PaymentOrder.user)
+            .where(
+                or_(User.id.is_(None), User.is_superuser.is_(False)),
+                or_(User.id.is_(None), User.email.not_ilike("%superadmin%")),
+                or_(User.id.is_(None), User.email.not_ilike("%admin@agsgold%")),
+            )
         )
+        if admin_mobile:
+            query = query.where(
+                or_(
+                    PaymentOrder.customer_contact.is_(None),
+                    PaymentOrder.customer_contact != admin_mobile,
+                ),
+                or_(
+                    User.id.is_(None),
+                    User.mobile_number.is_(None),
+                    User.mobile_number != admin_mobile,
+                ),
+            )
+        query = query.order_by(ts_col.desc())
         if status:
             if status in {"paid", "captured"}:
                 query = query.where(PaymentOrder.status == "paid")
@@ -88,7 +130,7 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
 
         if search:
             search_term = f"%{search.strip()}%"
-            query = query.outerjoin(PaymentOrder.user).where(
+            query = query.where(
                 or_(
                     PaymentOrder.razorpay_payment_id.ilike(search_term),
                     PaymentOrder.razorpay_order_id.ilike(search_term),
