@@ -574,6 +574,7 @@ class GoldPaymentService:
                     payment_method=order.payment_method,
                     metal=order.metal,
                     gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+                    amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
                     gst_percent=Decimal(str(order.gst_percent or 0)),
                     metal_value_inr=Decimal(str(order.metal_value_inr or 0)),
                     gst_amount_inr=Decimal(str(order.gst_amount_inr or 0)),
@@ -583,6 +584,10 @@ class GoldPaymentService:
                     ),
                     grams=Decimal(str(order.grams)),
                     paid_at=order.paid_at or order.created_at,
+                    created_at=order.created_at,
+                    status="paid" if order.status == "paid" else (order.status or "paid"),
+                    razorpay_payment_id=order.razorpay_payment_id,
+                    bank_rrn=order.bank_rrn,
                 )
                 for order in items
             ],

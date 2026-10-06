@@ -74,6 +74,7 @@ class PaymentSettlementItem(BaseModel):
   payment_method: Optional[str] = None
   metal: str
   gross_amount_inr: Decimal
+  amount_inr: Optional[Decimal] = None
   gst_percent: Decimal
   metal_value_inr: Decimal
   gst_amount_inr: Decimal
@@ -81,6 +82,11 @@ class PaymentSettlementItem(BaseModel):
   merchant_settlement_inr: Decimal
   grams: Decimal
   paid_at: datetime
+  created_at: Optional[datetime] = None
+  status: str = "paid"
+  razorpay_payment_id: Optional[str] = None
+  bank_rrn: Optional[str] = None
+
 
 
 class PaymentSettlementListResponse(BaseModel):

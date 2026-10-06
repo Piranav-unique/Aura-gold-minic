@@ -106,6 +106,25 @@ class AdminWalletRepository:
         result = await self.db.execute(query)
         return Decimal(str(result.scalar_one() or 0))
 
+    async def batch_sum_paid_grams(
+        self, user_ids: list[uuid.UUID], metal: Optional[str] = None
+    ) -> dict[uuid.UUID, Decimal]:
+        if not user_ids:
+            return {}
+        query = (
+            select(PaymentOrder.user_id, func.coalesce(func.sum(PaymentOrder.grams), 0))
+            .where(
+                PaymentOrder.user_id.in_(user_ids),
+                PaymentOrder.status == "paid",
+            )
+        )
+        if metal:
+            query = query.where(PaymentOrder.metal == metal)
+        query = query.group_by(PaymentOrder.user_id)
+        result = await self.db.execute(query)
+        return {row[0]: Decimal(str(row[1] or 0)) for row in result.all()}
+
+
     async def count_pending_sell_inquiries(self, user_id: uuid.UUID) -> int:
         result = await self.db.execute(
             select(func.count())

@@ -63,9 +63,19 @@ class AdminWalletService:
         user: User,
         gold_rate: Decimal = Decimal("0"),
         silver_rate: Decimal = Decimal("0"),
+        override_gold_grams: Optional[Decimal] = None,
+        override_silver_grams: Optional[Decimal] = None,
     ) -> WalletUserSearchItem:
-        gold_grams = user.gold_savings_grams or Decimal("0")
-        silver_grams = user.silver_savings_grams or Decimal("0")
+        gold_grams = (
+            override_gold_grams
+            if override_gold_grams is not None
+            else (user.gold_savings_grams or Decimal("0"))
+        )
+        silver_grams = (
+            override_silver_grams
+            if override_silver_grams is not None
+            else (user.silver_savings_grams or Decimal("0"))
+        )
         gold_val = (gold_grams * gold_rate).quantize(Decimal("0.01")) if gold_rate > 0 else Decimal("0")
         silver_val = (silver_grams * silver_rate).quantize(Decimal("0.01")) if silver_rate > 0 else Decimal("0")
         cash_val = user.wallet_balance_inr or Decimal("0")
@@ -141,6 +151,10 @@ class AdminWalletService:
         users, total = await self.wallet_repo.search_wallet_users(
             search=search, skip=skip, limit=limit
         )
+        user_ids = [u.id for u in users]
+        paid_gold_map = await self.wallet_repo.batch_sum_paid_grams(user_ids, metal="gold")
+        paid_silver_map = await self.wallet_repo.batch_sum_paid_grams(user_ids, metal="silver")
+
         gold_rate = Decimal("0")
         silver_rate = Decimal("0")
         try:
@@ -150,8 +164,36 @@ class AdminWalletService:
         except Exception:
             pass
 
+        items = []
+        sync_needed = False
+        for u in users:
+            paid_gold = paid_gold_map.get(u.id, Decimal("0"))
+            paid_silver = paid_silver_map.get(u.id, Decimal("0"))
+            actual_gold = max(u.gold_savings_grams or Decimal("0"), paid_gold)
+            actual_silver = max(u.silver_savings_grams or Decimal("0"), paid_silver)
+
+            if u.gold_savings_grams is None or u.gold_savings_grams < actual_gold:
+                u.gold_savings_grams = actual_gold
+                sync_needed = True
+
+            items.append(
+                self._to_search_item(
+                    u,
+                    gold_rate=gold_rate,
+                    silver_rate=silver_rate,
+                    override_gold_grams=actual_gold,
+                    override_silver_grams=actual_silver,
+                )
+            )
+
+        if sync_needed:
+            try:
+                await self.wallet_repo.db.commit()
+            except Exception:
+                pass
+
         return WalletUserSearchResponse(
-            items=[self._to_search_item(u, gold_rate=gold_rate, silver_rate=silver_rate) for u in users],
+            items=items,
             total=total,
             skip=skip,
             limit=limit,
