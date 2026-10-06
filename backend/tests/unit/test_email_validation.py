@@ -24,14 +24,15 @@ def test_is_placeholder_email_identifies_placeholders():
 
     # Phone number as local part
     assert is_placeholder_email("9442733154@gmail.com") is True
-    assert is_placeholder_email("7010196231@yahoo.com") is True
+    # Non-gmail addresses
+    assert is_placeholder_email("nathan@student.tce.edu") is True
+    assert is_placeholder_email("john.doe@company.in") is True
+    assert is_placeholder_email("user@yahoo.com") is True
 
 
 def test_is_placeholder_email_accepts_valid_personal_emails():
     assert is_placeholder_email("piranav.richu2006@gmail.com") is False
-    assert is_placeholder_email("nathan@student.tce.edu") is False
     assert is_placeholder_email("name.someone@gmail.com") is False
-    assert is_placeholder_email("john.doe@company.in") is False
     assert is_placeholder_email("aurumgoldsilvers@gmail.com") is False
 
 
@@ -45,6 +46,12 @@ def test_profile_update_schema_rejects_placeholder_email():
     with pytest.raises(ValidationError):
         ProfileUpdate(email="7010196231@gmail.com")
 
-    # Valid personal email passes
+    with pytest.raises(ValidationError):
+        ProfileUpdate(email="nathan@student.tce.edu")
+
+    with pytest.raises(ValidationError):
+        ProfileUpdate(email="user@yahoo.com")
+
+    # Valid personal Gmail passes
     valid = ProfileUpdate(email="piranav.richu2006@gmail.com")
     assert valid.email == "piranav.richu2006@gmail.com"

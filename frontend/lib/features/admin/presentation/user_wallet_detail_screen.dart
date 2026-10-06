@@ -63,11 +63,25 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      detail.fullName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            detail.fullName,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        const SizedBox(width: 6),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          tooltip: 'Edit Customer Name',
+                          onPressed: () => _showEditNameDialog(context, detail),
+                        ),
+                      ],
                     ),
                   ),
                   OutlinedButton.icon(
@@ -394,6 +408,147 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
           icon: const Icon(Icons.chevron_right),
         ),
       ],
+    );
+  }
+
+  void _showEditNameDialog(BuildContext context, WalletUserDetail detail) {
+    String initFirst = detail.firstName ?? '';
+    String initLast = detail.lastName ?? '';
+    if (initFirst.isEmpty && detail.hasAssignedName) {
+      final parts = detail.fullName.trim().split(RegExp(r'\s+'));
+      initFirst = parts.isNotEmpty ? parts.first : '';
+      initLast = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    }
+
+    final firstController = TextEditingController(text: initFirst);
+    final lastController = TextEditingController(text: initLast);
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Edit Customer Name'),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      detail.mobileNumber != null
+                          ? 'Customer Mobile: ${detail.mobileNumber}'
+                          : 'Customer: ${detail.email}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.65),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: firstController,
+                      decoration: const InputDecoration(
+                        labelText: 'First Name *',
+                        hintText: 'e.g. Rahul',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'First name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: lastController,
+                      decoration: const InputDecoration(
+                        labelText: 'Last Name',
+                        hintText: 'e.g. Sharma (optional)',
+                        prefixIcon: Icon(Icons.badge_outlined),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving ? null : () => Navigator.of(dialogCtx).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.primaryGold,
+                  foregroundColor: Colors.black,
+                ),
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setDialogState(() => isSaving = true);
+                        try {
+                          final fn = firstController.text.trim();
+                          final ln = lastController.text.trim();
+                          await ref.read(updateCustomerNameProvider)(
+                            userId: detail.id,
+                            firstName: fn,
+                            lastName: ln.isNotEmpty ? ln : null,
+                          );
+                          if (dialogCtx.mounted) {
+                            Navigator.of(dialogCtx).pop();
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Customer name set to "$fn${ln.isNotEmpty ? ' $ln' : ''}".',
+                                ),
+                                backgroundColor: Colors.green,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => isSaving = false);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to update name: $e'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: isSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Text(
+                        'Save Name',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

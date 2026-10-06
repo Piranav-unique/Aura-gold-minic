@@ -84,6 +84,8 @@ class AdminWalletService:
         return WalletUserSearchItem(
             id=user.id,
             full_name=_user_display_name(user),
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
             mobile_number=user.mobile_number,
             kyc_status=user.kyc_status,
@@ -223,6 +225,8 @@ class AdminWalletService:
         return WalletUserDetailResponse(
             id=user.id,
             full_name=_user_display_name(user),
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
             mobile_number=user.mobile_number,
             kyc_status=user.kyc_status,
@@ -232,6 +236,48 @@ class AdminWalletService:
             is_active=user.is_active,
             is_deleted=user.is_deleted,
             wallet=wallet,
+        )
+
+    async def update_user_name(
+        self,
+        user_id: uuid.UUID,
+        *,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        full_name: Optional[str] = None,
+        admin_user_id: Optional[uuid.UUID] = None,
+    ) -> WalletUserDetailResponse:
+        user = await self.wallet_repo.get_wallet_user(user_id)
+        if not user:
+            raise NotFoundException("User not found")
+
+        if full_name and not first_name:
+            fn_parts = full_name.strip().split(None, 1)
+            first_name = fn_parts[0] if fn_parts else ""
+            last_name = fn_parts[1] if len(fn_parts) > 1 else None
+
+        if first_name is not None:
+            user.first_name = first_name.strip() if first_name else None
+        if last_name is not None:
+            user.last_name = last_name.strip() if last_name else None
+
+        await self.wallet_repo.db.commit()
+        await self.wallet_repo.db.refresh(user)
+
+        if admin_user_id and self.audit_service:
+            await self.audit_service.log_action(
+                user_id=admin_user_id,
+                action="ADMIN_USER_NAME_UPDATE",
+                entity_type="User",
+                entity_id=str(user.id),
+                metadata={
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                },
+            )
+
+        return await self.get_user_wallet(
+            user.id, admin_user_id=admin_user_id or user.id
         )
 
     def _row_to_item(self, row) -> WalletTransactionItem:

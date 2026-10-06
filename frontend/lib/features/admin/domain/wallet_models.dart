@@ -7,6 +7,8 @@ double parseWalletDecimal(dynamic value) {
 class WalletUserSearchItem {
   final String id;
   final String fullName;
+  final String? firstName;
+  final String? lastName;
   final String email;
   final String? mobileNumber;
   final String kycStatus;
@@ -21,6 +23,8 @@ class WalletUserSearchItem {
   const WalletUserSearchItem({
     required this.id,
     required this.fullName,
+    this.firstName,
+    this.lastName,
     required this.email,
     this.mobileNumber,
     required this.kycStatus,
@@ -37,6 +41,8 @@ class WalletUserSearchItem {
     return WalletUserSearchItem(
       id: json['id'] as String,
       fullName: json['full_name'] as String? ?? '',
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
       email: json['email'] as String? ?? '',
       mobileNumber: json['mobile_number'] as String?,
       kycStatus: json['kyc_status'] as String? ?? 'not_started',
@@ -48,6 +54,14 @@ class WalletUserSearchItem {
       walletBalanceInr: parseWalletDecimal(json['wallet_balance_inr']),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
+  }
+
+  bool get hasAssignedName {
+    final trimmed = fullName.trim();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.startsWith('Customer (') || trimmed.startsWith('Customer')) return false;
+    if (trimmed.contains('@')) return false;
+    return true;
   }
 }
 
@@ -101,6 +115,8 @@ class WalletSummary {
 class WalletUserDetail {
   final String id;
   final String fullName;
+  final String? firstName;
+  final String? lastName;
   final String email;
   final String? mobileNumber;
   final String kycStatus;
@@ -113,6 +129,8 @@ class WalletUserDetail {
   const WalletUserDetail({
     required this.id,
     required this.fullName,
+    this.firstName,
+    this.lastName,
     required this.email,
     this.mobileNumber,
     required this.kycStatus,
@@ -127,6 +145,8 @@ class WalletUserDetail {
     return WalletUserDetail(
       id: json['id'] as String,
       fullName: json['full_name'] as String? ?? '',
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
       email: json['email'] as String? ?? '',
       mobileNumber: json['mobile_number'] as String?,
       kycStatus: json['kyc_status'] as String? ?? 'not_started',
@@ -138,6 +158,14 @@ class WalletUserDetail {
         json['wallet'] as Map<String, dynamic>? ?? {},
       ),
     );
+  }
+
+  bool get hasAssignedName {
+    final trimmed = fullName.trim();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.startsWith('Customer (') || trimmed.startsWith('Customer')) return false;
+    if (trimmed.contains('@')) return false;
+    return true;
   }
 }
 

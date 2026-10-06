@@ -211,3 +211,31 @@ final walletTransactionDetailProvider = FutureProvider.autoDispose
     response.data as Map<String, dynamic>,
   );
 });
+
+final updateCustomerNameProvider = Provider<
+    Future<void> Function({
+      required String userId,
+      String? firstName,
+      String? lastName,
+      String? fullName,
+    })>((ref) {
+  return ({
+    required String userId,
+    String? firstName,
+    String? lastName,
+    String? fullName,
+  }) async {
+    final api = ref.read(apiClientProvider);
+    await api.put(
+      '/admin/wallets/users/$userId/name',
+      data: {
+        'first_name': ?firstName,
+        'last_name': ?lastName,
+        'full_name': ?fullName,
+      },
+    );
+    ref.invalidate(walletUsersListProvider);
+    ref.invalidate(walletUserDetailProvider(userId));
+  };
+});
+

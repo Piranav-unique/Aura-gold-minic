@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Optional
 import re
 from pydantic import BaseModel, Field, field_validator, model_validator
+from app.core.email_utils import EMAIL_REGEX, is_placeholder_email
 
-EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 _INDIAN_MOBILE = re.compile(r"^[6-9]\d{9}$")
 
 
@@ -183,9 +183,14 @@ class RegisterRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def validate_email(cls, v: str) -> str:
-        if not EMAIL_REGEX.match(v):
+        cleaned = v.strip().lower()
+        if not EMAIL_REGEX.match(cleaned):
             raise ValueError("Invalid email format")
-        return v.lower()
+        if is_placeholder_email(cleaned):
+            raise ValueError(
+                "Email must be a valid personal Gmail address ending with @gmail.com."
+            )
+        return cleaned
 
 
 class RefreshRequest(BaseModel):

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, time, timezone
@@ -33,9 +35,58 @@ class _WalletTxnRow:
     source_id: uuid.UUID
 
 
+def _is_human_name(val: Optional[str]) -> bool:
+    if not val:
+        return False
+    s = val.strip().lower()
+    if not s or s in {"unknown", "n/a", "na", "null", "none", "admin", "superadmin", "customer"}:
+        return False
+    if "aurum" in s or "retail" in s or "store" in s or "test" in s:
+        return False
+    if "@" in s or ".com" in s or ".local" in s or ".aura" in s:
+        return False
+    if re.search(r"\d{4,}", s):
+        return False
+    return len(s) >= 2
+
+
 def _user_display_name(user: User) -> str:
-    parts = [p for p in (user.first_name, user.last_name) if p]
-    return " ".join(parts) if parts else user.email
+    # 1. Direct first_name / last_name
+    parts = [p.strip() for p in (user.first_name, user.last_name) if p and p.strip()]
+    if parts:
+        joined = " ".join(parts).strip()
+        if _is_human_name(joined):
+            return joined
+        elif joined:
+            return joined
+
+    # 2. Extract from verified KYC profile (Aadhaar / PAN verification)
+    if getattr(user, "kyc_profile", None):
+        try:
+            kd = json.loads(user.kyc_profile)
+            if isinstance(kd, dict) and (kd.get("full_name") or kd.get("name")):
+                val = str(kd.get("full_name") or kd.get("name")).strip()
+                if _is_human_name(val):
+                    return val
+        except Exception:
+            pass
+
+    # 3. Clean email prefix if a real human email
+    if getattr(user, "email", None) and "@" in str(user.email):
+        em = str(user.email).strip().lower()
+        if not em.endswith(".aura") and not em.endswith(".local") and "mobile" not in em:
+            prefix = em.split("@")[0].replace(".", " ").replace("_", " ").strip()
+            if _is_human_name(prefix):
+                cleaned = re.sub(r"\d+", "", prefix).strip()
+                if len(cleaned) >= 2:
+                    return cleaned.title()
+
+    # 4. Clean mobile number display
+    if getattr(user, "mobile_number", None):
+        return f"Customer ({user.mobile_number})"
+
+    # 5. Fallback
+    return user.email if user.email else "Customer"
 
 
 class AdminWalletRepository:
@@ -59,6 +110,7 @@ class AdminWalletRepository:
             User.mobile_number.ilike(pattern),
             User.kyc_aadhaar_last4.ilike(pattern),
             User.kyc_pan_last4.ilike(pattern),
+            User.kyc_profile.ilike(pattern),
         ]
         if len(term) >= 2:
             filters.append(

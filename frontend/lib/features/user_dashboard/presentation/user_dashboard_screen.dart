@@ -51,7 +51,11 @@ class UserDashboardScreen extends ConsumerWidget {
         },
         child: dashboardAsync.when(
           data: (data) {
+            final hasValidEmail = !isPlaceholderEmail(data.email);
             maybeShowKycPrompt(context, ref, verified: kycComplete);
+            if (!hasValidEmail && (kycComplete || ref.read(kycPromptShownProvider))) {
+              maybeShowEmailPrompt(context, ref, currentEmail: data.email);
+            }
 
             final goldRate = pricesAsync.asData?.value.gold.displayPrice ?? 15736.0;
             final silverRate = pricesAsync.asData?.value.silver.displayPrice ?? 255.0;
@@ -109,7 +113,7 @@ class UserDashboardScreen extends ConsumerWidget {
 
               AppEventLog.action('buy_gold_tap', data: {
                 'kyc_complete': true,
-                'amount': ?amount,
+                'amount': amount,
               });
               final uri = amount != null
                   ? '/buy-gold?metal=gold&amount=${amount.toStringAsFixed(0)}'
@@ -124,6 +128,20 @@ class UserDashboardScreen extends ConsumerWidget {
                   ref,
                   isBuy: false,
                   metal: MetalType.gold,
+                );
+                return;
+              }
+              final userEmail = data.email ?? ref.read(profileProvider).value?.email;
+              if (isPlaceholderEmail(userEmail)) {
+                showAddEmailDialog(
+                  context,
+                  ref,
+                  currentEmail: userEmail,
+                  onEmailSaved: () {
+                    if (context.mounted) {
+                      handleSellGold();
+                    }
+                  },
                 );
                 return;
               }
@@ -149,6 +167,16 @@ class UserDashboardScreen extends ConsumerWidget {
                   AurumDashboardHeader(
                     unreadNotifications: data.unreadNotifications,
                   ),
+                  if (!hasValidEmail) ...[
+                    const SizedBox(height: 12),
+                    _GmailVerificationBanner(
+                      onVerifyTap: () => showAddEmailDialog(
+                        context,
+                        ref,
+                        currentEmail: data.email,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
 
                   // 2. Portfolio Overview (Total Value, Returns/Gain, Gold/Silver holdings, privacy toggle)
@@ -237,6 +265,104 @@ class UserDashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GmailVerificationBanner extends StatelessWidget {
+  final VoidCallback onVerifyTap;
+
+  const _GmailVerificationBanner({required this.onVerifyTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AurumConsumerTheme.isDark(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF261D10) : const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFD97706).withValues(alpha: isDark ? 0.45 : 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD97706).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mark_email_unread_outlined,
+                  color: Color(0xFFD97706),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gmail Verification Required',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Link your personal @gmail.com to receive official 24K Tax Invoices, gold vault custody certificates, and trade receipts.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        color: isDark ? Colors.white70 : const Color(0xFF78350F),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: onVerifyTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFD97706),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                visualDensity: VisualDensity.compact,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+              label: const Text(
+                'Verify Gmail',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

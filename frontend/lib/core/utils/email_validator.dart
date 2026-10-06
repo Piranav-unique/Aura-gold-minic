@@ -2,29 +2,22 @@ final RegExp _emailRegex = RegExp(
   r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
 );
 
-/// Return true if the email is null, empty, invalid, or an auto-generated placeholder.
+/// Return true if the email is a valid personal Gmail address ending in `@gmail.com`.
 ///
-/// Placeholders include:
-/// - `@mobile.agsgold.com` or `@agsgold.com` (system auto-generated mobile signup)
-/// - Any email containing `agsgold` (e.g. `phoneno.agsgold@gmail.com`)
-/// - Any email whose local part is a phone number (10 or more digits)
-bool isPlaceholderEmail(String? email) {
-  if (email == null) return true;
+/// Customers must have a verified personal `@gmail.com` address for receiving official
+/// tax invoices, payment receipts, and vault certificates.
+bool isValidCustomerGmail(String? email) {
+  if (email == null) return false;
   final cleaned = email.trim().toLowerCase();
-  if (cleaned.isEmpty || !cleaned.contains('@')) return true;
+  if (cleaned.isEmpty || !cleaned.contains('@')) return false;
 
-  if (!_emailRegex.hasMatch(cleaned)) return true;
+  if (!_emailRegex.hasMatch(cleaned)) return false;
 
-  // System generated domain
-  if (cleaned.endsWith('@mobile.agsgold.com') ||
-      cleaned.endsWith('@agsgold.com')) {
-    return true;
-  }
+  // Must strictly end with @gmail.com
+  if (!cleaned.endsWith('@gmail.com')) return false;
 
   // Placeholder containing agsgold
-  if (cleaned.contains('agsgold')) {
-    return true;
-  }
+  if (cleaned.contains('agsgold')) return false;
 
   // Phone number used as local part (e.g. 7010196231@gmail.com)
   final localPart = cleaned.split('@').first;
@@ -32,10 +25,19 @@ bool isPlaceholderEmail(String? email) {
   if (digitsOnly.length >= 10 &&
       (digitsOnly.length == localPart.length ||
           localPart.startsWith(digitsOnly))) {
-    return true;
+    return false;
   }
 
-  return false;
+  // Local part must have at least 3 characters
+  if (localPart.length < 3) return false;
+
+  return true;
+}
+
+/// Return true if the email is null, empty, invalid, or an auto-generated placeholder,
+/// or not a valid personal `@gmail.com` address.
+bool isPlaceholderEmail(String? email) {
+  return !isValidCustomerGmail(email);
 }
 
 /// Form validator for user email input.
@@ -43,7 +45,7 @@ bool isPlaceholderEmail(String? email) {
 /// Returns null if valid, or a descriptive error message if invalid.
 String? validateUserEmail(String? value) {
   if (value == null || value.trim().isEmpty) {
-    return 'Please enter your email address.';
+    return 'Please enter your Gmail address.';
   }
 
   final cleaned = value.trim().toLowerCase();
@@ -52,10 +54,12 @@ String? validateUserEmail(String? value) {
     return 'Enter a valid email address (e.g. name@gmail.com).';
   }
 
-  if (cleaned.endsWith('@mobile.agsgold.com') ||
-      cleaned.endsWith('@agsgold.com') ||
-      cleaned.contains('agsgold')) {
-    return 'Please enter your personal email address (e.g. name@gmail.com).';
+  if (!cleaned.endsWith('@gmail.com')) {
+    return 'Email must end with @gmail.com (e.g. name@gmail.com).';
+  }
+
+  if (cleaned.contains('agsgold')) {
+    return 'Please enter your personal Gmail address.';
   }
 
   final localPart = cleaned.split('@').first;
@@ -63,7 +67,11 @@ String? validateUserEmail(String? value) {
   if (digitsOnly.length >= 10 &&
       (digitsOnly.length == localPart.length ||
           localPart.startsWith(digitsOnly))) {
-    return 'Please enter your personal email, not your mobile number.';
+    return 'Please enter your personal Gmail address, not your mobile number.';
+  }
+
+  if (localPart.length < 3) {
+    return 'Gmail username must be at least 3 characters.';
   }
 
   return null;

@@ -32,11 +32,17 @@ void main() {
       expect(isPlaceholderEmail('9442733154@outlook.com'), isTrue);
     });
 
-    test('accepts valid personal and academic emails', () {
+    test('rejects non-gmail domains such as academic or corporate domains', () {
+      expect(isPlaceholderEmail('nathan@student.tce.edu'), isTrue);
+      expect(isPlaceholderEmail('john.doe@company.org'), isTrue);
+      expect(isPlaceholderEmail('user@yahoo.com'), isTrue);
+      expect(isPlaceholderEmail('user@outlook.com'), isTrue);
+    });
+
+    test('accepts valid personal gmail addresses', () {
       expect(isPlaceholderEmail('piranav.richu2006@gmail.com'), isFalse);
-      expect(isPlaceholderEmail('nathan@student.tce.edu'), isFalse);
       expect(isPlaceholderEmail('name.someone@gmail.com'), isFalse);
-      expect(isPlaceholderEmail('john.doe@company.org'), isFalse);
+      expect(isPlaceholderEmail('aura.investor@gmail.com'), isFalse);
     });
   });
 
@@ -46,16 +52,22 @@ void main() {
       expect(validateUserEmail('invalid'), isNotNull);
     });
 
+    test('rejects non-gmail domains', () {
+      expect(validateUserEmail('nathan@student.tce.edu'), isNotNull);
+      expect(validateUserEmail('john.doe@company.org'), isNotNull);
+      expect(validateUserEmail('user@yahoo.com'), isNotNull);
+    });
+
     test('rejects agsgold and phone-based placeholders', () {
       expect(validateUserEmail('phoneno.agsgold@gmail.com'), isNotNull);
       expect(validateUserEmail('7010196231@gmail.com'), isNotNull);
       expect(validateUserEmail('user@mobile.agsgold.com'), isNotNull);
     });
 
-    test('returns null for valid personal emails', () {
+    test('returns null for valid personal gmail addresses', () {
       expect(validateUserEmail('name.someone@gmail.com'), isNull);
       expect(validateUserEmail('piranav.richu2006@gmail.com'), isNull);
-      expect(validateUserEmail('nathan@student.tce.edu'), isNull);
+      expect(validateUserEmail('aura.investor@gmail.com'), isNull);
     });
   });
 }

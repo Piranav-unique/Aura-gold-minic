@@ -10,6 +10,7 @@ from app.api.dependencies import get_admin_wallet_service, get_current_user
 from app.core.authorization import PermissionChecker
 from app.models.user import User
 from app.schemas.admin_wallet import (
+    UpdateCustomerNameRequest,
     WalletTransactionDetailResponse,
     WalletTransactionListResponse,
     WalletUserDetailResponse,
@@ -48,6 +49,26 @@ async def get_user_wallet_detail(
 ) -> WalletUserDetailResponse:
     return await wallet_service.get_user_wallet(
         user_id, admin_user_id=current_user.id
+    )
+
+
+@router.put(
+    "/users/{user_id}/name",
+    response_model=WalletUserDetailResponse,
+    summary="Update customer name from Admin",
+)
+async def update_customer_name(
+    user_id: uuid.UUID,
+    payload: UpdateCustomerNameRequest,
+    current_user: User = Depends(PermissionChecker("wallet.view")),
+    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
+) -> WalletUserDetailResponse:
+    return await wallet_service.update_user_name(
+        user_id,
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        full_name=payload.full_name,
+        admin_user_id=current_user.id,
     )
 
 

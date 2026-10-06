@@ -711,6 +711,38 @@ class GoldPaymentService:
             if not matched_user and email:
                 matched_user = await self.user_repo.get_by_email(email)
 
+            if not matched_user and (contact or email):
+                clean_mobile = normalize_mobile(contact) if contact else None
+                user_email = email if (email and email != "void@razorpay.com") else (f"{clean_mobile}@mobile.agsgold.com" if clean_mobile else f"razorpay_{payment_id}@mobile.agsgold.com")
+                card_holder = (item.get("card") or {}).get("name") if isinstance(item.get("card"), dict) else None
+                notes_name = notes.get("customer_name") or notes.get("name") or notes.get("full_name") or card_holder
+                first_name = None
+                last_name = None
+                if notes_name:
+                    np = str(notes_name).strip().split(None, 1)
+                    first_name = np[0]
+                    last_name = np[1] if len(np) > 1 else None
+
+                new_user = User(
+                    id=uuid.uuid4(),
+                    email=user_email,
+                    hashed_password="!",
+                    first_name=first_name,
+                    last_name=last_name,
+                    mobile_number=clean_mobile,
+                    mobile_verified=bool(clean_mobile),
+                    is_active=True,
+                    is_superuser=False,
+                    gold_savings_grams=Decimal("0"),
+                    silver_savings_grams=Decimal("0"),
+                    gold_invested_inr=Decimal("0"),
+                    silver_invested_inr=Decimal("0"),
+                )
+                self.user_repo.db.add(new_user)
+                await self.user_repo.db.commit()
+                await self.user_repo.db.refresh(new_user)
+                matched_user = new_user
+
             if matched_user:
                 metal = str(notes.get("metal", "gold")).lower()
                 rate = gold_rate if metal == "gold" else silver_rate

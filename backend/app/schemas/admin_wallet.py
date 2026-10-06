@@ -14,9 +14,17 @@ WalletTransactionStatus = Literal[
 ]
 
 
+class UpdateCustomerNameRequest(BaseModel):
+    full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+
 class WalletUserSearchItem(BaseModel):
     id: UUID
     full_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: str
     mobile_number: Optional[str] = None
     kyc_status: str
@@ -59,6 +67,8 @@ class WalletSummary(BaseModel):
 class WalletUserDetailResponse(BaseModel):
     id: UUID
     full_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: str
     mobile_number: Optional[str] = None
     kyc_status: str

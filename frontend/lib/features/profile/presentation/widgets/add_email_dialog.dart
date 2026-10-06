@@ -8,7 +8,39 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/personal
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
-/// Shows a bottom sheet allowing the customer to add or update their personal email
+/// Session flag so the Email reminder sheet pops up at most once per app session.
+class EmailPromptShownNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void markShown() => state = true;
+}
+
+final emailPromptShownProvider =
+    NotifierProvider<EmailPromptShownNotifier, bool>(EmailPromptShownNotifier.new);
+
+/// Shows the "Verify your Gmail" sheet once per session for customers without a valid @gmail.com.
+void maybeShowEmailPrompt(
+  BuildContext context,
+  WidgetRef ref, {
+  String? currentEmail,
+}) {
+  if (!isPlaceholderEmail(currentEmail)) return;
+  if (ref.read(emailPromptShownProvider)) return;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    if (ref.read(emailPromptShownProvider)) return;
+    ref.read(emailPromptShownProvider.notifier).markShown();
+    showAddEmailDialog(
+      context,
+      ref,
+      currentEmail: currentEmail,
+    );
+  });
+}
+
+/// Shows a bottom sheet allowing the customer to add or update their personal Gmail
 /// address required for receiving tax invoices and vault receipts.
 Future<bool?> showAddEmailDialog(
   BuildContext context,
@@ -161,7 +193,7 @@ class _AddEmailSheetState extends ConsumerState<_AddEmailSheet> {
 
             // Title
             Text(
-              isNew ? 'Add Email Address' : 'Update Email Address',
+              isNew ? 'Verify Your Gmail Address' : 'Update Gmail Address',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -173,7 +205,7 @@ class _AddEmailSheetState extends ConsumerState<_AddEmailSheet> {
 
             // Description
             Text(
-              'Required for delivering official 24K Tax Invoices, payment receipts, and vault custody certificates on gold purchases.',
+              'Required for delivering official 24K Tax Invoices, payment receipts, and vault custody certificates. Must end with @gmail.com.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -206,7 +238,7 @@ class _AddEmailSheetState extends ConsumerState<_AddEmailSheet> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Please use your personal email (e.g. name.someone@gmail.com). Mobile number or temporary addresses are not accepted.',
+                      'Please enter your personal Gmail (e.g. name@gmail.com). Mobile numbers, academic emails, or non-Gmail addresses cannot be accepted.',
                       style: TextStyle(
                         fontSize: 12,
                         height: 1.35,
@@ -234,8 +266,8 @@ class _AddEmailSheetState extends ConsumerState<_AddEmailSheet> {
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
-                labelText: 'Email Address',
-                hintText: 'name.someone@gmail.com',
+                labelText: 'Gmail Address (@gmail.com)',
+                hintText: 'name@gmail.com',
                 prefixIcon: const Icon(Icons.alternate_email_rounded),
                 suffixIcon: _emailController.text.isNotEmpty
                     ? IconButton(

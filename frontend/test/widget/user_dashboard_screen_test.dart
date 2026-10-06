@@ -19,6 +19,7 @@ import '../test_helpers/auth_dashboard_overrides.dart';
 final _userProfile = UserProfile(
   id: '22222222-2222-2222-2222-222222222222',
   mobileNumber: '9876543210',
+  email: 'gold.user@gmail.com',
   firstName: 'Gold',
   lastName: 'User',
   isActive: true,
@@ -32,10 +33,14 @@ class _ShownKycPromptNotifier extends KycPromptShownNotifier {
   bool build() => true;
 }
 
-PersonalDashboard _mockPersonal({KycStatus kycStatus = KycStatus.notStarted}) {
+PersonalDashboard _mockPersonal({
+  KycStatus kycStatus = KycStatus.notStarted,
+  String? email = 'gold.user@gmail.com',
+}) {
   return PersonalDashboard(
     displayName: 'Gold User',
     mobileNumber: '9876543210',
+    email: email,
     roles: const ['employee'],
     unreadNotifications: 3,
     refreshedAt: DateTime.utc(2026, 6, 8, 10),
@@ -144,5 +149,20 @@ void main() {
     expect(find.text('Verify your identity'), findsOneWidget);
     expect(find.text('Verify now'), findsOneWidget);
     expect(find.text('Later'), findsOneWidget);
+  });
+
+  testWidgets('UserDashboardScreen shows Gmail prompt for customers with placeholder email', (
+    WidgetTester tester,
+  ) async {
+    await _pumpDashboard(
+      tester,
+      dashboard: _mockPersonal(
+        kycStatus: KycStatus.verified,
+        email: '9876543210@mobile.agsgold.com',
+      ),
+    );
+
+    expect(find.text('Gmail Verification Required'), findsOneWidget);
+    expect(find.text('Verify Your Gmail Address'), findsOneWidget);
   });
 }

@@ -35,6 +35,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const Key('signupButton')), findsOneWidget);
+    expect(find.byKey(const Key('emailField')), findsOneWidget);
     expect(find.byKey(const Key('verifyMobileButton')), findsOneWidget);
     expect(find.byKey(const Key('verifyOtpButton')), findsOneWidget);
     expect(find.byKey(const Key('otpField')), findsOneWidget);
@@ -77,6 +78,7 @@ void main() {
     expect(find.text('Name is required.'), findsWidgets);
 
     await tester.enterText(find.byKey(const Key('nameField')), 'Test User');
+    await tester.enterText(find.byKey(const Key('emailField')), 'test.user@gmail.com');
     await tester.enterText(find.byKey(const Key('mobileField')), '9876543210');
     await tester.ensureVisible(find.byKey(const Key('signupButton')));
     await tester.pumpAndSettle();
@@ -95,7 +97,8 @@ void main() {
     final mockStorage = MockSecureStorage();
     final mockDeviceAuth = MockDeviceAuthStorage();
 
-    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => false);
+    var hasToken = false;
+    when(() => mockStorage.hasAccessToken()).thenAnswer((_) async => hasToken);
     when(() => mockDeviceAuth.getRegisteredMobile()).thenAnswer((_) async => null);
     when(
       () => mockDeviceAuth.getOrCreateDeviceId(),
@@ -104,11 +107,19 @@ void main() {
       () => mockDeviceAuth.saveRegisteredMobile(any()),
     ).thenAnswer((_) async {});
     when(
+      () => mockDeviceAuth.clearPendingTrustedFirstLogin(),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockDeviceAuth.isPendingTrustedFirstLogin(),
+    ).thenAnswer((_) async => false);
+    when(
       () => mockStorage.saveTokens(
         accessToken: any(named: 'accessToken'),
         refreshToken: any(named: 'refreshToken'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async {
+      hasToken = true;
+    });
 
     final mockLoginResponse = MockResponse<Map<String, dynamic>>();
     when(() => mockLoginResponse.data).thenReturn({
@@ -123,6 +134,31 @@ void main() {
     when(
       () => mockApi.post('/auth/login/mobile', data: any(named: 'data')),
     ).thenAnswer((_) async => mockLoginResponse);
+    final mockMeResponse = MockResponse<Map<String, dynamic>>();
+    when(() => mockMeResponse.data).thenReturn({
+      'id': '11111111-1111-1111-1111-111111111111',
+      'mobile_number': '9876543210',
+      'email': 'test.user@gmail.com',
+      'first_name': 'Test',
+      'last_name': 'User',
+      'is_active': true,
+      'is_superuser': false,
+      'roles': [
+        {'id': '1', 'name': 'user', 'permissions': []}
+      ],
+      'created_at': '2026-06-08T00:00:00Z',
+      'updated_at': '2026-06-08T00:00:00Z',
+    });
+    when(() => mockApi.get('/auth/me')).thenAnswer((_) async => mockMeResponse);
+    when(() => mockApi.get('/profile/')).thenAnswer((_) async => mockMeResponse);
+    final mockKycResponse = MockResponse<Map<String, dynamic>>();
+    when(() => mockKycResponse.data).thenReturn({
+      'status': 'verified',
+      'pan_verified': true,
+      'aadhaar_verified': true,
+      'bank_verified': true,
+    });
+    when(() => mockApi.get('/profile/kyc/status')).thenAnswer((_) async => mockKycResponse);
 
     await tester.pumpWidget(
       ProviderScope(

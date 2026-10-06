@@ -25,8 +25,8 @@ class ProfileUpdate(BaseModel):
         cleaned = v.strip().lower()
         if is_placeholder_email(cleaned):
             raise ValueError(
-                "Please enter a valid personal email address (e.g. name@gmail.com). "
-                "Phone-based or placeholder emails are not allowed."
+                "Please enter a valid personal Gmail address ending with @gmail.com. "
+                "Non-Gmail addresses or phone-based emails are not allowed."
             )
         return cleaned
 
