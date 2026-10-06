@@ -159,12 +159,10 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       '/dashboard',
       '/customers',
       '/admin/payment-settlements',
-      '/reports',
       '/profile',
     ];
     // Routes that are launched via context.push() from Profile page —
     // keep the bottom nav highlighted on Profile for all of them.
-    // NOTE: /inventory is a standalone screen — not in bottom nav.
     const profileSubRoutes = {
       '/admin/users',
       '/admin/account-deletions',
@@ -177,7 +175,7 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       '/bank-accounts',
       '/kyc',
     };
-    // Enforce the display order: Home · Customers · Payments · Reports · More
+    // Enforce the display order: Home · Customers · Payments · More
     final staffMobileDestinations = isStaffMobile
         ? staffMobileTabPrefixes
             .map((prefix) => destinations.where((d) => d.routePrefix == prefix).firstOrNull)
@@ -263,8 +261,6 @@ class _MobileBottomNav extends StatelessWidget {
         return 'Customers';
       case '/admin/payment-settlements':
         return 'Payments';
-      case '/reports':
-        return 'Reports';
       case '/profile':
         return 'More';
       default:

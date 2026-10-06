@@ -20,12 +20,54 @@ class UserRepository(BaseRepository[User]):
 
     async def get_by_mobile(self, mobile_number: str) -> Optional[User]:
         """Fetch a user record by mobile number, excluding soft-deleted ones."""
-        query = select(User).where(
+        if not mobile_number:
+            return None
+
+        clean_digits = "".join(filter(str.isdigit, str(mobile_number)))
+        clean_10 = clean_digits[-10:] if len(clean_digits) >= 10 else clean_digits
+
+        from sqlalchemy import or_, func
+        from app.core.config import settings
+
+        conditions = [
             User.mobile_number == mobile_number,
+            User.mobile_number == clean_10,
+            User.mobile_number == f"+91{clean_10}",
+            User.mobile_number == f"91{clean_10}",
+        ]
+        if clean_10:
+            conditions.append(func.right(User.mobile_number, 10) == clean_10)
+
+        query = select(User).where(
+            or_(*conditions),
             User.is_deleted.is_(False),
         )
         result = await self.db.execute(query)
-        return result.scalars().first()
+        user = result.scalars().first()
+        if user:
+            return user
+
+        # Fallback for admin mobile (e.g. 9943795005) to match superadmin user if mobile_number was unset or formatted differently
+        admin_mobile = getattr(settings, "ADMIN_MOBILE_NUMBER", "9943795005").strip()
+        admin_10 = "".join(filter(str.isdigit, admin_mobile))[-10:]
+        if clean_10 and admin_10 and clean_10 == admin_10:
+            admin_query = select(User).where(
+                or_(
+                    User.is_superuser.is_(True),
+                    User.email == "superadmin@agsgold.com",
+                ),
+                User.is_deleted.is_(False),
+            )
+            res = await self.db.execute(admin_query)
+            admin_user = res.scalars().first()
+            if admin_user:
+                if not admin_user.mobile_number or admin_user.mobile_number != clean_10:
+                    admin_user.mobile_number = clean_10
+                    admin_user.mobile_verified = True
+                    await self.db.commit()
+                return admin_user
+
+        return None
 
     async def get_by_registered_device_id(self, device_id: str) -> Optional[User]:
         """Fetch a user linked to a device, excluding soft-deleted ones."""

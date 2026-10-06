@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ags_gold/config/env_config.dart';
@@ -10,6 +9,7 @@ import 'package:ags_gold/features/auth/presentation/providers/app_audience_provi
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
+import 'package:ags_gold/core/utils/paste_aware_formatters.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.successMessage, this.initialMobile});
@@ -570,6 +570,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _handleLogin();
                     }
                   },
+                  inputFormatters: [PasteAwarePhoneFormatter()],
                   decoration: InputDecoration(
                     hintText: l10n.tenDigitMobileLogin,
                     prefixIcon: const Icon(Icons.phone_outlined),
@@ -645,7 +646,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               maxLength: 6,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [PasteAwareOtpFormatter()],
               onFieldSubmitted: (_) => _handleLogin(),
               decoration: InputDecoration(
                 hintText: _isAdminEntered ? 'Default OTP: 123456' : l10n.otpFromSms,

@@ -620,8 +620,9 @@ def get_admin_wallet_repository(
 def get_admin_wallet_service(
     wallet_repo: AdminWalletRepository = Depends(get_admin_wallet_repository),
     audit_service: AuditService = Depends(get_audit_service),
+    metal_price_service: MetalPriceService = Depends(get_metal_price_service),
 ) -> AdminWalletService:
-    return AdminWalletService(wallet_repo, audit_service)
+    return AdminWalletService(wallet_repo, audit_service, metal_price_service)
 
 
 def get_account_deletion_repository(

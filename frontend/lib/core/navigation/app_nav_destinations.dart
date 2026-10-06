@@ -175,6 +175,8 @@ List<AppNavDestination> buildNavDestinations(
         '/portfolio',
         '/audit-logs',
         '/workflows',
+        '/reports',
+        '/inventory',
       };
       if (hiddenForStaffAdmin.contains(d.routePrefix)) return false;
     }

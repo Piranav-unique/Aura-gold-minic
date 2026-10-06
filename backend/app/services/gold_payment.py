@@ -539,26 +539,20 @@ class GoldPaymentService:
 
     @staticmethod
     def _display_name(user: User) -> str:
-        parts = [p for p in (user.first_name, user.last_name) if p]
-        if parts:
-            return " ".join(parts).strip()
-        if getattr(user, "kyc_profile", None):
-            try:
-                import json
-                kd = json.loads(user.kyc_profile)
-                if isinstance(kd, dict) and (kd.get("full_name") or kd.get("name")):
-                    return str(kd.get("full_name") or kd.get("name")).strip()
-            except Exception:
-                pass
-        if getattr(user, "email", None) and "@" in str(user.email):
-            import re
-            cleaned = re.sub(r"[\d_.]+", " ", str(user.email).split("@")[0]).strip()
-            if len(cleaned) >= 3 and not cleaned.isdigit():
-                return cleaned.title()
-            return str(user.email)
+        from app.services.executive_dashboard import _extract_human_name
+        hname = _extract_human_name(user)
+        if hname:
+            return hname
         if getattr(user, "mobile_number", None):
             return str(user.mobile_number)
         return "Customer"
+
+    @staticmethod
+    def _human_name_or_none(user: Optional[User]) -> Optional[str]:
+        if not user:
+            return None
+        from app.services.executive_dashboard import _extract_human_name
+        return _extract_human_name(user)
 
     async def list_settlements(
         self,
@@ -800,7 +794,7 @@ class GoldPaymentService:
                     razorpay_payment_id=order.razorpay_payment_id,
                     bank_rrn=order.bank_rrn,
                     payment_method=order.payment_method,
-                    customer_name=self._display_name(order.user) if order.user else None,
+                    customer_name=self._human_name_or_none(order.user),
                     customer_mobile=order.customer_contact or (order.user.mobile_number if order.user else None),
                     customer_email=order.user.email if order.user else None,
                     metal=order.metal,

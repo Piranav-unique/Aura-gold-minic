@@ -24,6 +24,7 @@ from app.schemas.admin_wallet import (
     WalletUserSearchResponse,
 )
 from app.services.audit import AuditService
+from app.services.metal_prices import MetalPriceService
 
 
 class AdminWalletService:
@@ -33,9 +34,11 @@ class AdminWalletService:
         self,
         wallet_repo: AdminWalletRepository,
         audit_service: Optional[AuditService] = None,
+        metal_price_service: Optional[MetalPriceService] = None,
     ):
         self.wallet_repo = wallet_repo
         self.audit_service = audit_service
+        self.metal_price_service = metal_price_service or MetalPriceService()
 
     async def _log_wallet_view(
         self,
@@ -55,7 +58,19 @@ class AdminWalletService:
             metadata=metadata or {},
         )
 
-    def _to_search_item(self, user: User) -> WalletUserSearchItem:
+    def _to_search_item(
+        self,
+        user: User,
+        gold_rate: Decimal = Decimal("0"),
+        silver_rate: Decimal = Decimal("0"),
+    ) -> WalletUserSearchItem:
+        gold_grams = user.gold_savings_grams or Decimal("0")
+        silver_grams = user.silver_savings_grams or Decimal("0")
+        gold_val = (gold_grams * gold_rate).quantize(Decimal("0.01")) if gold_rate > 0 else Decimal("0")
+        silver_val = (silver_grams * silver_rate).quantize(Decimal("0.01")) if silver_rate > 0 else Decimal("0")
+        cash_val = user.wallet_balance_inr or Decimal("0")
+        display_val = gold_val if gold_val > 0 else cash_val
+
         return WalletUserSearchItem(
             id=user.id,
             full_name=_user_display_name(user),
@@ -65,9 +80,12 @@ class AdminWalletService:
             kyc_aadhaar_last4=user.kyc_aadhaar_last4,
             kyc_pan_last4=user.kyc_pan_last4,
             is_active=user.is_active,
-            gold_balance_grams=user.gold_savings_grams or Decimal("0"),
-            silver_balance_grams=user.silver_savings_grams or Decimal("0"),
-            wallet_balance_inr=user.wallet_balance_inr or Decimal("0"),
+            gold_balance_grams=gold_grams,
+            silver_balance_grams=silver_grams,
+            wallet_balance_inr=display_val,
+            gold_value_inr=gold_val,
+            silver_value_inr=silver_val,
+            cash_wallet_inr=cash_val,
             created_at=user.created_at,
         )
 
@@ -79,9 +97,28 @@ class AdminWalletService:
         )
         gold_invested = user.gold_invested_inr or Decimal("0")
         silver_invested = user.silver_invested_inr or Decimal("0")
+
+        gold_rate = Decimal("0")
+        silver_rate = Decimal("0")
+        try:
+            prices = await self.metal_price_service.get_prices()
+            gold_rate = prices.gold.retail_price
+            silver_rate = prices.silver.retail_price
+        except Exception:
+            pass
+
+        gold_grams = user.gold_savings_grams or Decimal("0")
+        silver_grams = user.silver_savings_grams or Decimal("0")
+        gold_val = (gold_grams * gold_rate).quantize(Decimal("0.01")) if gold_rate > 0 else Decimal("0")
+        silver_val = (silver_grams * silver_rate).quantize(Decimal("0.01")) if silver_rate > 0 else Decimal("0")
+        cash_val = user.wallet_balance_inr or Decimal("0")
+        display_val = gold_val if gold_val > 0 else cash_val
+
         return WalletSummary(
-            gold_balance_grams=user.gold_savings_grams or Decimal("0"),
-            silver_balance_grams=user.silver_savings_grams or Decimal("0"),
+            gold_balance_grams=gold_grams,
+            silver_balance_grams=silver_grams,
+            gold_value_inr=gold_val,
+            silver_value_inr=silver_val,
             total_inr_invested=gold_invested + silver_invested,
             total_bought_grams=total_bought,
             total_sold_grams=Decimal("0"),
@@ -90,7 +127,8 @@ class AdminWalletService:
             referral_reward_grams=referral_grams,
             savings_scheme_target_grams=user.gold_scheme_target_grams,
             savings_scheme_status=user.gold_scheme_status or "not_selected",
-            wallet_balance_inr=user.wallet_balance_inr or Decimal("0"),
+            wallet_balance_inr=display_val,
+            cash_wallet_inr=cash_val,
         )
 
     async def search_users(
@@ -103,8 +141,17 @@ class AdminWalletService:
         users, total = await self.wallet_repo.search_wallet_users(
             search=search, skip=skip, limit=limit
         )
+        gold_rate = Decimal("0")
+        silver_rate = Decimal("0")
+        try:
+            prices = await self.metal_price_service.get_prices()
+            gold_rate = prices.gold.retail_price
+            silver_rate = prices.silver.retail_price
+        except Exception:
+            pass
+
         return WalletUserSearchResponse(
-            items=[self._to_search_item(u) for u in users],
+            items=[self._to_search_item(u, gold_rate=gold_rate, silver_rate=silver_rate) for u in users],
             total=total,
             skip=skip,
             limit=limit,

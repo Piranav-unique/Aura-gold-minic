@@ -77,27 +77,54 @@ def _clean_phone(phone: Optional[str]) -> str:
     return digits[-10:] if len(digits) >= 10 else digits
 
 
-def _display_name(user: Optional[User]) -> str:
+def _is_human_name(name: Optional[str]) -> bool:
+    if not name:
+        return False
+    s = name.strip()
+    if not s or s.lower() in {"customer", "admin", "unknown", "none", "null"}:
+        return False
+    if s.startswith("+91") or s.startswith("Customer") or s.startswith("+"):
+        return False
+    digits = "".join(filter(str.isdigit, s))
+    if digits and len(digits) >= 7 and len(digits) >= len(s.replace(" ", "").replace("-", "")) * 0.7:
+        return False
+    return True
+
+
+def _extract_human_name(user: Optional[User]) -> Optional[str]:
     if not user:
-        return "Customer"
-    parts = [p for p in (user.first_name, user.last_name) if p]
+        return None
+    parts = [p for p in (user.first_name, user.last_name) if p and p.strip()]
     if parts:
-        return " ".join(parts).strip()
+        joined = " ".join(parts).strip()
+        if _is_human_name(joined):
+            return joined
     if getattr(user, "kyc_profile", None):
         try:
             import json
             kd = json.loads(user.kyc_profile)
             if isinstance(kd, dict) and (kd.get("full_name") or kd.get("name")):
-                return str(kd.get("full_name") or kd.get("name")).strip()
+                val = str(kd.get("full_name") or kd.get("name")).strip()
+                if _is_human_name(val):
+                    return val
         except Exception:
             pass
     if getattr(user, "email", None) and "@" in str(user.email):
-        import re
-        cleaned = re.sub(r"[\d_.]+", " ", str(user.email).split("@")[0]).strip()
-        if len(cleaned) >= 3 and not cleaned.isdigit():
-            return cleaned.title()
-        return str(user.email)
-    if getattr(user, "mobile_number", None):
+        em = str(user.email).strip().lower()
+        if not em.endswith(".aura") and not em.endswith(".local") and "mobile" not in em:
+            import re
+            handle = em.split("@")[0]
+            cleaned = re.sub(r"[\d_.]+", " ", handle).strip()
+            if len(cleaned) >= 3 and not cleaned.isdigit() and _is_human_name(cleaned):
+                return cleaned.title()
+    return None
+
+
+def _display_name(user: Optional[User]) -> str:
+    hname = _extract_human_name(user)
+    if hname:
+        return hname
+    if user and getattr(user, "mobile_number", None):
         return str(user.mobile_number)
     return "Customer"
 
@@ -295,41 +322,60 @@ class ExecutiveDashboardService:
             try:
                 orders = await self.payment_order_repo.list_orders(limit=100)
 
-                # Pre-fetch registered customer names from Customer table to enrich orders
+                # Pre-fetch registered customer names from Customer, User, BankAccount & SellInquiries tables
                 customer_names_by_phone: dict[str, str] = {}
                 customer_names_by_email: dict[str, str] = {}
+                customer_names_by_user_id: dict[str, str] = {}
+
+                # 1. From Customer CRM table
                 try:
-                    all_custs = await self.customer_repo.list_customers(limit=100)
+                    all_custs = await self.customer_repo.list_customers(limit=200)
                     for c in all_custs:
-                        if c.full_name:
+                        if c.full_name and _is_human_name(c.full_name):
                             if c.mobile_number:
                                 k = _clean_phone(c.mobile_number)
                                 if k:
-                                    customer_names_by_phone[k] = c.full_name
+                                    customer_names_by_phone[k] = c.full_name.strip()
                             if c.email:
-                                customer_names_by_email[c.email.strip().lower()] = c.full_name
+                                customer_names_by_email[c.email.strip().lower()] = c.full_name.strip()
                 except Exception as exc:
                     logger.warning("customer_lookup_preload_error", error=str(exc))
 
+                # 2. From User table (registered users with names)
+                try:
+                    all_users = await self.user_repo.list_users(limit=200)
+                    for u in all_users:
+                        hname = _extract_human_name(u)
+                        if hname:
+                            customer_names_by_user_id[str(u.id)] = hname
+                            if u.mobile_number:
+                                k = _clean_phone(u.mobile_number)
+                                if k and k not in customer_names_by_phone:
+                                    customer_names_by_phone[k] = hname
+                            if u.email:
+                                em = u.email.strip().lower()
+                                if em and em not in customer_names_by_email:
+                                    customer_names_by_email[em] = hname
+                except Exception as exc:
+                    logger.warning("user_lookup_preload_error", error=str(exc))
+
                 def _resolve_order_customer_name(o) -> Optional[str]:
-                    # 1. Check User name (first_name/last_name/kyc_profile/email)
+                    # 1. Check User model human name
                     if o.user:
-                        nm = _display_name(o.user)
-                        if nm and nm != "Customer" and not nm.startswith("+91") and not nm.isdigit():
-                            return nm
-                    # 2. Check Customer table by phone
+                        hname = _extract_human_name(o.user)
+                        if hname:
+                            return hname
+                        if str(o.user.id) in customer_names_by_user_id:
+                            return customer_names_by_user_id[str(o.user.id)]
+                    # 2. Check Customer/User phone lookup
                     contact = o.customer_contact or (o.user.mobile_number if o.user else None)
                     p_key = _clean_phone(contact)
                     if p_key and p_key in customer_names_by_phone:
                         return customer_names_by_phone[p_key]
-                    # 3. Check Customer table by email
+                    # 3. Check Customer/User email lookup
                     email = (o.user.email if o.user else None)
                     if email and email.strip().lower() in customer_names_by_email:
                         return customer_names_by_email[email.strip().lower()]
-                    # 4. Fallback to user display name or None
-                    if o.user:
-                        nm = _display_name(o.user)
-                        return nm if nm != "Customer" else None
                     return None
 
                 recent_payments = [
@@ -368,7 +414,7 @@ class ExecutiveDashboardService:
                     if contact not in cust_map:
                         cust_map[contact] = {
                             "mobile": contact,
-                            "name": p.customer_name,
+                            "name": p.customer_name if (p.customer_name and _is_human_name(p.customer_name)) else None,
                             "email": p.customer_email,
                             "total_paid_inr": Decimal("0"),
                             "success_count": 0,
@@ -377,8 +423,8 @@ class ExecutiveDashboardService:
                             "silver_grams": Decimal("0"),
                             "payment_methods": [],
                         }
-                    # Update name if previously null
-                    if p.customer_name and (not cust_map[contact]["name"] or cust_map[contact]["name"] == contact):
+                    # Update name if previously null and p.customer_name is valid
+                    if p.customer_name and _is_human_name(p.customer_name) and not cust_map[contact]["name"]:
                         cust_map[contact]["name"] = p.customer_name
                     if p.customer_email and not cust_map[contact]["email"]:
                         cust_map[contact]["email"] = p.customer_email
@@ -393,14 +439,16 @@ class ExecutiveDashboardService:
                         if p.payment_method and p.payment_method not in cust_map[contact]["payment_methods"]:
                             cust_map[contact]["payment_methods"].append(p.payment_method)
 
-                # Final fallback for any customer without a name in cust_map
+                # Final fallback pass for any customer without a valid human name in cust_map
                 for contact, item in cust_map.items():
-                    if not item["name"]:
+                    if not item["name"] or not _is_human_name(item["name"]):
                         p_key = _clean_phone(contact)
                         if p_key and p_key in customer_names_by_phone:
                             item["name"] = customer_names_by_phone[p_key]
                         elif item["email"] and item["email"].strip().lower() in customer_names_by_email:
                             item["name"] = customer_names_by_email[item["email"].strip().lower()]
+                        else:
+                            item["name"] = None
 
                 customer_summaries = [
                     CustomerPaymentSummary(**c) for c in cust_map.values()

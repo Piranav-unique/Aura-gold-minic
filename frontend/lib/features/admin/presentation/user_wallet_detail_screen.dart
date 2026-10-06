@@ -60,11 +60,24 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                detail.fullName,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      detail.fullName,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push(
+                      '/admin/payment-settlements?mobile=${Uri.encodeComponent(detail.mobileNumber ?? '')}',
+                    ),
+                    icon: const Icon(Icons.payments_outlined, size: 18),
+                    label: const Text('Customer Payments'),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Expanded(
@@ -180,6 +193,7 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
             ),
             const SizedBox(height: 12),
             _infoRow('Gold balance', '${w.goldBalanceGrams.toStringAsFixed(4)} g'),
+            _infoRow('Gold valuation', currency.format(w.walletBalanceInr)),
             _infoRow(
               'Silver balance',
               '${w.silverBalanceGrams.toStringAsFixed(4)} g',
@@ -198,7 +212,7 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
               '${w.pendingSellInquiries}',
             ),
             _infoRow(
-              'Referral reward',
+              'Referral cash reward',
               '${currency.format(w.referralRewardInr)} (${w.referralRewardGrams.toStringAsFixed(0)} g scheme)',
             ),
             if (w.savingsSchemeTargetGrams != null)
@@ -206,7 +220,6 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                 'Savings scheme',
                 '${w.savingsSchemeTargetGrams!.toStringAsFixed(0)} g • ${w.savingsSchemeStatus}',
               ),
-            _infoRow('INR wallet', currency.format(w.walletBalanceInr)),
           ],
         ),
       ),

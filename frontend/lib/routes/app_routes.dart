@@ -26,8 +26,6 @@ import 'package:ags_gold/features/user_dashboard/presentation/add_bank_account_s
 import 'package:ags_gold/features/notifications/presentation/notifications_screen.dart';
 import 'package:ags_gold/features/profile/presentation/profile_screen.dart';
 import 'package:ags_gold/features/legal/presentation/privacy_policy_screen.dart';
-import 'package:ags_gold/features/admin/presentation/metal_inventory_screen.dart';
-import 'package:ags_gold/features/admin/presentation/metal_inventory_movements_screen.dart';
 import 'package:ags_gold/features/admin/presentation/payment_settlements_screen.dart';
 import 'package:ags_gold/features/admin/presentation/user_wallets_screen.dart';
 import 'package:ags_gold/features/admin/presentation/user_wallet_detail_screen.dart';
@@ -51,8 +49,6 @@ import 'package:ags_gold/features/transactions/presentation/transactions_screen.
 import 'package:ags_gold/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_permission_gate.dart';
-import 'package:ags_gold/features/reports/presentation/reports_screen.dart';
-import 'package:ags_gold/features/reports/presentation/report_permission_gate.dart';
 import 'package:ags_gold/features/workflows/presentation/workflows_screen.dart';
 import 'package:ags_gold/features/workflows/presentation/workflow_detail_screen.dart';
 import 'package:ags_gold/features/workflows/presentation/workflow_form_screen.dart';
@@ -359,29 +355,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/inventory/movements',
-        builder: (context, state) => const PermissionGate(
-          requiredPermission: 'inventory.view',
-          child: MetalInventoryMovementsScreen(),
-        ),
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/inventory',
-        builder: (context, state) => const PermissionGate(
-          requiredPermission: 'inventory.view',
-          child: MetalInventoryScreen(),
-        ),
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/inventory/:subpath',
-        redirect: (context, state) => '/inventory',
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/suppliers',
-        redirect: (context, state) => '/inventory',
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/admin/metal-inventory',
-        redirect: (context, state) => '/inventory',
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/transactions',
@@ -438,8 +428,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/reports',
-        builder: (context, state) =>
-            const ReportPermissionGate(child: ReportsScreen()),
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/workflows',
@@ -502,10 +491,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin/payment-settlements',
-        builder: (context, state) => const PermissionGate(
-          requiredPermission: 'transaction.view',
-          child: PaymentSettlementsScreen(),
-        ),
+        builder: (context, state) {
+          final customerParam = state.uri.queryParameters['mobile'] ??
+              state.uri.queryParameters['customer'] ??
+              state.uri.queryParameters['user'];
+          return PermissionGate(
+            requiredPermission: 'transaction.view',
+            child: PaymentSettlementsScreen(
+              initialCustomerFilter: customerParam,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/admin/sell-inquiries',

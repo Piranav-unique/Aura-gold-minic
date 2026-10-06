@@ -47,21 +47,93 @@ class SettingsScreen extends ConsumerWidget {
                 theme,
                 l10n.languageSettings,
                 Icons.language,
-                DropdownButtonFormField<String>(
-                  initialValue: settings.locale,
-                  decoration: InputDecoration(labelText: l10n.languageLabel),
-                  items: [
-                    for (final option in kAppLanguageOptions)
-                      DropdownMenuItem(
-                        value: option.code,
-                        child: Text(option.nativeLabel),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFAF8F5),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFC59A27).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: settings.locale,
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFFC59A27),
+                    ),
+                    decoration: InputDecoration(
+                      labelText: l10n.languageLabel,
+                      labelStyle: const TextStyle(
+                        color: Color(0xFF92400E),
+                        fontWeight: FontWeight.w600,
                       ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) {
-                      _saveSettings(ref, settings.copyWith(locale: v));
-                    }
-                  },
+                      prefixIcon: const Icon(
+                        Icons.translate_rounded,
+                        color: Color(0xFFC59A27),
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    items: [
+                      for (final option in kAppLanguageOptions)
+                        DropdownMenuItem(
+                          value: option.code,
+                          child: Row(
+                            children: [
+                              Text(
+                                option.nativeLabel,
+                                style: TextStyle(
+                                  fontWeight: settings.locale == option.code
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: const Color(0xFF1E1B18),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  option.code.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF92400E),
+                                  ),
+                                ),
+                              ),
+                              if (settings.locale == option.code) ...[
+                                const Spacer(),
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Color(0xFFC59A27),
+                                  size: 18,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) {
+                        _saveSettings(ref, settings.copyWith(locale: v));
+                      }
+                    },
+                  ),
                 ),
               ),
               _sectionCard(

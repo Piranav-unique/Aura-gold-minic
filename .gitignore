@@ -29,6 +29,7 @@ frontend/.pub/
 frontend/**/GeneratedPluginRegistrant.*
 
 # IDE / OS
+.freebuff/
 .idea/
 .vscode/
 *.swp

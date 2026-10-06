@@ -156,8 +156,14 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
                         Text(u.goldBalanceGrams.toStringAsFixed(4)),
                   ),
                   DataTableColumn(
-                    label: 'INR wallet',
-                    cellBuilder: (u) => Text(currency.format(u.walletBalanceInr)),
+                    label: 'Gold Valuation',
+                    cellBuilder: (u) => Text(
+                      currency.format(u.walletBalanceInr),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFC59A27),
+                      ),
+                    ),
                   ),
                   DataTableColumn(
                     label: 'Status',
@@ -207,7 +213,7 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
                 children: [
                   _chip('KYC: ${user.kycStatus}'),
                   _chip('${user.goldBalanceGrams.toStringAsFixed(4)} g gold'),
-                  _chip(currency.format(user.walletBalanceInr)),
+                  _chip('Valuation: ${currency.format(user.walletBalanceInr)}'),
                 ],
               ),
             ],

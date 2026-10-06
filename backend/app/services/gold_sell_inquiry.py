@@ -346,6 +346,10 @@ class GoldSellInquiryService:
         if inquiry.status in {"approved", "rejected"}:
             raise ValidationException("This inquiry is already finalized.")
 
+        user = inquiry.user
+        if not user or (user.kyc_status or "").lower() != "verified":
+            raise ValidationException("User must be KYC verified before approving or rejecting sell inquiries.")
+
         inquiry = await self.inquiry_repo.update(
             inquiry,
             {
@@ -387,6 +391,8 @@ class GoldSellInquiryService:
             raise ValidationException("This inquiry is already finalized.")
 
         user = inquiry.user
+        if not user or (user.kyc_status or "").lower() != "verified":
+            raise ValidationException("User must be KYC verified before approving or rejecting sell inquiries.")
 
         quantity = Decimal(str(inquiry.quantity_grams or 0))
         holdings = Decimal(str(user.gold_savings_grams or 0))

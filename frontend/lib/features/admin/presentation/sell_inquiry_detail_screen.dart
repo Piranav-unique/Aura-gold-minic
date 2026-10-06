@@ -330,21 +330,7 @@ class _SellInquiryDetailScreenState
                 if (detail.userPaymentDestination != null)
                   _row('Bank account', detail.userPaymentDestination!)
                 else
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.warning_amber, color: Colors.orange, size: 20),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'No bank account linked. The customer must add a bank account in the app before you can approve and pay via RazorpayX.',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _row('Payout routing', 'KYC Verified Direct Settlement'),
               ],
             ),
             if (detail.razorpayPayoutId != null)
@@ -402,19 +388,34 @@ class _SellInquiryDetailScreenState
   }
 
   Widget _actionBar(SellInquiryDetail detail) {
-    final missingBank = detail.userPaymentDestination == null;
+    final isKycVerified = (detail.kycStatus ?? '').toLowerCase() == 'verified';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (missingBank)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              'Approve is disabled until the customer links a bank account.',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.w600,
-              ),
+        if (!isKycVerified)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.shade700),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'User is not KYC verified. Approve and Reject actions are disabled until KYC is verified.',
+                    style: TextStyle(
+                      color: Colors.amber.shade900,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         Wrap(
@@ -422,14 +423,14 @@ class _SellInquiryDetailScreenState
           runSpacing: 12,
           children: [
             FilledButton.icon(
-              onPressed: _actionLoading || missingBank
+              onPressed: _actionLoading || !isKycVerified
                   ? null
                   : () => _approve(detail),
               icon: const Icon(Icons.check_circle_outline),
               label: const Text('Approve'),
             ),
             OutlinedButton.icon(
-              onPressed: _actionLoading ? null : _reject,
+              onPressed: _actionLoading || !isKycVerified ? null : _reject,
               icon: const Icon(Icons.cancel_outlined),
               label: const Text('Reject'),
             ),

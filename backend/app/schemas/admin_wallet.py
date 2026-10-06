@@ -26,6 +26,9 @@ class WalletUserSearchItem(BaseModel):
     gold_balance_grams: Decimal
     silver_balance_grams: Decimal
     wallet_balance_inr: Decimal
+    gold_value_inr: Decimal = Decimal("0")
+    silver_value_inr: Decimal = Decimal("0")
+    cash_wallet_inr: Decimal = Decimal("0")
     created_at: datetime
 
 
@@ -39,6 +42,8 @@ class WalletUserSearchResponse(BaseModel):
 class WalletSummary(BaseModel):
     gold_balance_grams: Decimal
     silver_balance_grams: Decimal
+    gold_value_inr: Decimal = Decimal("0")
+    silver_value_inr: Decimal = Decimal("0")
     total_inr_invested: Decimal
     total_bought_grams: Decimal
     total_sold_grams: Decimal = Decimal("0")
@@ -48,6 +53,7 @@ class WalletSummary(BaseModel):
     savings_scheme_target_grams: Optional[Decimal] = None
     savings_scheme_status: str = "not_selected"
     wallet_balance_inr: Decimal = Decimal("0")
+    cash_wallet_inr: Decimal = Decimal("0")
 
 
 class WalletUserDetailResponse(BaseModel):

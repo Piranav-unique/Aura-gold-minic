@@ -17,6 +17,7 @@ import 'package:ags_gold/features/settings/presentation/providers/settings_provi
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
+import 'package:ags_gold/features/dashboard/presentation/widgets/admin_executive_view.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
 import 'package:ags_gold/l10n/locale_preference_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -385,6 +386,20 @@ class _AdminProfileBody extends ConsumerWidget {
     );
   }
 
+  void _showQuickOperations(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          child: const AdminQuickHub(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activityAsync = ref.watch(profileActivityProvider);
@@ -408,34 +423,45 @@ class _AdminProfileBody extends ConsumerWidget {
         ProfileSettingsGroup(
           children: [
             ProfileSettingsTile(
-              icon: Icons.wallet_outlined,
-              title: 'App Members & Wallets',
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Customers / User Wallets',
+              subtitle: 'Gold & silver holdings, balances, & KYC',
               onTap: () => context.push('/admin/user-wallets'),
             ),
             ProfileSettingsTile(
               icon: Icons.payments_outlined,
-              title: 'Payment Settlements',
+              title: 'Customer Payments',
+              subtitle: 'Amounts paid, transaction modes, & history',
               onTap: () => context.push('/admin/payment-settlements'),
             ),
             ProfileSettingsTile(
-              icon: Icons.assignment_outlined,
+              icon: Icons.flash_on_outlined,
+              title: 'Quick Operations',
+              subtitle: 'Fast administrative operations & shortcuts',
+              onTap: () => _showQuickOperations(context),
+            ),
+            ProfileSettingsTile(
+              icon: Icons.sell_outlined,
               title: 'Sell Inquiries',
+              subtitle: 'Customer gold buyback requests & payouts',
               onTap: () => context.push('/admin/sell-inquiries'),
             ),
           ],
         ),
-        ProfileSectionHeader(title: 'SYSTEM & LOGS'),
+        ProfileSectionHeader(title: 'PREFERENCES & SYSTEM'),
         ProfileSettingsGroup(
           children: [
             ProfileSettingsTile(
-              icon: Icons.history_toggle_off_outlined,
-              title: 'System Audit Logs',
-              onTap: () => context.push('/audit-logs'),
+              icon: Icons.settings_outlined,
+              title: 'Settings',
+              subtitle: 'Language, themes, and biometric security',
+              onTap: () => context.push('/settings'),
             ),
             ProfileSettingsTile(
-              icon: Icons.palette_outlined,
-              title: 'Theme Settings',
-              onTap: () => context.push('/settings'),
+              icon: Icons.history_toggle_off_outlined,
+              title: 'System Audit Logs',
+              subtitle: 'Audit logs for admin actions',
+              onTap: () => context.push('/audit-logs'),
             ),
           ],
         ),
