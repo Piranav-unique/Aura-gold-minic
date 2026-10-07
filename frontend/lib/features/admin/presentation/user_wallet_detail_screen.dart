@@ -148,15 +148,16 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
             const Text(
               'User details',
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
                 color: AppTheme.primaryGold,
               ),
             ),
             const SizedBox(height: 12),
             _infoRow('Full name', detail.fullName),
             _infoRow('Mobile', detail.mobileNumber ?? '—'),
-            _infoRow('Email', detail.email),
-            _infoRow('KYC status', detail.kycStatus),
+            _infoRow('Email', detail.email, isEmail: true),
+            _infoRow('KYC status', detail.kycStatus == 'not_started' ? 'Not Started' : detail.kycStatus),
             _infoRow(
               'Aadhaar',
               detail.kycAadhaarLast4 != null
@@ -189,7 +190,8 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
             const Text(
               'Wallet summary',
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
                 color: AppTheme.primaryGold,
               ),
             ),
@@ -228,23 +230,27 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(String label, String value, {bool isEmail = false}) {
+    final displayValue = isEmail
+        ? value.replaceAll('@', '@\u200B').replaceAll('.', '.\u200B')
+        : value;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 115,
             child: Text(
               label,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
             ),
           ),
           Expanded(
             child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              displayValue,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
           ),
         ],
