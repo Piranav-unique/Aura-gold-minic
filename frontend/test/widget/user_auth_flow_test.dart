@@ -35,6 +35,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const Key('signupButton')), findsOneWidget);
+    expect(find.byKey(const Key('emailField')), findsOneWidget);
     expect(find.byKey(const Key('verifyMobileButton')), findsOneWidget);
     expect(find.byKey(const Key('verifyOtpButton')), findsOneWidget);
     expect(find.byKey(const Key('otpField')), findsOneWidget);
@@ -77,6 +78,7 @@ void main() {
     expect(find.text('Name is required.'), findsWidgets);
 
     await tester.enterText(find.byKey(const Key('nameField')), 'Test User');
+    await tester.enterText(find.byKey(const Key('emailField')), 'test.user@gmail.com');
     await tester.enterText(find.byKey(const Key('mobileField')), '9876543210');
     await tester.ensureVisible(find.byKey(const Key('signupButton')));
     await tester.pumpAndSettle();

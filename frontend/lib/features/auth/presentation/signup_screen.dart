@@ -10,6 +10,7 @@ import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/core/utils/paste_aware_formatters.dart';
+import 'package:ags_gold/core/utils/email_validator.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   final String? initialReferralCode;
@@ -29,6 +30,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
   final _otpController = TextEditingController();
   late final TextEditingController _referralController;
@@ -65,6 +67,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   void dispose() {
     _scrollController.dispose();
     _nameController.dispose();
+    _emailController.dispose();
     _mobileController.dispose();
     _otpController.dispose();
     _referralController.dispose();
@@ -78,9 +81,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
     return digits;
   }
-
-  /// Backend still requires email/password; end-users sign in with mobile only.
-  String _signupEmailFor(String mobile) => '$mobile@mobile.agsgold.com';
 
   String _signupPasswordFor(String mobile) => 'Ag$mobile!x';
 
@@ -206,12 +206,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     final l10n = context.l10n;
     final name = _nameController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final mobile = _normalizeMobile(_mobileController.text.trim());
 
     _formKey.currentState?.validate();
 
     if (name.length < 2) {
       _showSignupError(l10n.fullNameRequired);
+      return;
+    }
+
+    final emailError = validateUserEmail(email);
+    if (emailError != null) {
+      _showSignupError(emailError);
       return;
     }
 
@@ -256,7 +263,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             name: _nameController.text.trim(),
             mobileNumber: mobile,
             otp: _otpController.text.trim(),
-            email: _signupEmailFor(mobile),
+            email: email,
             password: _signupPasswordFor(mobile),
             referralCode: _referralController.text.trim().isEmpty
                 ? null
@@ -562,6 +569,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 }
                 return null;
               },
+            ),
+          ),
+          const SizedBox(height: 16),
+          _labeledField(
+            label: 'Gmail Address (@gmail.com)',
+            child: TextFormField(
+              key: const Key('emailField'),
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                hintText: 'name@gmail.com',
+                prefixIcon: Icon(Icons.alternate_email),
+              ),
+              validator: validateUserEmail,
             ),
           ),
           const SizedBox(height: 16),
