@@ -615,7 +615,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
                         onPressed: () async {
                           try {
                             await ref.read(subscribeStockNotificationProvider)(metalType: metalStr);
-                            if (context.mounted) {
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('We will notify you when ${widget.metal == MetalType.silver ? 'Silver' : 'Gold'} is available again!'),
@@ -625,7 +625,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
                               );
                             }
                           } catch (e) {
-                            if (context.mounted) {
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Notification note: $e')),
                               );
