@@ -365,28 +365,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       ],
                     ),
                   ),
-                  if (!hasName)
-                    FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        backgroundColor: AppTheme.primaryGold.withValues(alpha: 0.18),
-                        foregroundColor: AppTheme.primaryGold,
-                      ),
-                      icon: const Icon(Icons.person_add_alt_1, size: 16),
-                      label: const Text(
-                        'Add Name',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: () => _showEditNameDialog(context, user),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      tooltip: 'Edit Name',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => _showEditNameDialog(context, user),
-                    ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
                     tooltip: 'Delete Customer Wallet',
