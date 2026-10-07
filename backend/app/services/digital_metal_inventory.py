@@ -15,6 +15,15 @@ from app.repositories.digital_metal_inventory import (
     DigitalMetalInventoryRepository,
     DigitalMetalStockSubscriptionRepository,
 )
+from app.schemas.digital_metal_inventory import (
+    DigitalMetalInventoryAlertResponse,
+    DigitalMetalInventoryAlertsResponse,
+    DigitalMetalInventoryListResponse,
+    DigitalMetalInventoryMovementListResponse,
+    DigitalMetalInventoryMovementResponse,
+    DigitalMetalInventoryResponse,
+    compute_stock_status,
+)
 
 
 INSUFFICIENT_STOCK_MESSAGE = "Gold is temporarily unavailable."
