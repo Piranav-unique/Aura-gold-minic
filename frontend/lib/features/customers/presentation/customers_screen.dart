@@ -4,19 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
-import 'package:ags_gold/core/widgets/filter_chip_bar.dart';
 import 'package:ags_gold/core/widgets/premium_data_table.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/admin/domain/wallet_models.dart';
 import 'package:ags_gold/features/admin/domain/wallet_pagination.dart';
 import 'package:ags_gold/features/admin/presentation/providers/admin_wallet_provider.dart';
-import 'package:ags_gold/features/customers/domain/customer.dart';
-import 'package:ags_gold/features/customers/presentation/providers/customers_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 class CustomersScreen extends ConsumerStatefulWidget {
@@ -32,9 +28,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   // Search controllers
   final _appSearchController = TextEditingController();
   Timer? _appDebounce;
-
-  final _wholesaleSearchController = TextEditingController();
-  Timer? _wholesaleDebounce;
 
   Future<void> _syncWithRazorpay() async {
     setState(() => _isSyncingRazorpay = true);
@@ -67,11 +60,10 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   }
 
   @override
+  @override
   void dispose() {
     _appDebounce?.cancel();
     _appSearchController.dispose();
-    _wholesaleDebounce?.cancel();
-    _wholesaleSearchController.dispose();
     super.dispose();
   }
 
@@ -81,60 +73,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       ref.read(walletUserSearchQueryProvider.notifier).update(value);
       ref.read(walletUsersPageProvider.notifier).update(1);
     });
-  }
-
-  void _onWholesaleSearchChanged(String value) {
-    _wholesaleDebounce?.cancel();
-    _wholesaleDebounce = Timer(const Duration(milliseconds: 400), () {
-      ref.read(customersSearchProvider.notifier).update(value);
-      ref.read(customersSkipProvider.notifier).update(0);
-    });
-  }
-
-  void _onWholesaleSort(int columnIndex) {
-    final field = customerTableSortFields[columnIndex];
-    if (field == null) return;
-
-    final current = ref.read(customersSortFieldProvider);
-    if (current == field) {
-      ref.read(customersSortAscProvider.notifier).toggle();
-    } else {
-      ref.read(customersSortFieldProvider.notifier).update(field);
-    }
-    ref.read(customersSkipProvider.notifier).update(0);
-  }
-
-  int? _wholesaleSortColumnIndex() {
-    final field = ref.watch(customersSortFieldProvider);
-    for (final entry in customerTableSortFields.entries) {
-      if (entry.value == field) return entry.key;
-    }
-    return null;
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'active':
-        return Colors.green;
-      case 'inactive':
-        return Colors.orange;
-      case 'blacklisted':
-        return Colors.redAccent;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  bool _canCreateWholesale(WidgetRef ref) {
-    final profile = ref.watch(profileProvider).value;
-    if (profile == null) return false;
-    return hasPermission(profile, 'customer.create');
-  }
-
-  bool _canUpdateWholesale(WidgetRef ref) {
-    final profile = ref.watch(profileProvider).value;
-    if (profile == null) return false;
-    return hasPermission(profile, 'customer.update');
   }
 
   @override
@@ -634,292 +572,6 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           fontWeight: FontWeight.w700,
           color: Colors.blueGrey,
         ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // TAB 2: WHOLESALE (B2B) CUSTOMERS
-  // ==========================================
-
-  Widget _buildWholesaleTab(
-    bool isDesktop,
-    NumberFormat currency,
-    DateFormat dateFormat,
-  ) {
-    final customersAsync = ref.watch(customersListProvider);
-    final canCreate = _canCreateWholesale(ref);
-    final canUpdate = _canUpdateWholesale(ref);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _wholesaleSearchController,
-                decoration: const InputDecoration(
-                  hintText: 'Search wholesale customers...',
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onChanged: _onWholesaleSearchChanged,
-                onSubmitted: _onWholesaleSearchChanged,
-              ),
-            ),
-            if (canCreate) ...[
-              const SizedBox(width: 12),
-              FilledButton.icon(
-                onPressed: () => context.go('/customers/new'),
-                icon: const Icon(Icons.person_add_outlined),
-                label: const Text('New Wholesale Customer'),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 16),
-        FilterChipBar(
-          options: customerTypeOptions,
-          selected: ref.watch(customersTypeFilterProvider),
-          onSelected: (v) {
-            ref.read(customersTypeFilterProvider.notifier).update(v);
-            ref.read(customersSkipProvider.notifier).update(0);
-          },
-        ),
-        const SizedBox(height: 8),
-        FilterChipBar(
-          options: customerStatusOptions,
-          selected: ref.watch(customersStatusFilterProvider),
-          onSelected: (v) {
-            ref.read(customersStatusFilterProvider.notifier).update(v);
-            ref.read(customersSkipProvider.notifier).update(0);
-          },
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: customersAsync.when(
-            data: (page) {
-              if (page.items.isEmpty) {
-                return EmptyStateWidget(
-                  icon: Icons.storefront_outlined,
-                  title: 'No wholesale customers found',
-                  subtitle: 'Create a wholesale customer or switch to App Customers.',
-                  actionLabel: canCreate ? 'New Wholesale Customer' : null,
-                  onAction: canCreate ? () => context.go('/customers/new') : null,
-                );
-              }
-
-              if (!isDesktop) {
-                return RefreshIndicator(
-                  onRefresh: () => ref.refresh(customersListProvider.future),
-                  child: ListView.builder(
-                    itemCount: page.items.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == page.items.length) {
-                        return _buildWholesalePagination(page);
-                      }
-                      final customer = page.items[index];
-                      return _buildWholesaleMobileCard(
-                        customer,
-                        currency,
-                        dateFormat,
-                        canUpdate,
-                      );
-                    },
-                  ),
-                );
-              }
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: PremiumDataTable<Customer>(
-                      items: page.items,
-                      sortColumnIndex: _wholesaleSortColumnIndex(),
-                      sortAscending: ref.watch(customersSortAscProvider),
-                      onSort: _onWholesaleSort,
-                      columns: [
-                        DataTableColumn(
-                          label: 'Name',
-                          valueGetter: (c) => c.fullName,
-                          cellBuilder: (c) => _wholesaleNameCell(c),
-                        ),
-                        DataTableColumn(
-                          label: 'Type',
-                          valueGetter: (c) => c.customerType,
-                          cellBuilder: (c) => Text(c.displayType),
-                        ),
-                        DataTableColumn(
-                          label: 'Status',
-                          valueGetter: (c) => c.status,
-                          cellBuilder: (c) => _wholesaleStatusChip(c),
-                        ),
-                        DataTableColumn(
-                          label: 'Mobile',
-                          cellBuilder: (c) => Text(c.mobileNumber),
-                        ),
-                        DataTableColumn(
-                          label: 'Revenue',
-                          valueGetter: (c) => c.totalRevenue,
-                          cellBuilder: (c) =>
-                              Text(currency.format(c.totalRevenue)),
-                        ),
-                        DataTableColumn(
-                          label: 'Purchases',
-                          valueGetter: (c) => c.totalPurchases,
-                          cellBuilder: (c) => Text('${c.totalPurchases}'),
-                        ),
-                        DataTableColumn(
-                          label: 'Last Transaction',
-                          valueGetter: (c) =>
-                              c.lastTransactionDate ?? DateTime(1970),
-                          cellBuilder: (c) => Text(
-                            c.lastTransactionDate != null
-                                ? dateFormat.format(c.lastTransactionDate!)
-                                : '—',
-                          ),
-                        ),
-                        DataTableColumn(
-                          label: 'Actions',
-                          cellBuilder: (c) =>
-                              _wholesaleActionButtons(c, canUpdate: canUpdate),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildWholesalePagination(page),
-                ],
-              );
-            },
-            loading: () => const PremiumSkeletonList(itemCount: 8),
-            error: (e, _) => EmptyStateWidget(
-              icon: Icons.error_outline,
-              title: 'Unable to load wholesale customers',
-              subtitle: e.toString(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _wholesaleNameCell(Customer customer) {
-    return InkWell(
-      onTap: () => context.go('/customers/${customer.id}'),
-      child: Text(
-        customer.fullName,
-        style: const TextStyle(
-          color: AppTheme.primaryGold,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _wholesaleStatusChip(Customer customer) {
-    return Chip(
-      label: Text(
-        customer.displayStatus,
-        style: const TextStyle(fontSize: 12, color: Colors.white),
-      ),
-      backgroundColor: _statusColor(customer.status),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  Widget _wholesaleActionButtons(Customer customer, {required bool canUpdate}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.visibility_outlined, size: 20),
-          tooltip: 'View',
-          onPressed: () => context.go('/customers/${customer.id}'),
-        ),
-        if (canUpdate)
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            tooltip: 'Edit',
-            onPressed: () => context.go('/customers/${customer.id}/edit'),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildWholesaleMobileCard(
-    Customer customer,
-    NumberFormat currency,
-    DateFormat dateFormat,
-    bool canUpdate,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        onTap: () => context.go('/customers/${customer.id}'),
-        title: Text(
-          customer.fullName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${customer.displayType} • ${customer.mobileNumber}'),
-            Text(
-              '${currency.format(customer.totalRevenue)} • ${customer.totalPurchases} purchases',
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _wholesaleStatusChip(customer),
-            if (canUpdate)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20),
-                onPressed: () => context.go('/customers/${customer.id}/edit'),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWholesalePagination(PaginatedCustomers page) {
-    final skip = ref.watch(customersSkipProvider);
-    final limit = ref.watch(customersLimitProvider);
-    final canPrev = skip > 0;
-    final canNext = skip + limit < page.total;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Showing ${skip + 1}-${skip + page.items.length} of ${page.total}',
-          ),
-          Row(
-            children: [
-              IconButton(
-                onPressed: canPrev
-                    ? () => ref
-                        .read(customersSkipProvider.notifier)
-                        .update(skip - limit)
-                    : null,
-                icon: const Icon(Icons.chevron_left),
-              ),
-              IconButton(
-                onPressed: canNext
-                    ? () => ref
-                        .read(customersSkipProvider.notifier)
-                        .update(skip + limit)
-                    : null,
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

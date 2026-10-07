@@ -5,11 +5,26 @@ import 'package:go_router/go_router.dart';
 String? parentRouteFor(String location) {
   const directParents = <String, String>{
     '/inventory/movements': '/inventory',
+    '/inventory/new': '/inventory',
+    '/suppliers': '/inventory',
+    '/admin/metal-inventory': '/inventory',
     '/bank-accounts/add': '/bank-accounts',
     '/sell-gold-inquiry/success': '/user-dashboard',
     '/transactions/new': '/transactions',
     '/customers/new': '/customers',
     '/workflows/new': '/workflows',
+    '/admin/users': '/profile',
+    '/admin/account-deletions': '/profile',
+    '/admin/roles': '/profile',
+    '/admin/permissions': '/profile',
+    '/admin/profile': '/profile',
+    '/admin/user-wallets': '/profile',
+    '/admin/sell-inquiries': '/profile',
+    '/audit-logs': '/profile',
+    '/settings': '/profile',
+    '/privacy-policy': '/profile',
+    '/terms-and-conditions': '/profile',
+    '/notifications': '/user-dashboard',
   };
   if (directParents.containsKey(location)) {
     return directParents[location];

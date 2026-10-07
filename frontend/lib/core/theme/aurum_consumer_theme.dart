@@ -135,7 +135,7 @@ class AurumConsumerTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.primaryGold,
           foregroundColor: const Color(0xFF1A1200),
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(0, 50),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
@@ -232,7 +232,7 @@ class AurumConsumerTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppTheme.primaryGold,
           foregroundColor: const Color(0xFF1A1200),
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(0, 50),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),

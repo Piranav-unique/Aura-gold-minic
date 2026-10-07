@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
-import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';

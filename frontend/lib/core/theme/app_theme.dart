@@ -164,7 +164,7 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: primaryGold,
           foregroundColor: ink,
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(0, 50),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -175,7 +175,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: ctaBlack,
           foregroundColor: const Color(0xFFFFFFFF),
-          minimumSize: const Size(double.infinity, 54),
+          minimumSize: const Size(0, 50),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -324,7 +324,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryGold,
           foregroundColor: deepNavy,
-          minimumSize: const Size(double.infinity, 54),
+          minimumSize: const Size(0, 50),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

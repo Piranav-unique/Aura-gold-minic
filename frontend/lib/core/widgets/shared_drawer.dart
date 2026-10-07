@@ -8,6 +8,7 @@ import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/navigation/app_nav_destinations.dart';
+import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/live_price_app_bar_chip.dart';
 import 'package:ags_gold/core/widgets/app_exit_guard.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -24,11 +25,21 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
 
   Future<void> _handleBack(
     BuildContext context, {
+    required String currentPath,
     required bool isHome,
     required String homePath,
     required bool didPop,
   }) async {
     if (didPop) return;
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    final parent = parentRouteFor(currentPath);
+    if (parent != null) {
+      context.go(parent);
+      return;
+    }
     if (!isHome) {
       context.go(homePath);
       return;
@@ -54,14 +65,13 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
     );
     final selectedIndex = selectedNavIndexForPath(currentPath, destinations);
 
-    // Back button always returns to the home page (user or admin). Only when
-    // already on the home page is a pop allowed (which exits the app).
     final homePath =
         audience == AppAudience.endUser ? '/user-dashboard' : '/dashboard';
     final isHome = currentPath == homePath;
     void handleBack(bool didPop, Object? result) {
       _handleBack(
         context,
+        currentPath: currentPath,
         isHome: isHome,
         homePath: homePath,
         didPop: didPop,
@@ -139,14 +149,15 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
 
     final isEndUserMobile = audience == AppAudience.endUser;
     final isStaffMobile = !isEndUserMobile;
-    final mobileLeading = isHome
-        ? null
-        : IconButton(
-            icon: const BackButtonIcon(),
-            onPressed: () => context.go(homePath),
-          );
 
     const endUserTabPrefixes = ['/user-dashboard', '/portfolio', '/profile'];
+    const staffMobileTabPrefixes = [
+      '/dashboard',
+      '/customers',
+      '/admin/payment-settlements',
+      '/profile',
+    ];
+
     final endUserDestinations = isEndUserMobile
         ? endUserTabPrefixes
             .map((prefix) =>
@@ -155,12 +166,25 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
             .toList()
         : <AppNavDestination>[];
 
-    const staffMobileTabPrefixes = [
-      '/dashboard',
-      '/customers',
-      '/admin/payment-settlements',
-      '/profile',
-    ];
+    final isTopLevelTab = endUserTabPrefixes.contains(currentPath) ||
+        staffMobileTabPrefixes.contains(currentPath);
+    final mobileLeading = isTopLevelTab
+        ? null
+        : IconButton(
+            icon: const BackButtonIcon(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                final parent = parentRouteFor(currentPath);
+                if (parent != null) {
+                  context.go(parent);
+                } else {
+                  context.go(homePath);
+                }
+              }
+            },
+          );
     // Routes that are launched via context.push() from Profile page —
     // keep the bottom nav highlighted on Profile for all of them.
     const profileSubRoutes = {

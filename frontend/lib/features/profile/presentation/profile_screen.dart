@@ -7,7 +7,6 @@ import 'package:ags_gold/core/utils/email_validator.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 
 import 'package:ags_gold/core/widgets/aura_dialog_actions.dart';
-import 'package:ags_gold/core/widgets/premium_timeline.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
 import 'package:ags_gold/features/profile/domain/profile.dart';
@@ -17,7 +16,6 @@ import 'package:ags_gold/features/settings/presentation/providers/settings_provi
 import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/services/service_providers.dart';
-import 'package:ags_gold/features/dashboard/presentation/widgets/admin_executive_view.dart';
 import 'package:ags_gold/l10n/app_languages.dart';
 import 'package:ags_gold/l10n/locale_preference_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -386,24 +384,8 @@ class _AdminProfileBody extends ConsumerWidget {
     );
   }
 
-  void _showQuickOperations(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(16),
-          child: const AdminQuickHub(),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activityAsync = ref.watch(profileActivityProvider);
-    final theme = Theme.of(context);
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final l10n = context.l10n;
 
@@ -424,27 +406,15 @@ class _AdminProfileBody extends ConsumerWidget {
           children: [
             ProfileSettingsTile(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Customers / User Wallets',
+              title: 'User Wallets & Balances',
               subtitle: 'Gold & silver holdings, balances, & KYC',
               onTap: () => context.push('/admin/user-wallets'),
-            ),
-            ProfileSettingsTile(
-              icon: Icons.payments_outlined,
-              title: 'Customer Payments',
-              subtitle: 'Amounts paid, transaction modes, & history',
-              onTap: () => context.push('/admin/payment-settlements'),
             ),
             ProfileSettingsTile(
               icon: Icons.inventory_2_outlined,
               title: 'Inventory',
               subtitle: 'Track physical gold & silver stock',
               onTap: () => context.push('/inventory'),
-            ),
-            ProfileSettingsTile(
-              icon: Icons.flash_on_outlined,
-              title: 'Quick Operations',
-              subtitle: 'Fast administrative operations & shortcuts',
-              onTap: () => _showQuickOperations(context),
             ),
             ProfileSettingsTile(
               icon: Icons.sell_outlined,
@@ -466,7 +436,7 @@ class _AdminProfileBody extends ConsumerWidget {
             ProfileSettingsTile(
               icon: Icons.history_toggle_off_outlined,
               title: 'System Audit Logs',
-              subtitle: 'Audit logs for admin actions',
+              subtitle: 'Audit logs for admin actions & activity summary',
               onTap: () => context.push('/audit-logs'),
             ),
           ],
@@ -479,92 +449,7 @@ class _AdminProfileBody extends ConsumerWidget {
               title: 'Edit Profile Info',
               onTap: () => showEditProfileDialog(context, ref, user),
             ),
-            ProfileSettingsTile(
-              icon: Icons.lock_outline,
-              title: 'Change Password',
-              onTap: () => showChangePasswordDialog(context, ref),
-            ),
-            ProfileSettingsTile(
-              icon: Icons.star_border,
-              title: 'Superuser Access',
-              trailing: Switch(
-                value: user.isSuperuser,
-                onChanged: null,
-              ),
-            ),
           ],
-        ),
-        const SizedBox(height: 24),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Activity Summary',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => context.push('/audit-logs'),
-                      icon: const Icon(Icons.open_in_new, size: 14),
-                      label: const Text('See All'),
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                activityAsync.when(
-                  data: (logs) {
-                    final preview = logs.take(5).toList();
-                    return Column(
-                      children: [
-                        PremiumTimeline(
-                          entries: preview
-                              .map(
-                                (log) => TimelineEntry(
-                                  title: log.action
-                                      .replaceAll('_', ' ')
-                                      .toUpperCase(),
-                                  subtitle:
-                                      '${log.entityType ?? 'System'} activity',
-                                  timestamp: log.timestamp,
-                                  icon: Icons.history,
-                                ),
-                              )
-                              .toList(),
-                        ),
-                        if (logs.length > 5)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: () => context.push('/audit-logs'),
-                                icon: const Icon(Icons.history, size: 16),
-                                label: Text(
-                                  'See ${logs.length - 5} more events',
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Text('Failed to load activity: $e'),
-                ),
-              ],
-            ),
-          ),
         ),
         const SizedBox(height: 24),
         SizedBox(

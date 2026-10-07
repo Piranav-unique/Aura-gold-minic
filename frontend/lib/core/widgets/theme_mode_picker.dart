@@ -11,28 +11,31 @@ class ThemeModePicker extends ConsumerWidget {
     final l10n = context.l10n;
     final themeMode = ref.watch(themeModeProvider);
 
-    return SegmentedButton<ThemeMode>(
-      segments: [
-        ButtonSegment(
-          value: ThemeMode.system,
-          label: Text(l10n.themeSystem),
-          icon: const Icon(Icons.brightness_auto),
-        ),
-        ButtonSegment(
-          value: ThemeMode.light,
-          label: Text(l10n.themeLight),
-          icon: const Icon(Icons.light_mode),
-        ),
-        ButtonSegment(
-          value: ThemeMode.dark,
-          label: Text(l10n.themeDark),
-          icon: const Icon(Icons.dark_mode),
-        ),
-      ],
-      selected: {themeMode},
-      onSelectionChanged: (selection) {
-        ref.read(themeModeProvider.notifier).setThemeMode(selection.first);
-      },
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<ThemeMode>(
+        segments: [
+          ButtonSegment(
+            value: ThemeMode.system,
+            label: Text(l10n.themeSystem),
+            icon: const Icon(Icons.brightness_auto),
+          ),
+          ButtonSegment(
+            value: ThemeMode.light,
+            label: Text(l10n.themeLight),
+            icon: const Icon(Icons.light_mode),
+          ),
+          ButtonSegment(
+            value: ThemeMode.dark,
+            label: Text(l10n.themeDark),
+            icon: const Icon(Icons.dark_mode),
+          ),
+        ],
+        selected: {themeMode},
+        onSelectionChanged: (selection) {
+          ref.read(themeModeProvider.notifier).setThemeMode(selection.first);
+        },
+      ),
     );
   }
 }

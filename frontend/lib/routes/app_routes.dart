@@ -46,7 +46,6 @@ import 'package:ags_gold/features/customers/presentation/customers_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_detail_screen.dart';
 import 'package:ags_gold/features/customers/presentation/customer_form_screen.dart';
 import 'package:ags_gold/features/admin/presentation/metal_inventory_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/inventory_screen.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_permission_gate.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_form_screen.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_detail_screen.dart';
