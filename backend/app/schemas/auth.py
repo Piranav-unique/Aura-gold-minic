@@ -144,7 +144,7 @@ class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=200)
     mobile_number: str
     otp: str = Field(..., min_length=4, max_length=6)
-    email: str
+    email: Optional[str] = None
     password: str = Field(..., min_length=8)
     referral_code: Optional[str] = Field(default=None, max_length=16)
     referral_scheme_grams: Optional[int] = None
@@ -182,15 +182,24 @@ class RegisterRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, v: str) -> str:
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return None
         cleaned = v.strip().lower()
+        if not cleaned:
+            return None
+        # Allow system/mobile registration placeholder emails
+        if cleaned.endswith(("@mobile.agsgold.com", "@agsgold.com", "@aurum.local")):
+            return cleaned
         if not EMAIL_REGEX.match(cleaned):
             raise ValueError("Invalid email format")
-        if is_placeholder_email(cleaned):
-            raise ValueError(
-                "Email must be a valid personal Gmail address ending with @gmail.com."
-            )
         return cleaned
+
+    @model_validator(mode="after")
+    def ensure_email(self) -> "RegisterRequest":
+        if not self.email or not self.email.strip():
+            self.email = f"{self.mobile_number}@mobile.agsgold.com"
+        return self
 
 
 class RefreshRequest(BaseModel):
