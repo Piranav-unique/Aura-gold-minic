@@ -14,6 +14,7 @@ import 'package:ags_gold/features/admin/domain/wallet_models.dart';
 import 'package:ags_gold/features/admin/domain/wallet_pagination.dart';
 import 'package:ags_gold/features/admin/presentation/providers/admin_wallet_provider.dart';
 import 'package:ags_gold/features/admin/presentation/wallet_transaction_detail_sheet.dart';
+import 'package:ags_gold/services/service_providers.dart';
 
 class UserWalletDetailScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -27,6 +28,59 @@ class UserWalletDetailScreen extends ConsumerStatefulWidget {
 
 class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen> {
   int _txnPage = 1;
+
+  Future<void> _confirmDeleteUserWallet(
+    WalletUserDetail detail,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Customer Wallet?'),
+        content: Text(
+          'Are you sure you want to delete ${detail.fullName}\'s wallet (${detail.mobileNumber ?? detail.email})? This user will be removed from the admin dashboard.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete Wallet'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final api = ref.read(apiClientProvider);
+        await api.delete('/admin/wallets/users/${detail.id}');
+        ref.invalidate(walletUsersListProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${detail.fullName} wallet deleted successfully.'),
+              backgroundColor: const Color(0xFF16A34A),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          context.pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete user wallet: $e'),
+              backgroundColor: Colors.red.shade800,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +126,15 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmDeleteUserWallet(detail),
+                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    label: const Text('Delete Wallet', style: TextStyle(color: Colors.red)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: () => context.push(
                       '/admin/payment-settlements?mobile=${Uri.encodeComponent(detail.mobileNumber ?? '')}',

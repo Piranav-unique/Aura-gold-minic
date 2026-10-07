@@ -47,6 +47,56 @@ from app.database import base as db_base  # noqa: F401
 from app.repositories.token_blacklist import TokenBlacklistRepository
 
 
+async def _startup_cleanup():
+    """Purge fake development mock orders, Yogesh fake payment, and website orders from app database."""
+    from sqlalchemy import text
+    try:
+        async with async_session_maker() as session:
+            # 1. Delete fake Yogesh / dev mock orders
+            await session.execute(
+                text("""
+                    DELETE FROM payment_orders 
+                    WHERE razorpay_payment_id = 'pay_dev_mock' 
+                       OR razorpay_order_id LIKE 'order_dev_%'
+                       OR id = '0cd884c2-740a-497b-90d0-bbf82e270a6e';
+                """)
+            )
+            # 2. Delete / purge user Yogesh
+            await session.execute(
+                text("""
+                    DELETE FROM users 
+                    WHERE mobile_number = '8248345770' 
+                       OR email = '8248345770@mobile.agsgold.com';
+                """)
+            )
+            # 3. Delete website orders from app table
+            await session.execute(
+                text("""
+                    DELETE FROM payment_orders 
+                    WHERE razorpay_order_id IN (
+                        'order_Tkkr0WuXPYD8G5',
+                        'order_Tkkk5aZIuCofGZ',
+                        'order_TkkiZDW6SnMXRA',
+                        'order_Tkkc5pV5WdC87Y',
+                        'order_TkKPpYcdWGd8CD',
+                        'order_TkKSA3pKTBiHKk'
+                    );
+                """)
+            )
+            # 4. Correct Akshai's silver balance (bought 0 silver in app)
+            await session.execute(
+                text("""
+                    UPDATE users 
+                    SET silver_savings_grams = 0, silver_invested_inr = 0 
+                    WHERE id = '7eeb1b05-0a84-4bb3-aaa3-fd8a76613b49';
+                """)
+            )
+            await session.commit()
+            logger.info("db_startup_cleanup_complete", message="Purged fake mock payments and website orders.")
+    except Exception as exc:
+        logger.warning("db_startup_cleanup_failed", error=str(exc))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -59,6 +109,7 @@ async def lifespan(app: FastAPI):
             "db_connection_success",
             message="Database connection verified successfully.",
         )
+        await _startup_cleanup()
     else:
         logger.warning(
             "db_connection_failed",

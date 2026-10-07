@@ -127,7 +127,7 @@ class GoldPaymentService:
 
         amount_paise = int((final_amount * 100).to_integral_value(rounding=ROUND_HALF_UP))
 
-        receipt = f"{metal}_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"[:40]
+        receipt = f"app_{metal}_{user.id}_{int(datetime.now(timezone.utc).timestamp())}"[:40]
         if self.razorpay.use_dev_mock:
             rz_order = {"id": f"order_dev_{uuid.uuid4().hex[:24]}"}
             key_id = RazorpayClient.DEV_MOCK_KEY_ID
@@ -136,6 +136,8 @@ class GoldPaymentService:
                 amount_paise=amount_paise,
                 receipt=receipt,
                 notes={
+                    "app": "ags_gold_app",
+                    "source": "mobile_app",
                     "user_id": str(user.id),
                     "metal": metal,
                     "purchase_mode": mode,
@@ -692,7 +694,9 @@ class GoldPaymentService:
                     updated_orders += 1
                 continue
 
-            # Skip transactions originating from other websites sharing the same Razorpay account
+            # 2. If order is not found in our database, it originated from the website
+            # or an external system sharing the same Razorpay API keys.
+            # We strictly MUST NOT import website/e-commerce payments as app digital gold purchases.
             continue
 
         clear_executive_dashboard_cache()

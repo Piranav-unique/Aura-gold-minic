@@ -113,6 +113,8 @@ class AdminWalletRepository:
             User.is_superuser.is_(False),
             User.email.not_ilike("%superadmin%"),
             User.email.not_ilike("%admin@agsgold%"),
+            User.first_name.not_ilike("%yogesh%"),
+            or_(User.mobile_number.is_(None), ~User.mobile_number.like("%8248345770%")),
             ~User.id.in_(admin_subq),
         ]
         if admin_mobile:
@@ -169,10 +171,26 @@ class AdminWalletRepository:
         )
         return result.scalars().first()
 
+    _IGNORED_ORDERS = (
+        "order_dev_3e67692f9a9a4b1fa6e39aa3",
+        "order_Tkkr0WuXPYD8G5",
+        "order_Tkkk5aZIuCofGZ",
+        "order_TkkiZDW6SnMXRA",
+        "order_Tkkc5pV5WdC87Y",
+        "order_TkKPpYcdWGd8CD",
+        "order_TkKSA3pKTBiHKk",
+    )
+
     async def sum_paid_grams(self, user_id: uuid.UUID, metal: Optional[str] = None) -> Decimal:
         query = (
             select(func.coalesce(func.sum(PaymentOrder.grams), 0))
-            .where(PaymentOrder.user_id == user_id, PaymentOrder.status == "paid")
+            .where(
+                PaymentOrder.user_id == user_id,
+                PaymentOrder.status == "paid",
+                or_(PaymentOrder.razorpay_payment_id.is_(None), PaymentOrder.razorpay_payment_id != "pay_dev_mock"),
+                or_(PaymentOrder.razorpay_order_id.is_(None), ~PaymentOrder.razorpay_order_id.like("order_dev_%")),
+                ~PaymentOrder.razorpay_order_id.in_(self._IGNORED_ORDERS),
+            )
         )
         if metal:
             query = query.where(PaymentOrder.metal == metal)
@@ -189,6 +207,9 @@ class AdminWalletRepository:
             .where(
                 PaymentOrder.user_id.in_(user_ids),
                 PaymentOrder.status == "paid",
+                or_(PaymentOrder.razorpay_payment_id.is_(None), PaymentOrder.razorpay_payment_id != "pay_dev_mock"),
+                or_(PaymentOrder.razorpay_order_id.is_(None), ~PaymentOrder.razorpay_order_id.like("order_dev_%")),
+                ~PaymentOrder.razorpay_order_id.in_(self._IGNORED_ORDERS),
             )
         )
         if metal:
@@ -226,6 +247,11 @@ class AdminWalletRepository:
         status: Optional[str] = None,
     ) -> list[_WalletTxnRow]:
         query = select(PaymentOrder).options(selectinload(PaymentOrder.user))
+        query = query.where(
+            or_(PaymentOrder.razorpay_payment_id.is_(None), PaymentOrder.razorpay_payment_id != "pay_dev_mock"),
+            or_(PaymentOrder.razorpay_order_id.is_(None), ~PaymentOrder.razorpay_order_id.like("order_dev_%")),
+            ~PaymentOrder.razorpay_order_id.in_(self._IGNORED_ORDERS),
+        )
         if user_id:
             query = query.where(PaymentOrder.user_id == user_id)
         if metal:

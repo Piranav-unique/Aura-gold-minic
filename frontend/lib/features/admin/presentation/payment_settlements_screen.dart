@@ -114,13 +114,28 @@ class _PaymentSettlementsScreenState
                 (row['customer_email'] as String?)?.trim() ??
                 '';
 
-            // Never include superadmin in customer payments
+            // Never include superadmin, Yogesh (fake payment), dev_mock, or website orders
             final emailLower = email.toLowerCase();
             final nameLower = (rawName ?? '').toLowerCase();
+            final payId = (row['razorpay_payment_id'] as String? ?? '').toLowerCase();
+            final ordId = (row['razorpay_order_id'] as String? ?? '').toLowerCase();
+            const websiteOrders = [
+              'order_tkkr0wuxpyd8g5',
+              'order_tkkk5aziucoffgz',
+              'order_tkkizdw6snmxra',
+              'order_tkkc5pv5wdc87y',
+              'order_tkkppycdwgd8cd',
+              'order_tkksa3pktbihkk',
+            ];
             if (emailLower.contains('superadmin') ||
                 emailLower.contains('admin@agsgold') ||
                 nameLower.contains('super admin') ||
-                mobile == '9943795005') {
+                mobile == '9943795005' ||
+                mobile == '8248345770' ||
+                nameLower.contains('yogesh') ||
+                payId.contains('dev_mock') ||
+                ordId.contains('order_dev_') ||
+                websiteOrders.contains(ordId)) {
               continue;
             }
 
@@ -181,13 +196,28 @@ class _PaymentSettlementsScreenState
                 (row['customer_name'] as String?)?.trim() ??
                 '';
 
-            // Never include superadmin in payment records
+            // Never include superadmin, Yogesh (fake payment), dev_mock, or website orders in payment records
             final emailLower = email.toLowerCase();
             final nameLower = rawName.toLowerCase();
+            final payId = (row['razorpay_payment_id'] as String? ?? '').toLowerCase();
+            final ordId = (row['razorpay_order_id'] as String? ?? '').toLowerCase();
+            const websiteOrders = [
+              'order_tkkr0wuxpyd8g5',
+              'order_tkkk5aziucoffgz',
+              'order_tkkizdw6snmxra',
+              'order_tkkc5pv5wdc87y',
+              'order_tkkppycdwgd8cd',
+              'order_tkksa3pktbihkk',
+            ];
             if (emailLower.contains('superadmin') ||
                 emailLower.contains('admin@agsgold') ||
                 nameLower.contains('super admin') ||
-                mobile == '9943795005') {
+                mobile == '9943795005' ||
+                mobile == '8248345770' ||
+                nameLower.contains('yogesh') ||
+                payId.contains('dev_mock') ||
+                ordId.contains('order_dev_') ||
+                websiteOrders.contains(ordId)) {
               return false;
             }
             final method = (row['payment_method'] as String? ?? '').toLowerCase();

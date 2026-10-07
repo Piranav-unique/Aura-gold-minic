@@ -111,6 +111,7 @@ class _UserWalletsScreenState extends ConsumerState<UserWalletsScreen> {
           if (email.contains('superadmin') || email.contains('admin@agsgold')) return false;
           if (name.contains('super admin') || name.contains('superadmin')) return false;
           if (mobile.contains('9943795005')) return false;
+          if (name.contains('yogesh') || mobile.contains('8248345770')) return false;
           return true;
         }).toList();
         final filteredPage = PaginatedWalletUsers(

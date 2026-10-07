@@ -59,6 +59,56 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     }
   }
 
+  Future<void> _confirmDeleteCustomer(WalletUserSearchItem user) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Customer Wallet?'),
+        content: Text(
+          'Are you sure you want to remove ${user.fullName} (${user.mobileNumber ?? user.email})? This user wallet will be removed from the admin dashboard.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final api = ref.read(apiClientProvider);
+        await api.delete('/admin/wallets/users/${user.id}');
+        ref.invalidate(walletUsersListProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${user.fullName} wallet removed successfully.'),
+              backgroundColor: const Color(0xFF16A34A),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete customer: $e'),
+              backgroundColor: Colors.red.shade800,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   @override
   void dispose() {
@@ -185,6 +235,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 if (email.contains('superadmin') || email.contains('admin@agsgold')) return false;
                 if (name.contains('super admin') || name.contains('superadmin')) return false;
                 if (mobile.contains('9943795005')) return false;
+                if (name.contains('yogesh') || mobile.contains('8248345770')) return false;
                 return true;
               }).toList();
               final filteredPage = PaginatedWalletUsers(
@@ -314,6 +365,34 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       ],
                     ),
                   ),
+                  if (!hasName)
+                    FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        backgroundColor: AppTheme.primaryGold.withValues(alpha: 0.18),
+                        foregroundColor: AppTheme.primaryGold,
+                      ),
+                      icon: const Icon(Icons.person_add_alt_1, size: 16),
+                      label: const Text(
+                        'Add Name',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => _showEditNameDialog(context, user),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      tooltip: 'Edit Name',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => _showEditNameDialog(context, user),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    tooltip: 'Delete Customer Wallet',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _confirmDeleteCustomer(user),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -412,10 +491,20 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
               ),
               DataTableColumn(
                 label: 'Actions',
-                cellBuilder: (u) => IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  tooltip: 'View Wallet Details',
-                  onPressed: () => context.push('/admin/user-wallets/${u.id}'),
+                cellBuilder: (u) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      tooltip: 'Delete Customer Wallet',
+                      onPressed: () => _confirmDeleteCustomer(u),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      tooltip: 'View Wallet Details',
+                      onPressed: () => context.push('/admin/user-wallets/${u.id}'),
+                    ),
+                  ],
                 ),
               ),
             ],

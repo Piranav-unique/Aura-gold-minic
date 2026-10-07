@@ -136,8 +136,27 @@ async def list_recent_wallet_transactions(
 async def get_wallet_transaction_detail(
     transaction_id: str,
     current_user: User = Depends(PermissionChecker("wallet.view")),
-    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
 ) -> WalletTransactionDetailResponse:
     return await wallet_service.get_transaction_detail(
         transaction_id, admin_user_id=current_user.id
     )
+
+
+@router.delete(
+    "/users/{user_id}",
+    summary="Delete / remove a customer and their wallet (admin)",
+)
+async def delete_user_wallet(
+    user_id: uuid.UUID,
+    current_user: User = Depends(PermissionChecker("wallet.view")),
+    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
+):
+    from app.core.exceptions import NotFoundException
+    user = await wallet_service.wallet_repo.db.get(User, user_id)
+    if not user:
+        raise NotFoundException("User not found")
+    user.is_deleted = True
+    user.is_active = False
+    await wallet_service.wallet_repo.db.commit()
+    return {"message": "User wallet deleted successfully", "user_id": str(user_id)}
+

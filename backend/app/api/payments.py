@@ -177,3 +177,21 @@ async def subscribe_stock_notification(
   return {"message": f"We will notify you when {body.metal_type.capitalize()} is back in stock!"}
 
 
+@router.delete(
+  "/admin/orders/{order_id}",
+  summary="Delete an invalid or fake payment order (admin)",
+)
+async def delete_payment_order(
+  order_id: uuid.UUID,
+  current_user: User = Depends(PermissionChecker("dashboard.view")),
+  payment_service: GoldPaymentService = Depends(get_gold_payment_service),
+):
+  from app.core.exceptions import NotFoundException
+  order = await payment_service.payment_repo.get(order_id)
+  if not order:
+    raise NotFoundException("Order not found")
+  await payment_service.payment_repo.db.delete(order)
+  await payment_service.payment_repo.db.commit()
+  return {"message": "Payment order deleted successfully", "order_id": str(order_id)}
+
+
