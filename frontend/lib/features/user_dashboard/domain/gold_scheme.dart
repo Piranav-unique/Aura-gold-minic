@@ -27,6 +27,7 @@ class GoldScheme {
   final bool canSellInquiry;
   final String? sellLockedReason;
   final DateTime? startedAt;
+  final double minDepositInr;
 
   const GoldScheme({
     this.status = GoldSchemeStatus.notSelected,
@@ -37,6 +38,7 @@ class GoldScheme {
     this.canSellInquiry = false,
     this.sellLockedReason,
     this.startedAt,
+    this.minDepositInr = 50.0,
   });
 
   factory GoldScheme.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,9 @@ class GoldScheme {
       startedAt: json['started_at'] != null
           ? DateTime.tryParse(json['started_at'] as String)
           : null,
+      minDepositInr: _parseDecimal(json['min_deposit_inr']) > 0
+          ? _parseDecimal(json['min_deposit_inr'])
+          : 50.0,
     );
   }
 

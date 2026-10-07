@@ -88,6 +88,84 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
     return 1.03;
   }
 
+  double _getMinDepositInr() {
+    if (widget.metal == MetalType.silver) return 1.0;
+    final dashboard = ref.read(personalDashboardProvider).value;
+    final scheme = dashboard?.goldScheme;
+    if (scheme != null && scheme.minDepositInr > 0) {
+      return scheme.minDepositInr;
+    }
+    final targetGrams = scheme?.targetGrams?.round() ?? 1;
+    if (targetGrams == 10) return 2000.0;
+    if (targetGrams == 5) return 1000.0;
+    final invested = dashboard?.goldInvestedInr ?? 0;
+    if (invested < 100) return 100.0;
+    return 50.0;
+  }
+
+  int _getSchemeGrams() {
+    final dashboard = ref.read(personalDashboardProvider).value;
+    return dashboard?.goldScheme.targetGrams?.round() ?? 1;
+  }
+
+  Widget _buildQuickChips(double rate) {
+    if (!widget.isBuy) return const SizedBox.shrink();
+    final minDeposit = _getMinDepositInr();
+    final schemeGrams = _getSchemeGrams();
+    List<double> presets;
+    if (widget.metal == MetalType.silver) {
+      presets = [100, 250, 500, 1000];
+    } else if (schemeGrams == 10) {
+      presets = [2000, 3000, 5000, 10000];
+    } else if (schemeGrams == 5) {
+      presets = [1000, 1500, 2000, 3000];
+    } else {
+      presets = minDeposit >= 100 ? [100, 200, 500, 1000] : [50, 100, 250, 500];
+    }
+
+    final currentAmount = double.tryParse(_amountController.text) ?? 0;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: presets.map((amount) {
+          final isSelected = (currentAmount - amount).abs() < 0.01;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(
+                '₹${amount.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: isSelected ? Colors.black : AurumConsumerTheme.textPrimary,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: AppTheme.primaryGold,
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected
+                      ? AppTheme.primaryGold
+                      : AppTheme.primaryGold.withValues(alpha: 0.3),
+                ),
+              ),
+              onSelected: (selected) {
+                if (selected) {
+                  _purchaseMode = PurchaseMode.amount;
+                  _amountController.text = amount.toStringAsFixed(0);
+                  _syncFromAmount(rate);
+                }
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   String _formatGramsForDisplay(double grams) {
     if (grams <= 0) return '';
     if (grams < 0.0001) {
@@ -151,6 +229,8 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
 
     final gramsInput = double.tryParse(_gramsController.text);
     final amountInput = double.tryParse(_amountController.text);
+    final minDeposit = _getMinDepositInr();
+    final schemeGrams = _getSchemeGrams();
 
     if (_purchaseMode == PurchaseMode.amount) {
       if (amountInput == null || amountInput <= 0) {
@@ -159,7 +239,17 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
         );
         return;
       }
-      if (amountInput < 1.0) {
+      if (widget.metal == MetalType.gold && amountInput < minDeposit) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Minimum deposit for your ${schemeGrams}g scheme is ₹${minDeposit.toStringAsFixed(0)}.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (widget.metal == MetalType.silver && amountInput < 1.0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Minimum purchase amount is ₹1.')),
         );
@@ -217,6 +307,17 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       metalValue = finalGrams * rate;
       gstAmount = metalValue * 0.03;
       finalAmount = metalValue + gstAmount;
+    }
+
+    if (widget.metal == MetalType.gold && finalAmount < minDeposit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Minimum deposit for your ${schemeGrams}g scheme is ₹${minDeposit.toStringAsFixed(0)}.',
+          ),
+        ),
+      );
+      return;
     }
 
     final formattedGrams = _formatGramsForDisplay(finalGrams);
@@ -543,10 +644,21 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       });
     }
 
+    final minDeposit = _getMinDepositInr();
+    final schemeGrams = _getSchemeGrams();
+
     final gramsInput = double.tryParse(_gramsController.text) ?? 0;
     final amountInput = double.tryParse(_amountController.text) ?? 0;
-    final hasValidInput = (_purchaseMode == PurchaseMode.amount && amountInput >= 1.0) ||
-        (_purchaseMode == PurchaseMode.grams && gramsInput >= 0.0001);
+    final calculatedAmount = _purchaseMode == PurchaseMode.amount
+        ? amountInput
+        : (gramsInput > 0 && rate > 0 ? (gramsInput * rate * _gstMultiplier()) : 0.0);
+    final hasValidInput = widget.metal == MetalType.silver
+        ? ((_purchaseMode == PurchaseMode.amount && amountInput >= 1.0) ||
+            (_purchaseMode == PurchaseMode.grams && gramsInput >= 0.0001))
+        : (calculatedAmount >= minDeposit &&
+            (_purchaseMode == PurchaseMode.amount
+                ? amountInput > 0
+                : gramsInput >= 0.0001));
 
     final metalStr = widget.metal == MetalType.silver ? 'silver' : 'gold';
     final inventoryAsync = ref.watch(digitalMetalInventoryProvider);
@@ -707,15 +819,52 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
               const SizedBox(height: 16),
             ],
 
+            if (widget.isBuy && widget.metal == MetalType.gold) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGold.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.primaryGold),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${schemeGrams}g Gold Scheme • Minimum deposit: ₹${minDeposit.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AurumConsumerTheme.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (widget.isBuy) ...[
+              _buildQuickChips(rate),
+              const SizedBox(height: 14),
+            ],
+
             // 3. Input Fields: Display in selected order with clear indication of authoritative field
             if (_purchaseMode == PurchaseMode.amount) ...[
               _Field(
                 label: '${l10n.amountInr} (Exact Payable)',
                 controller: _amountController,
-                hint: '100.00',
+                hint: minDeposit.toStringAsFixed(0),
                 prefixText: '₹ ',
                 badgeText: 'AUTHORITATIVE',
-                helperText: 'You will be charged this exact amount via Razorpay.',
+                helperText: widget.metal == MetalType.gold
+                    ? 'Minimum deposit: ₹${minDeposit.toStringAsFixed(0)} for your ${schemeGrams}g scheme.'
+                    : 'You will be charged this exact amount via Razorpay.',
                 onChanged: (_) => _syncFromAmount(rate),
               ),
               const SizedBox(height: 16),

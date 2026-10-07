@@ -16,6 +16,7 @@ class GoldSchemeResponse(BaseModel):
     can_sell_inquiry: bool = False
     sell_locked_reason: str | None = None
     started_at: datetime | None = None
+    min_deposit_inr: Decimal = Decimal("50")
 
 
 class SelectGoldSchemeRequest(BaseModel):

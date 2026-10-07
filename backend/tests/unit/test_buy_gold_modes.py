@@ -21,7 +21,7 @@ def _make_user(**kwargs) -> User:
         "is_deleted": False,
         "kyc_status": "verified",
         "gold_scheme_status": "active",
-        "gold_scheme_target_grams": Decimal("10"),
+        "gold_scheme_target_grams": Decimal("1"),
         "gold_savings_grams": Decimal("0"),
         "silver_savings_grams": Decimal("0"),
         "gold_invested_inr": Decimal("0"),
@@ -85,7 +85,7 @@ async def test_mode_a_1_rupee():
 
     response = await service.create_buy_order(
         user,
-        metal="gold",
+        metal="silver",
         purchase_mode="amount",
         amount_inr=Decimal("1.00"),
     )
@@ -123,7 +123,7 @@ async def test_mode_a_5_rupees():
 
     response = await service.create_buy_order(
         user,
-        metal="gold",
+        metal="silver",
         purchase_mode="amount",
         amount_inr=Decimal("5.00"),
     )
@@ -143,7 +143,7 @@ async def test_mode_a_10_rupees():
 
     response = await service.create_buy_order(
         user,
-        metal="gold",
+        metal="silver",
         purchase_mode="amount",
         amount_inr=Decimal("10.00"),
     )
@@ -206,7 +206,7 @@ async def test_mode_b_0_001_grams():
 
     response = await service.create_buy_order(
         user,
-        metal="gold",
+        metal="silver",
         purchase_mode="grams",
         grams=Decimal("0.001"),
     )
@@ -410,7 +410,7 @@ async def test_minimum_amount_under_1_rupee_rejected():
     with pytest.raises(ValidationException, match="Minimum purchase amount is ₹1"):
         await service.create_buy_order(
             user,
-            metal="gold",
+            metal="silver",
             purchase_mode="amount",
             amount_inr=Decimal("0.50"),
         )
@@ -428,3 +428,108 @@ async def test_placeholder_email_rejected_for_invoice_compliance():
             purchase_mode="amount",
             amount_inr=Decimal("100.00"),
         )
+
+
+@pytest.mark.asyncio
+async def test_gold_scheme_10g_enforces_2000_minimum():
+    service, user_repo, payment_repo, razorpay = _setup_service()
+    user = _make_user(gold_scheme_target_grams=Decimal("10"), gold_invested_inr=Decimal("2000"))
+
+    # Less than ₹2000 rejected
+    with pytest.raises(ValidationException, match="Minimum deposit for your 10g scheme is ₹2,000"):
+        await service.create_buy_order(
+            user,
+            metal="gold",
+            purchase_mode="amount",
+            amount_inr=Decimal("1999.00"),
+        )
+
+    # ₹2000 accepted
+    response = await service.create_buy_order(
+        user,
+        metal="gold",
+        purchase_mode="amount",
+        amount_inr=Decimal("2000.00"),
+    )
+    assert response.amount_inr == Decimal("2000.00")
+    assert response.amount_paise == 200000
+
+
+@pytest.mark.asyncio
+async def test_gold_scheme_5g_enforces_1000_minimum():
+    service, user_repo, payment_repo, razorpay = _setup_service()
+    user = _make_user(gold_scheme_target_grams=Decimal("5"), gold_invested_inr=Decimal("1000"))
+
+    # Less than ₹1000 rejected
+    with pytest.raises(ValidationException, match="Minimum deposit for your 5g scheme is ₹1,000"):
+        await service.create_buy_order(
+            user,
+            metal="gold",
+            purchase_mode="amount",
+            amount_inr=Decimal("999.00"),
+        )
+
+    # ₹1000 accepted
+    response = await service.create_buy_order(
+        user,
+        metal="gold",
+        purchase_mode="amount",
+        amount_inr=Decimal("1000.00"),
+    )
+    assert response.amount_inr == Decimal("1000.00")
+    assert response.amount_paise == 100000
+
+
+@pytest.mark.asyncio
+async def test_gold_scheme_1g_enforces_50_minimum():
+    service, user_repo, payment_repo, razorpay = _setup_service()
+    user = _make_user(gold_scheme_target_grams=Decimal("1"), gold_invested_inr=Decimal("100"))
+
+    # Less than ₹50 rejected
+    with pytest.raises(ValidationException, match="Minimum deposit for your 1g scheme is ₹50"):
+        await service.create_buy_order(
+            user,
+            metal="gold",
+            purchase_mode="amount",
+            amount_inr=Decimal("49.00"),
+        )
+
+    # ₹50 accepted
+    response = await service.create_buy_order(
+        user,
+        metal="gold",
+        purchase_mode="amount",
+        amount_inr=Decimal("50.00"),
+    )
+    assert response.amount_inr == Decimal("50.00")
+    assert response.amount_paise == 5000
+
+
+@pytest.mark.asyncio
+async def test_gold_scheme_1g_referred_first_deposit_enforces_100():
+    service, user_repo, payment_repo, razorpay = _setup_service()
+    referrer_id = uuid.uuid4()
+    user = _make_user(
+        gold_scheme_target_grams=Decimal("1"),
+        gold_invested_inr=Decimal("0"),
+        referred_by_user_id=referrer_id,
+    )
+
+    # For a referred user making first deposit, ₹50 is rejected, must be at least ₹100
+    with pytest.raises(ValidationException, match="Minimum deposit for your 1g scheme is ₹100"):
+        await service.create_buy_order(
+            user,
+            metal="gold",
+            purchase_mode="amount",
+            amount_inr=Decimal("50.00"),
+        )
+
+    # ₹100 accepted
+    response = await service.create_buy_order(
+        user,
+        metal="gold",
+        purchase_mode="amount",
+        amount_inr=Decimal("100.00"),
+    )
+    assert response.amount_inr == Decimal("100.00")
+    assert response.amount_paise == 10000

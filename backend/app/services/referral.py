@@ -1,8 +1,10 @@
 import secrets
 import uuid
+from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 
 from app.core.exceptions import ValidationException
+from app.core.logging import logger
 from app.models.user import User
 from app.repositories.referral_reward import ReferralRewardRepository
 from app.repositories.user import UserRepository
@@ -63,6 +65,10 @@ class ReferralService:
             if grams not in _VALID_SCHEME_GRAMS:
                 raise ValidationException("Invalid referral scheme. Choose 1 g, 5 g, or 10 g.")
             user.referral_scheme_grams = grams
+            if (user.gold_scheme_status or "not_selected") == "not_selected":
+                user.gold_scheme_target_grams = grams
+                user.gold_scheme_status = "active"
+                user.gold_scheme_started_at = datetime.now(timezone.utc)
 
         await self.user_repo.db.commit()
         await self.user_repo.db.refresh(user)
@@ -149,6 +155,14 @@ class ReferralService:
 
         await self.user_repo.db.commit()
         clear_personal_dashboard_cache(str(referrer.id))
+        logger.info(
+            "referral_reward_credited",
+            referrer_id=str(referrer.id),
+            referee_id=str(referee.id),
+            tier=tier,
+            reward_inr=str(reward_inr),
+            gold_reward_grams=str(gold_reward_grams),
+        )
         return reward_inr
 
     async def maybe_credit_referrer(

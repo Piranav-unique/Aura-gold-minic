@@ -75,9 +75,16 @@ class GoldPaymentService:
                 "Please add your personal email address (e.g. name@gmail.com) in your profile to receive tax invoices before purchasing."
             )
         if metal == "gold" and (user.gold_scheme_status or "not_selected") == "not_selected":
-            raise ValidationException(
-                "Choose a gold savings scheme (1 g, 5 g, or 10 g) before buying gold."
-            )
+            if user.referral_scheme_grams is not None:
+                user.gold_scheme_target_grams = user.referral_scheme_grams
+                user.gold_scheme_status = "active"
+                user.gold_scheme_started_at = datetime.now(timezone.utc)
+                await self.user_repo.db.commit()
+                await self.user_repo.db.refresh(user)
+            else:
+                raise ValidationException(
+                    "Choose a gold savings scheme (1 g, 5 g, or 10 g) before buying gold."
+                )
         if metal not in {"gold", "silver"}:
             raise ValidationException("Only gold and silver purchases are supported.")
 
@@ -100,7 +107,14 @@ class GoldPaymentService:
         if mode == "amount":
             if amount_inr is None or amount_inr <= Decimal("0"):
                 raise ValidationException("Enter an amount in rupees.")
-            if amount_inr < Decimal("1"):
+            if metal == "gold":
+                min_gold_deposit = GoldSchemeService.get_min_deposit_inr(user)
+                if amount_inr < min_gold_deposit:
+                    target_g = int(user.gold_scheme_target_grams or user.referral_scheme_grams or Decimal("1"))
+                    raise ValidationException(
+                        f"Minimum deposit for your {target_g}g scheme is ₹{int(min_gold_deposit):,}."
+                    )
+            elif amount_inr < Decimal("1"):
                 raise ValidationException("Minimum purchase amount is ₹1.")
 
             # MODE A: Exact INR amount is strictly authoritative.
@@ -119,8 +133,24 @@ class GoldPaymentService:
             settlement = compute_grams_purchase_settlement(final_grams, rate, metal=metal)
             final_amount = settlement.gross_amount_inr
 
+            if metal == "gold":
+                min_gold_deposit = GoldSchemeService.get_min_deposit_inr(user)
+                if final_amount < min_gold_deposit:
+                    target_g = int(user.gold_scheme_target_grams or user.referral_scheme_grams or Decimal("1"))
+                    raise ValidationException(
+                        f"Minimum deposit for your {target_g}g scheme is ₹{int(min_gold_deposit):,}."
+                    )
+
         else:
             raise ValidationException("Invalid purchase mode.")
+
+        if metal == "gold":
+            min_gold_deposit = GoldSchemeService.get_min_deposit_inr(user)
+            if final_amount < min_gold_deposit:
+                target_g = int(user.gold_scheme_target_grams or user.referral_scheme_grams or Decimal("1"))
+                raise ValidationException(
+                    f"Minimum deposit for your {target_g}g scheme is ₹{int(min_gold_deposit):,}."
+                )
 
         if self.digital_inventory_service:
             await self.digital_inventory_service.ensure_available(metal, final_grams)

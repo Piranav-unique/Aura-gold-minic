@@ -128,6 +128,28 @@ class GoldSchemeService:
         return None
 
     @classmethod
+    def get_min_deposit_inr(cls, user: User) -> Decimal:
+        tier: int = 1
+        if user.gold_scheme_target_grams is not None:
+            tier = int(user.gold_scheme_target_grams)
+        elif user.referral_scheme_grams is not None:
+            tier = int(user.referral_scheme_grams)
+
+        if tier == 10:
+            return Decimal("2000")
+        elif tier == 5:
+            return Decimal("1000")
+        else:
+            # 1-gram scheme
+            # For referred users who haven't completed a qualifying deposit of ₹100:
+            # First deposit minimum is ₹100 so the ₹150 referral bonus unlocks.
+            # In future payments, they can pay ₹50 or above (minimum floor ₹50).
+            invested = Decimal(str(user.gold_invested_inr or 0))
+            if user.referred_by_user_id and invested < Decimal("100"):
+                return Decimal("100")
+            return Decimal("50")
+
+    @classmethod
     def build_response(cls, user: User) -> GoldSchemeResponse:
         status = user.gold_scheme_status or "not_selected"
         saved = Decimal(str(user.gold_savings_grams or 0))
@@ -142,6 +164,7 @@ class GoldSchemeService:
 
         can_sell = cls.can_sell_gold(user)
         can_sell_inquiry = cls.can_submit_sell_inquiry(user)
+        min_deposit = cls.get_min_deposit_inr(user)
         return GoldSchemeResponse(
             status=status,  # type: ignore[arg-type]
             target_grams=target,
@@ -151,4 +174,5 @@ class GoldSchemeService:
             can_sell_inquiry=can_sell_inquiry,
             sell_locked_reason=None if can_sell else cls.sell_locked_reason(user),
             started_at=user.gold_scheme_started_at,
+            min_deposit_inr=min_deposit,
         )
