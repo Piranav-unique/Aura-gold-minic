@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 
-from app.core.config import settings
 from app.core import audit_actions
+from app.core.config import settings
 from app.core.exceptions import NotFoundException, ValidationException
 from app.core.logging import logger
 from app.models.digital_metal_inventory import DigitalMetalInventory
@@ -22,8 +22,11 @@ from app.schemas.digital_metal_inventory import (
     DigitalMetalInventoryMovementListResponse,
     DigitalMetalInventoryMovementResponse,
     DigitalMetalInventoryResponse,
+    DigitalMetalInventoryUpdate,
     compute_stock_status,
 )
+from app.services.audit import AuditService
+from app.services.notification import NotificationService
 
 
 INSUFFICIENT_STOCK_MESSAGE = "Gold is temporarily unavailable."
