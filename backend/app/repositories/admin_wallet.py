@@ -109,12 +109,10 @@ class AdminWalletRepository:
         )
 
         clauses = [
-            User.is_deleted.is_(False),
+            or_(User.is_deleted.is_(False), User.is_deleted.is_(None)),
             User.is_superuser.is_(False),
             User.email.not_ilike("%superadmin%"),
             User.email.not_ilike("%admin@agsgold%"),
-            User.first_name.not_ilike("%yogesh%"),
-            or_(User.mobile_number.is_(None), ~User.mobile_number.like("%8248345770%")),
             ~User.id.in_(admin_subq),
         ]
         if admin_mobile:

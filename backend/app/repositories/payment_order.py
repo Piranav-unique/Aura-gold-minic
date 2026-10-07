@@ -67,10 +67,7 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
                 or_(User.id.is_(None), User.email.not_ilike("%admin@agsgold%")),
                 or_(PaymentOrder.razorpay_payment_id.is_(None), PaymentOrder.razorpay_payment_id != "pay_dev_mock"),
                 or_(PaymentOrder.razorpay_order_id.is_(None), ~PaymentOrder.razorpay_order_id.like("order_dev_%")),
-                or_(PaymentOrder.customer_contact.is_(None), ~PaymentOrder.customer_contact.like("%8248345770%")),
-                or_(User.id.is_(None), ~User.mobile_number.like("%8248345770%")),
-                or_(User.id.is_(None), User.first_name.not_ilike("%yogesh%")),
-                or_(User.id.is_(None), User.is_deleted.is_(False)),
+                or_(User.id.is_(None), User.is_deleted.is_(False), User.is_deleted.is_(None)),
                 ~PaymentOrder.razorpay_order_id.in_([
                     "order_Tkkr0WuXPYD8G5",
                     "order_Tkkk5aZIuCofGZ",
@@ -121,10 +118,7 @@ class PaymentOrderRepository(BaseRepository[PaymentOrder]):
                 or_(User.id.is_(None), User.email.not_ilike("%admin@agsgold%")),
                 or_(PaymentOrder.razorpay_payment_id.is_(None), PaymentOrder.razorpay_payment_id != "pay_dev_mock"),
                 or_(PaymentOrder.razorpay_order_id.is_(None), ~PaymentOrder.razorpay_order_id.like("order_dev_%")),
-                or_(PaymentOrder.customer_contact.is_(None), ~PaymentOrder.customer_contact.like("%8248345770%")),
-                or_(User.id.is_(None), ~User.mobile_number.like("%8248345770%")),
-                or_(User.id.is_(None), User.first_name.not_ilike("%yogesh%")),
-                or_(User.id.is_(None), User.is_deleted.is_(False)),
+                or_(User.id.is_(None), User.is_deleted.is_(False), User.is_deleted.is_(None)),
                 ~PaymentOrder.razorpay_order_id.in_([
                     "order_Tkkr0WuXPYD8G5",
                     "order_Tkkk5aZIuCofGZ",

@@ -131,8 +131,6 @@ class _PaymentSettlementsScreenState
                 emailLower.contains('admin@agsgold') ||
                 nameLower.contains('super admin') ||
                 mobile == '9943795005' ||
-                mobile == '8248345770' ||
-                nameLower.contains('yogesh') ||
                 payId.contains('dev_mock') ||
                 ordId.contains('order_dev_') ||
                 websiteOrders.contains(ordId)) {
@@ -213,8 +211,6 @@ class _PaymentSettlementsScreenState
                 emailLower.contains('admin@agsgold') ||
                 nameLower.contains('super admin') ||
                 mobile == '9943795005' ||
-                mobile == '8248345770' ||
-                nameLower.contains('yogesh') ||
                 payId.contains('dev_mock') ||
                 ordId.contains('order_dev_') ||
                 websiteOrders.contains(ordId)) {

@@ -61,15 +61,7 @@ async def _startup_cleanup():
                        OR id = '0cd884c2-740a-497b-90d0-bbf82e270a6e';
                 """)
             )
-            # 2. Delete / purge user Yogesh
-            await session.execute(
-                text("""
-                    DELETE FROM users 
-                    WHERE mobile_number = '8248345770' 
-                       OR email = '8248345770@mobile.agsgold.com';
-                """)
-            )
-            # 3. Delete website orders from app table
+            # 2. Delete website orders from app table
             await session.execute(
                 text("""
                     DELETE FROM payment_orders 
