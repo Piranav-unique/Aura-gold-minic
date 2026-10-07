@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Optional
 
 from app.core.config import settings
+from app.core.logging import logger
 from app.core.permissions import user_has_permission
 from app.models.user import User
 from app.repositories.app_metrics import AppMetricsRepository
