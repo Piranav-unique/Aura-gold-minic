@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/auth/permission_utils.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
@@ -138,12 +137,6 @@ class MetalInventoryScreen extends ConsumerWidget {
                       ),
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => context.push('/inventory/movements'),
-                icon: const Icon(Icons.history, size: 18),
-                label: const Text('Stock history'),
-              ),
-              const SizedBox(width: 8),
               alertsAsync.when(
                 data: (alerts) {
                   if (alerts.isEmpty) return const SizedBox.shrink();
@@ -761,32 +754,6 @@ class _MetalLimitCard extends ConsumerWidget {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ref.read(metalMovementsMetalProvider.notifier).update(metalType);
-                context.push('/inventory/movements');
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
-                side: BorderSide(
-                  color: AppTheme.primaryGold.withValues(alpha: 0.35),
-                ),
-                minimumSize: const Size(0, 44),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              icon: const Icon(Icons.history_rounded, size: 18),
-              label: const Text(
-                'View History',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
           ),
         ],
       ),

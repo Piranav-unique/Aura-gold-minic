@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 /// Returns the parent route when [location] was opened via [GoRouter.go] (no stack).
 String? parentRouteFor(String location) {
   const directParents = <String, String>{
-    '/inventory/movements': '/inventory',
     '/inventory/new': '/inventory',
     '/suppliers': '/inventory',
     '/admin/metal-inventory': '/inventory',
@@ -64,8 +63,7 @@ String? parentRouteFor(String location) {
 
   final inventoryDetail = RegExp(r'^/inventory/([^/]+)$');
   if (inventoryDetail.hasMatch(location) &&
-      location != '/inventory' &&
-      location != '/inventory/movements') {
+      location != '/inventory') {
     return '/inventory';
   }
 

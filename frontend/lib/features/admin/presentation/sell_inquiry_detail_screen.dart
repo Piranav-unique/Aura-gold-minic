@@ -82,7 +82,7 @@ class _SellInquiryDetailScreenState
       ref.invalidate(sellInquiriesListProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sell request approved')),
+        const SnackBar(content: Text('Sell inquiry approved successfully.')),
       );
     } on ApiException catch (e) {
       if (!mounted) return;

@@ -172,13 +172,6 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                 onChanged: _onSearchChanged,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            OutlinedButton.icon(
-                              onPressed: () =>
-                                  context.go('/inventory/movements'),
-                              icon: const Icon(Icons.history, size: 18),
-                              label: const Text('Movements'),
-                            ),
                             const SizedBox(width: 8),
                             OutlinedButton.icon(
                               onPressed: () => context.go('/suppliers'),
@@ -203,15 +196,6 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () =>
-                                        context.go('/inventory/movements'),
-                                    icon: const Icon(Icons.history, size: 18),
-                                    label: const Text('Movements'),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: () =>

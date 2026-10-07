@@ -49,7 +49,6 @@ import 'package:ags_gold/features/admin/presentation/metal_inventory_screen.dart
 import 'package:ags_gold/features/inventory/presentation/inventory_permission_gate.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_form_screen.dart';
 import 'package:ags_gold/features/inventory/presentation/inventory_detail_screen.dart';
-import 'package:ags_gold/features/inventory/presentation/stock_movements_screen.dart';
 import 'package:ags_gold/features/inventory/presentation/suppliers_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transactions_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_detail_screen.dart';
@@ -364,13 +363,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const InventoryPermissionGate(
           requiredPermission: 'inventory.create',
           child: InventoryFormScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/inventory/movements',
-        builder: (context, state) => const InventoryPermissionGate(
-          requiredPermission: 'inventory.view',
-          child: StockMovementsScreen(),
         ),
       ),
       GoRoute(
