@@ -30,6 +30,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isSendingOtp = false;
   bool _otpSent = false;
   String? _errorMessage;
+  String? _otpFieldError;
   String? _successMessage;
   String? _otpMessage;
   String? _lockedMobile;
@@ -130,7 +131,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final lower = message.toLowerCase();
     return lower.contains('invalid otp') ||
         lower.contains('incorrect otp') ||
-        (lower.contains('invalid') && lower.contains('otp'));
+        lower.contains('wrong otp') ||
+        lower.contains('not match') ||
+        lower.contains('mismatch') ||
+        (lower.contains('invalid') && lower.contains('otp')) ||
+        (lower.contains('wrong') && lower.contains('otp'));
   }
 
   String _loginErrorMessage(ApiException error) {
@@ -141,6 +146,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return context.l10n.loginOtpIncorrect;
     }
     return error.message;
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.shade800,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
   }
 
   @override
@@ -178,6 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() {
       _isSendingOtp = true;
       _errorMessage = null;
+      _otpFieldError = null;
       _otpMessage = null;
     });
 
@@ -194,18 +214,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (_isNoAccountError(e.message)) {
           await _clearStaleDeviceRegistration();
         }
+        final msg = _isNoAccountError(e.message)
+            ? _noAccountErrorMessage()
+            : e.message;
         setState(() {
-          _errorMessage = _isNoAccountError(e.message)
-              ? _noAccountErrorMessage()
-              : e.message;
+          _errorMessage = msg;
         });
+        _showErrorSnackBar(msg);
       }
     } catch (_) {
       if (mounted) {
+        const msg = 'Could not send OTP. Check your connection and try again.';
         setState(() {
-          _errorMessage =
-              'Could not send OTP. Check your connection and try again.';
+          _errorMessage = msg;
         });
+        _showErrorSnackBar(msg);
       }
     } finally {
       if (mounted) {
@@ -220,6 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _otpFieldError = null;
     });
 
     final mobile = _normalizeMobile(_mobileController.text.trim());
@@ -242,6 +266,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           setState(() {
             _isLoading = false;
             _errorMessage = 'Enter the 6-digit OTP sent to your mobile.';
+            _otpFieldError = _errorMessage;
           });
           return;
         }
@@ -255,13 +280,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (_isNoAccountError(e.message)) {
           await _clearStaleDeviceRegistration();
         }
-        setState(() => _errorMessage = _loginErrorMessage(e));
+        final msg = _loginErrorMessage(e);
+        final isOtpErr = _isInvalidOtpError(e.message) ||
+            e.message.toLowerCase().contains('otp');
+        setState(() {
+          _errorMessage = msg;
+          if (isOtpErr) {
+            _otpFieldError = msg;
+          }
+        });
+        _showErrorSnackBar(msg);
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString();
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = msg;
         });
+        _showErrorSnackBar(msg);
       }
     } finally {
       if (mounted) {
@@ -647,11 +683,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               textInputAction: TextInputAction.done,
               maxLength: 6,
               inputFormatters: [PasteAwareOtpFormatter()],
+              onChanged: (_) {
+                if (_otpFieldError != null) {
+                  setState(() => _otpFieldError = null);
+                }
+              },
               onFieldSubmitted: (_) => _handleLogin(),
               decoration: InputDecoration(
                 hintText: _isAdminEntered ? 'Default OTP: 123456' : l10n.otpFromSms,
                 prefixIcon: const Icon(Icons.sms_outlined),
                 counterText: '',
+                errorText: _otpFieldError,
               ),
               validator: (value) {
                 if (_showTrustedFirstLogin) return null;

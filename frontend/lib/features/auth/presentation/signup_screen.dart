@@ -6,6 +6,7 @@ import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/features/auth/domain/app_audience.dart';
 import 'package:ags_gold/features/auth/domain/login_route_args.dart';
 import 'package:ags_gold/features/auth/presentation/providers/app_audience_provider.dart';
+import 'package:ags_gold/features/referral/domain/referral_summary.dart';
 import 'package:ags_gold/services/api_client.dart';
 import 'package:ags_gold/services/service_providers.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -43,8 +44,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _acceptedTerms = false;
   bool _attemptedSubmit = false;
   String? _errorMessage;
+  String? _otpFieldError;
   String? _otpMessage;
-  late int _selectedSchemeGrams;
 
   ButtonStyle get _inlineFilledButtonStyle => FilledButton.styleFrom(
         minimumSize: const Size(0, 48),
@@ -54,10 +55,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedSchemeGrams = widget.initialReferralSchemeGrams ?? 1;
-    _referralController = TextEditingController(
-      text: widget.initialReferralCode?.toUpperCase() ?? '',
-    );
+    String initialCode = widget.initialReferralCode?.trim().toUpperCase() ?? '';
+    if (initialCode.isNotEmpty) {
+      final parsed = ParsedReferralCode.parse(initialCode);
+      if (parsed != null && !parsed.hasValidTier && widget.initialReferralSchemeGrams != null) {
+        initialCode = '${parsed.baseCode}-${widget.initialReferralSchemeGrams}G';
+      } else if (parsed != null && parsed.hasValidTier) {
+        initialCode = parsed.fullTierCode;
+      }
+    }
+    _referralController = TextEditingController(text: initialCode);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(appAudienceProvider.notifier).setAudience(AppAudience.endUser);
     });
@@ -84,6 +91,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   String _signupPasswordFor(String mobile) => 'Ag$mobile!x';
 
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.shade800,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+  }
+
   void _showSignupError(String message) {
     setState(() {
       _errorMessage = message;
@@ -96,6 +117,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         curve: Curves.easeOut,
       );
     }
+    _showErrorSnackBar(message);
   }
 
   Future<void> _sendOtp() async {
@@ -110,6 +132,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     setState(() {
       _isSendingOtp = true;
       _errorMessage = null;
+      _otpFieldError = null;
       _otpMessage = null;
     });
 
@@ -125,12 +148,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _errorMessage = e.message);
+        _showErrorSnackBar(e.message);
       }
     } catch (_) {
       if (mounted) {
+        const msg = 'Could not send OTP. Please try again.';
         setState(() {
-          _errorMessage = 'Could not send OTP. Please try again.';
+          _errorMessage = msg;
         });
+        _showErrorSnackBar(msg);
       }
     } finally {
       if (mounted) {
@@ -141,9 +167,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   Future<void> _verifyOtp() async {
     if (!_otpSent) {
+      const msg = 'Tap Send OTP on your mobile number first.';
       setState(() {
-        _errorMessage = 'Tap Send OTP on your mobile number first.';
+        _errorMessage = msg;
+        _otpFieldError = msg;
       });
+      _showErrorSnackBar(msg);
       return;
     }
 
@@ -156,15 +185,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
     if (otp.length != 6) {
+      const msg = 'Enter the 6-digit OTP from SMS.';
       setState(() {
-        _errorMessage = 'Enter the 6-digit OTP from SMS.';
+        _errorMessage = msg;
+        _otpFieldError = msg;
       });
+      _showErrorSnackBar(msg);
       return;
     }
 
     setState(() {
       _isVerifyingOtp = true;
       _errorMessage = null;
+      _otpFieldError = null;
       _otpMessage = null;
     });
 
@@ -176,22 +209,36 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       if (mounted) {
         setState(() {
           _otpVerified = true;
+          _otpFieldError = null;
           _otpMessage = 'Mobile number verified. Accept terms and tap Sign Up.';
         });
       }
     } on ApiException catch (e) {
       if (mounted) {
+        final lower = e.message.toLowerCase();
+        final msg = (lower.contains('invalid otp') ||
+                lower.contains('incorrect otp') ||
+                lower.contains('wrong otp') ||
+                lower.contains('not match') ||
+                lower.contains('mismatch'))
+            ? context.l10n.loginOtpIncorrect
+            : e.message;
         setState(() {
           _otpVerified = false;
-          _errorMessage = e.message;
+          _errorMessage = msg;
+          _otpFieldError = msg;
         });
+        _showErrorSnackBar(msg);
       }
     } catch (_) {
       if (mounted) {
+        const msg = 'Could not verify OTP. Please try again.';
         setState(() {
           _otpVerified = false;
-          _errorMessage = 'Could not verify OTP. Please try again.';
+          _errorMessage = msg;
+          _otpFieldError = msg;
         });
+        _showErrorSnackBar(msg);
       }
     } finally {
       if (mounted) {
@@ -252,6 +299,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
 
+    final rawReferral = _referralController.text.trim();
+    ParsedReferralCode? parsedReferral;
+    if (rawReferral.isNotEmpty) {
+      parsedReferral = ParsedReferralCode.parse(rawReferral);
+      if (parsedReferral == null || !parsedReferral.hasValidTier) {
+        _showSignupError(
+          'Enter a valid plan referral code ending in -1G, -5G, or -10G (e.g. ${parsedReferral?.baseCode ?? "CODE"}-1G).',
+        );
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -265,13 +324,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             otp: _otpController.text.trim(),
             email: email,
             password: _signupPasswordFor(mobile),
-            referralCode: _referralController.text.trim().isEmpty
-                ? null
-                : _referralController.text.trim().toUpperCase(),
-            referralSchemeGrams: _referralController.text.trim().isNotEmpty ||
-                    widget.initialReferralSchemeGrams != null
-                ? _selectedSchemeGrams
-                : null,
+            referralCode: parsedReferral?.baseCode,
+            referralSchemeGrams: parsedReferral?.schemeGrams,
           );
       await ref.read(deviceAuthStorageProvider).saveRegisteredMobile(mobile);
       await ref
@@ -421,137 +475,85 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           if (_otpMessage != null) _messageBox(_otpMessage!, isError: false),
           if (_errorMessage != null || _otpMessage != null)
             const SizedBox(height: 16),
-          if (widget.initialReferralSchemeGrams != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryGold.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppTheme.primaryGold.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.stars_rounded, color: AppTheme.primaryGold),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.l10n.invitedScheme(widget.initialReferralSchemeGrams!),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.initialReferralSchemeGrams == 10
-                                ? 'Deposit min. ₹2,000 to activate the ₹550 gold coupon bonus.'
-                                : (widget.initialReferralSchemeGrams == 5
-                                    ? 'Deposit min. ₹1,000 to activate the ₹350 gold coupon bonus.'
-                                    : 'Deposit min. ₹100 to activate the ₹150 gold coupon bonus.'),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           _labeledField(
             label: context.l10n.referralCodeOptional,
             child: TextFormField(
               controller: _referralController,
               textCapitalization: TextCapitalization.characters,
               onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: l10n.referralHint,
-                prefixIcon: const Icon(Icons.card_giftcard_outlined),
+              decoration: const InputDecoration(
+                hintText: 'Plan code (e.g. ABCD1234-1G, -5G, or -10G)',
+                prefixIcon: Icon(Icons.card_giftcard_outlined),
               ),
             ),
           ),
-          if (_referralController.text.trim().isNotEmpty ||
-              widget.initialReferralSchemeGrams != null) ...[
+          if (_referralController.text.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              'Select Scheme Tier for Referral Reward',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              children: [
-                ChoiceChip(
-                  label: const Text('1g (Min. ₹100)'),
-                  selected: _selectedSchemeGrams == 1,
-                  onSelected: (_) => setState(() => _selectedSchemeGrams = 1),
-                  selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
-                  checkmarkColor: AppTheme.goldDeep,
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: _selectedSchemeGrams == 1 ? FontWeight.w700 : FontWeight.w500,
-                    color: _selectedSchemeGrams == 1 ? AppTheme.goldDeep : null,
+            Builder(
+              builder: (context) {
+                final parsed =
+                    ParsedReferralCode.parse(_referralController.text);
+                final tierGrams = parsed?.schemeGrams;
+                if (tierGrams == 1 || tierGrams == 5 || tierGrams == 10) {
+                  final rewardText = tierGrams == 10
+                      ? '10g Gold Scheme Code Applied • Deposit min. ₹2,000 to unlock ₹550 gold coupon.'
+                      : (tierGrams == 5
+                          ? '5g Gold Scheme Code Applied • Deposit min. ₹1,000 to unlock ₹350 gold coupon.'
+                          : '1g Gold Scheme Code Applied • Deposit min. ₹100 to unlock ₹150 gold coupon.');
+                  return Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E5B34).withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF1E5B34).withValues(alpha: 0.28),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 16,
+                          color: Color(0xFF1E5B34),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            rewardText,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF1E5B34),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGold.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.primaryGold.withValues(alpha: 0.35),
+                    ),
                   ),
-                ),
-                ChoiceChip(
-                  label: const Text('5g (Min. ₹1,000)'),
-                  selected: _selectedSchemeGrams == 5,
-                  onSelected: (_) => setState(() => _selectedSchemeGrams = 5),
-                  selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
-                  checkmarkColor: AppTheme.goldDeep,
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: _selectedSchemeGrams == 5 ? FontWeight.w700 : FontWeight.w500,
-                    color: _selectedSchemeGrams == 5 ? AppTheme.goldDeep : null,
+                  child: Text(
+                    'Enter the plan-specific referral code ending in -1G, -5G, or -10G (e.g. ${parsed?.baseCode ?? "CODE"}-1G).',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                ChoiceChip(
-                  label: const Text('10g (Min. ₹2,000)'),
-                  selected: _selectedSchemeGrams == 10,
-                  onSelected: (_) => setState(() => _selectedSchemeGrams = 10),
-                  selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
-                  checkmarkColor: AppTheme.goldDeep,
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: _selectedSchemeGrams == 10 ? FontWeight.w700 : FontWeight.w500,
-                    color: _selectedSchemeGrams == 10 ? AppTheme.goldDeep : null,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E5B34).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: const Color(0xFF1E5B34).withValues(alpha: 0.2),
-                ),
-              ),
-              child: Text(
-                _selectedSchemeGrams == 10
-                    ? 'Referrer unlocks ₹550 gold coupon after referee deposits min. ₹2,000.'
-                    : (_selectedSchemeGrams == 5
-                        ? 'Referrer unlocks ₹350 gold coupon after referee deposits min. ₹1,000.'
-                        : 'Referrer unlocks ₹150 gold coupon after referee deposits min. ₹100.'),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF1E5B34),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+                );
+              },
             ),
           ],
           const SizedBox(height: 16),
@@ -651,8 +653,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     readOnly: _otpVerified,
                     inputFormatters: [PasteAwareOtpFormatter()],
                     onChanged: (_) {
-                      if (_otpVerified) {
-                        setState(() => _otpVerified = false);
+                      if (_otpVerified || _otpFieldError != null) {
+                        setState(() {
+                          _otpVerified = false;
+                          _otpFieldError = null;
+                        });
                       }
                     },
                     decoration: InputDecoration(
@@ -663,6 +668,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             : Icons.sms_outlined,
                       ),
                       counterText: '',
+                      errorText: _otpFieldError,
                       suffixIcon: _otpVerified
                           ? const Icon(Icons.check_circle, color: Colors.green)
                           : null,

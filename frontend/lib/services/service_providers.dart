@@ -73,29 +73,23 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     String? mobileNumber,
     required String password,
   }) async {
-    state = const AsyncValue.loading();
-    try {
-      final apiClient = ref.read(apiClientProvider);
-      final data = <String, dynamic>{'password': password};
-      if (mobileNumber != null && mobileNumber.isNotEmpty) {
-        data['mobile_number'] = mobileNumber;
-      } else if (email != null) {
-        data['email'] = email;
-      }
-      final response = await apiClient.post('/auth/login', data: data);
-
-      final responseData = response.data as Map<String, dynamic>;
-      await _storage.saveTokens(
-        accessToken: responseData['access_token'] as String,
-        refreshToken: responseData['refresh_token'] as String,
-      );
-      _invalidateUserScopedProviders();
-      await _syncAudienceAfterAuth(mobileHint: mobileNumber);
-      state = const AsyncValue.data(AuthStatus.authenticated);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
+    final apiClient = ref.read(apiClientProvider);
+    final data = <String, dynamic>{'password': password};
+    if (mobileNumber != null && mobileNumber.isNotEmpty) {
+      data['mobile_number'] = mobileNumber;
+    } else if (email != null) {
+      data['email'] = email;
     }
+    final response = await apiClient.post('/auth/login', data: data);
+
+    final responseData = response.data as Map<String, dynamic>;
+    await _storage.saveTokens(
+      accessToken: responseData['access_token'] as String,
+      refreshToken: responseData['refresh_token'] as String,
+    );
+    _invalidateUserScopedProviders();
+    await _syncAudienceAfterAuth(mobileHint: mobileNumber);
+    state = const AsyncValue.data(AuthStatus.authenticated);
   }
 
   Future<void> sendSignupOtp(String mobileNumber) async {
@@ -120,96 +114,84 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   }
 
   Future<void> loginWithTrustedMobile(String mobileNumber) async {
-    state = const AsyncValue.loading();
-    try {
-      final deviceAuth = ref.read(deviceAuthStorageProvider);
-      final deviceId = await deviceAuth.getOrCreateDeviceId();
-      final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post(
-        '/auth/login/mobile/trusted',
-        data: {
-          'mobile_number': mobileNumber,
-          'device_id': deviceId,
-        },
-      );
+    final deviceAuth = ref.read(deviceAuthStorageProvider);
+    final deviceId = await deviceAuth.getOrCreateDeviceId();
+    final apiClient = ref.read(apiClientProvider);
+    final response = await apiClient.post(
+      '/auth/login/mobile/trusted',
+      data: {
+        'mobile_number': mobileNumber,
+        'device_id': deviceId,
+      },
+    );
 
-      final responseData = response.data as Map<String, dynamic>;
-      await _storage.saveTokens(
-        accessToken: responseData['access_token'] as String,
-        refreshToken: responseData['refresh_token'] as String,
-      );
-      await deviceAuth.clearPendingTrustedFirstLogin();
-      _invalidateUserScopedProviders();
-      await _syncAudienceAfterAuth(mobileHint: mobileNumber);
-      state = const AsyncValue.data(AuthStatus.authenticated);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
-    }
+    final responseData = response.data as Map<String, dynamic>;
+    await _storage.saveTokens(
+      accessToken: responseData['access_token'] as String,
+      refreshToken: responseData['refresh_token'] as String,
+    );
+    await deviceAuth.clearPendingTrustedFirstLogin();
+    _invalidateUserScopedProviders();
+    await _syncAudienceAfterAuth(mobileHint: mobileNumber);
+    state = const AsyncValue.data(AuthStatus.authenticated);
   }
 
   Future<void> loginWithMobile(String mobileNumber, String otp) async {
-    state = const AsyncValue.loading();
-    try {
-      final env = ref.read(envConfigProvider);
-      final normalized = normalizeIndianMobile(mobileNumber);
-      final adminMobile = normalizeIndianMobile(env.adminNumber);
-      final isAdmin = normalized == adminMobile || normalized == '9943795005';
+    final env = ref.read(envConfigProvider);
+    final normalized = normalizeIndianMobile(mobileNumber);
+    final adminMobile = normalizeIndianMobile(env.adminNumber);
+    final isAdmin = normalized == adminMobile || normalized == '9943795005';
 
-      final deviceAuth = ref.read(deviceAuthStorageProvider);
-      final deviceId = await deviceAuth.getOrCreateDeviceId();
-      final apiClient = ref.read(apiClientProvider);
+    final deviceAuth = ref.read(deviceAuthStorageProvider);
+    final deviceId = await deviceAuth.getOrCreateDeviceId();
+    final apiClient = ref.read(apiClientProvider);
 
-      Map<String, dynamic> responseData;
+    Map<String, dynamic> responseData;
 
-      if (isAdmin && (otp.trim() == '123456' || otp.trim().isEmpty)) {
-        // Admin testing flow: default OTP 123456 without needing SMS request
-        try {
-          final response = await apiClient.post(
-            '/auth/login/mobile',
-            data: {
-              'mobile_number': mobileNumber,
-              'otp': '123456',
-              'device_id': deviceId,
-            },
-          );
-          responseData = response.data as Map<String, dynamic>;
-        } catch (_) {
-          // If remote server hasn't updated its /auth/login/mobile endpoint yet,
-          // authenticate directly with seeded admin credentials on /auth/login
-          final response = await apiClient.post(
-            '/auth/login',
-            data: {
-              'mobile_number': mobileNumber,
-              'password': 'adminpassword',
-            },
-          );
-          responseData = response.data as Map<String, dynamic>;
-        }
-      } else {
+    if (isAdmin && (otp.trim() == '123456' || otp.trim().isEmpty)) {
+      // Admin testing flow: default OTP 123456 without needing SMS request
+      try {
         final response = await apiClient.post(
           '/auth/login/mobile',
           data: {
             'mobile_number': mobileNumber,
-            'otp': otp,
+            'otp': '123456',
             'device_id': deviceId,
           },
         );
         responseData = response.data as Map<String, dynamic>;
+      } catch (_) {
+        // If remote server hasn't updated its /auth/login/mobile endpoint yet,
+        // authenticate directly with seeded admin credentials on /auth/login
+        final response = await apiClient.post(
+          '/auth/login',
+          data: {
+            'mobile_number': mobileNumber,
+            'password': 'adminpassword',
+          },
+        );
+        responseData = response.data as Map<String, dynamic>;
       }
-
-      await _storage.saveTokens(
-        accessToken: responseData['access_token'] as String,
-        refreshToken: responseData['refresh_token'] as String,
+    } else {
+      final response = await apiClient.post(
+        '/auth/login/mobile',
+        data: {
+          'mobile_number': mobileNumber,
+          'otp': otp,
+          'device_id': deviceId,
+        },
       );
-      await deviceAuth.clearPendingTrustedFirstLogin();
-      _invalidateUserScopedProviders();
-      await _syncAudienceAfterAuth(mobileHint: mobileNumber);
-      state = const AsyncValue.data(AuthStatus.authenticated);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
+      responseData = response.data as Map<String, dynamic>;
     }
+
+    await _storage.saveTokens(
+      accessToken: responseData['access_token'] as String,
+      refreshToken: responseData['refresh_token'] as String,
+    );
+    await deviceAuth.clearPendingTrustedFirstLogin();
+    _invalidateUserScopedProviders();
+    await _syncAudienceAfterAuth(mobileHint: mobileNumber);
+    state = const AsyncValue.data(AuthStatus.authenticated);
   }
 
   Future<void> verifySignupOtp({

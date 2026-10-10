@@ -526,9 +526,15 @@ class SmsService:
 
         if data.get("type") != "success":
             message = str(data.get("message") or data)
-            if "not found" in message.lower() or "invalid" in message.lower():
-                raise ValidationException("Invalid OTP. Please try again.")
-            raise ValidationException(f"SMS gateway error: {message}")
+            lower_msg = message.lower()
+            if any(
+                k in lower_msg
+                for k in ("not match", "mismatch", "incorrect", "wrong", "not found", "invalid")
+            ):
+                raise ValidationException("Wrong OTP. Please enter the correct 6-digit OTP.")
+            if "expired" in lower_msg:
+                raise ValidationException("OTP has expired. Tap Send OTP to request a new code.")
+            raise ValidationException("Wrong OTP. Please enter the correct 6-digit OTP.")
 
         logger.info("msg91_otp_verified", mobile=mobile)
 

@@ -82,9 +82,6 @@ void _logNavigation(GoRouterState state) {
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.watch(authNotifierProvider);
-  ref.watch(appAudienceProvider);
-
   // Use a ValueNotifier to notify GoRouter when authentication status changes
   final listenable = ValueNotifier<int>(0);
 

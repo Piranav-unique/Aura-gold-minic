@@ -183,7 +183,7 @@ class SignupOtpService:
                 await self.sms_service.verify_msg91_otp(mobile, code)
             elif _hash_otp(mobile, code) != challenge.otp_hash:
                 await self.otp_repo.db.commit()
-                raise ValidationException("Invalid OTP. Please try again.")
+                raise ValidationException("Wrong OTP. Please enter the correct 6-digit OTP.")
         except ValidationException:
             await self.otp_repo.db.commit()
             raise
