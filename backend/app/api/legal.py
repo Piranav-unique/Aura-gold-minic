@@ -1,7 +1,15 @@
+from pathlib import Path
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 router = APIRouter()
+
+LOGO_PATH = Path(__file__).resolve().parent.parent / "static" / "ags_logo.png"
+
+
+@router.get("/ags-logo.png", include_in_schema=False)
+async def get_shop_logo():
+    return FileResponse(LOGO_PATH, media_type="image/png")
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -211,7 +219,11 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AGS Gold - Referral Invitation</title>
+  <title>AGS - Aurum Gold &amp; Silvers | Referral Invitation</title>
+  <link rel="icon" type="image/png" href="/ags-logo.png">
+  <meta property="og:title" content="AGS - Aurum Gold &amp; Silvers">
+  <meta property="og:description" content="Join AGS Gold ({{SCHEME_NAME}}) using referral code {{REFERRAL_CODE}}.">
+  <meta property="og:image" content="https://api.aurumgold.co.in/ags-logo.png">
   <style>
     :root {
       --bg: #F7F3EA;
@@ -244,31 +256,24 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
       width: 100%;
       max-width: 420px;
     }
-    .brand-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
-      padding: 0 4px;
-    }
-    .brand-name {
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      color: var(--ink);
-      text-transform: uppercase;
-    }
-    .brand-sub {
-      font-size: 12px;
-      color: var(--ink-muted);
-      font-weight: 500;
-    }
     .card {
       background: var(--surface);
       border-radius: 16px;
       border: 1px solid var(--border);
       padding: 28px 22px;
       box-shadow: 0 2px 10px rgba(26, 23, 18, 0.04);
+    }
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .shop-logo {
+      max-width: 190px;
+      width: 100%;
+      height: auto;
+      display: inline-block;
     }
     .section-tag {
       display: inline-block;
@@ -281,10 +286,10 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
       border: 1px solid var(--gold-border);
       padding: 4px 10px;
       border-radius: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     h1 {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 700;
       color: var(--ink);
       margin-bottom: 6px;
@@ -294,14 +299,14 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
       font-size: 14px;
       color: var(--ink-secondary);
       line-height: 1.5;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .scheme-row {
       background: var(--surface-muted);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 12px 14px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -321,7 +326,7 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 14px 16px;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -382,8 +387,8 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
       border-radius: 10px;
     }
     .steps {
-      margin-top: 20px;
-      padding-top: 18px;
+      margin-top: 18px;
+      padding-top: 16px;
       border-top: 1px solid var(--border);
       font-size: 12.5px;
       color: var(--ink-secondary);
@@ -402,15 +407,14 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
   <div class="wrapper">
-    <div class="brand-header">
-      <span class="brand-name">AGS Gold</span>
-      <span class="brand-sub">Aurum Gold Works</span>
-    </div>
-
     <div class="card">
+      <div class="logo-wrap">
+        <img src="/ags-logo.png" alt="AGS - Aurum Gold &amp; Silvers" class="shop-logo">
+      </div>
+
       <span class="section-tag">Referral Invitation</span>
       <h1>Create your AGS Gold account</h1>
-      <p class="subtitle">You have been invited to join AGS Gold. Use the referral code below during registration.</p>
+      <p class="subtitle">You have been invited to join AGS (Aurum Gold &amp; Silvers). Use the referral code below during registration.</p>
 
       <div class="scheme-row">
         <span class="scheme-label">Selected Plan</span>
@@ -434,7 +438,7 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <div class="footer">
-      &copy; 2026 Aurum Gold Works, Coimbatore
+      &copy; 2026 Aurum Gold &amp; Silvers, Coimbatore
     </div>
   </div>
 
