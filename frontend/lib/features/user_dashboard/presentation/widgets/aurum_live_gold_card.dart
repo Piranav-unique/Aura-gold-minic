@@ -1,41 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
 import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
+import 'package:ags_gold/features/user_dashboard/domain/metal_history.dart';
+import 'package:ags_gold/features/user_dashboard/domain/metal_prices.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_price_history_provider.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
-class AurumLiveGoldCard extends StatefulWidget {
+class AurumLiveGoldCard extends ConsumerStatefulWidget {
   final double livePricePerGram;
   final double change24hPct;
+  final List<MetalPricePoint> initialTrend;
   final VoidCallback? onChartTap;
 
   const AurumLiveGoldCard({
     super.key,
     required this.livePricePerGram,
-    this.change24hPct = 0.2,
+    this.change24hPct = 0.0,
+    this.initialTrend = const [],
     this.onChartTap,
   });
 
   @override
-  State<AurumLiveGoldCard> createState() => _AurumLiveGoldCardState();
+  ConsumerState<AurumLiveGoldCard> createState() => _AurumLiveGoldCardState();
 }
 
-class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
+class _AurumLiveGoldCardState extends ConsumerState<AurumLiveGoldCard> {
   String _selectedRange = '1D';
 
   final List<String> _ranges = ['1D', '1W', '1M', '1Y', 'ALL'];
 
-  // Synthetic price trend points for the sparkline depending on timeframe
-  List<double> get _trendPoints {
-    final base = widget.livePricePerGram > 0 ? widget.livePricePerGram : 15736.0;
+  MetalHistoryRange get _apiRangeForSelection {
     return switch (_selectedRange) {
-      '1D' => [base * 0.995, base * 0.997, base * 0.996, base * 0.999, base * 1.001, base * 1.002],
-      '1W' => [base * 0.985, base * 0.989, base * 0.992, base * 0.995, base * 0.998, base * 1.002],
-      '1M' => [base * 0.960, base * 0.972, base * 0.980, base * 0.990, base * 0.998, base * 1.002],
-      '1Y' => [base * 0.850, base * 0.890, base * 0.930, base * 0.965, base * 0.985, base * 1.002],
-      _ => [base * 0.700, base * 0.780, base * 0.860, base * 0.920, base * 0.970, base * 1.002],
+      '1Y' => MetalHistoryRange.y1,
+      'ALL' => MetalHistoryRange.y3,
+      _ => MetalHistoryRange.m1,
     };
   }
+
+  List<double> _resolveRealTrendPoints(MetalHistory? history) {
+    final live = widget.livePricePerGram > 0 ? widget.livePricePerGram : 15736.0;
+    final rawPoints = (history != null && history.points.length >= 2)
+        ? history.points.map((p) => p.price).where((p) => p > 0).toList()
+        : widget.initialTrend.map((p) => p.price).where((p) => p > 0).toList();
+
+    if (rawPoints.length < 2) {
+      return [live, live];
+    }
+
+    final points = List<double>.from(rawPoints);
+    points[points.length - 1] = live;
+
+    return switch (_selectedRange) {
+      '1D' => points.length > 7 ? points.sublist(points.length - 7) : points,
+      '1W' => points.length > 8 ? points.sublist(points.length - 8) : points,
+      _ => points,
+    };
+  }
+
+  double _resolveRealChangePercent(MetalHistory? history, List<double> points) {
+    if (_selectedRange == '1D') {
+      if (widget.change24hPct != 0) {
+        return widget.change24hPct;
+      }
+      if (points.length >= 2 && points[points.length - 2] > 0) {
+        final prev = points[points.length - 2];
+        final curr = points.last;
+        return ((curr - prev) / prev) * 100.0;
+      }
+      return 0.0;
+    }
+
+    if (_selectedRange == '1W') {
+      if (points.length >= 2 && points.first > 0) {
+        return ((points.last - points.first) / points.first) * 100.0;
+      }
+      return widget.change24hPct;
+    }
+
+    if (history != null && history.points.length >= 2) {
+      return history.performancePercent;
+    }
+
+    if (points.length >= 2 && points.first > 0) {
+      return ((points.last - points.first) / points.first) * 100.0;
+    }
+    return widget.change24hPct;
+  }
+
+  String get _rangeBadgeLabel => _selectedRange == '1D' ? '24h' : _selectedRange;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +99,16 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
       decimalDigits: 0,
     );
     final isDark = AurumConsumerTheme.isDark(context);
-    final isPositive = widget.change24hPct >= 0;
+    final historyAsync = ref.watch(
+      metalHistoryProvider((
+        metal: MetalType.gold,
+        range: _apiRangeForSelection,
+      )),
+    );
+    final history = historyAsync.asData?.value;
+    final trendPoints = _resolveRealTrendPoints(history);
+    final activeChangePct = _resolveRealChangePercent(history, trendPoints);
+    final isPositive = activeChangePct >= 0;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -142,7 +205,7 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
           ),
           const SizedBox(height: 8),
 
-          // Price & 24h change
+          // Price & range change
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8,
@@ -166,7 +229,7 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
                     color: isPositive ? const Color(0xFF10B981) : Colors.redAccent,
                   ),
                   Text(
-                    '${isPositive ? '+' : ''}${widget.change24hPct.toStringAsFixed(1)}% (24h)',
+                    '${isPositive ? '+' : ''}${activeChangePct.toStringAsFixed(2)}% ($_rangeBadgeLabel)',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -185,7 +248,7 @@ class _AurumLiveGoldCardState extends State<AurumLiveGoldCard> {
             width: double.infinity,
             child: CustomPaint(
               painter: _SparklineChartPainter(
-                points: _trendPoints,
+                points: trendPoints,
                 lineColor: AppTheme.primaryGold,
                 fillGradient: LinearGradient(
                   colors: [

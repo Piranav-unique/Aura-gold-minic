@@ -63,14 +63,32 @@ class _ReferBody extends StatelessWidget {
   List<ReferralTier> get _tiers =>
       summary.tiers.isEmpty ? _defaultTiers : summary.tiers;
 
-  String _inviteLink(int schemeGrams) {
-    final code = summary.referralCode.isEmpty ? 'YOURCODE' : summary.referralCode;
-    return 'https://api.aurumgold.co.in/signup?ref=$code&scheme=$schemeGrams';
+  String _tierCode(ReferralTier tier) {
+    final code = tier.codeForUser(summary.referralCode);
+    return code.isEmpty ? 'YOURCODE-${tier.schemeGrams}G' : code;
+  }
+
+  String _inviteLink(ReferralTier tier) {
+    final code = _tierCode(tier);
+    return 'https://api.aurumgold.co.in/signup?ref=$code&scheme=${tier.schemeGrams}';
+  }
+
+  Future<void> _copyTierCode(BuildContext context, ReferralTier tier) async {
+    final code = tier.codeForUser(summary.referralCode);
+    if (code.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: code));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${tier.schemeGrams}g scheme referral code ($code) copied!'),
+        ),
+      );
+    }
   }
 
   Future<void> _copyLink(BuildContext context, ReferralTier tier) async {
-    final code = summary.referralCode.isEmpty ? '' : summary.referralCode;
-    final link = _inviteLink(tier.schemeGrams);
+    final code = _tierCode(tier);
+    final link = _inviteLink(tier);
     final minFormatted = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -161,49 +179,6 @@ class _ReferBody extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        AurumSurfaceCard(
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.yourReferralCode,
-                      style: TextStyle(color: AurumConsumerTheme.textMuted),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      summary.referralCode.isEmpty ? '—' : summary.referralCode,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.4,
-                        color: AurumConsumerTheme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: summary.referralCode.isEmpty
-                    ? null
-                    : () async {
-                        await Clipboard.setData(
-                          ClipboardData(text: summary.referralCode),
-                        );
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.referralCodeCopied)),
-                          );
-                        }
-                      },
-                icon: const Icon(Icons.copy_rounded, color: AppTheme.primaryGold),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 22),
         Text(
           l10n.shareSchemeEarn,
@@ -228,7 +203,7 @@ class _ReferBody extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Rewards are credited as pure 24K digital gold directly into your gold savings wallet when your friend completes their first deposit.',
+                  'Each gold savings plan below has its own unique referral code. Share the specific plan code with your friend — rewards are credited when they complete their first deposit.',
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.4,
@@ -279,6 +254,77 @@ class _ReferBody extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                // Dedicated Referral Code Box for this specific scheme plan
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGold.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.primaryGold.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${tier.schemeGrams}g Plan Referral Code',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AurumConsumerTheme.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              tier.codeForUser(summary.referralCode).isEmpty
+                                  ? '—'
+                                  : tier.codeForUser(summary.referralCode),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.4,
+                                color: AurumConsumerTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: tier.codeForUser(summary.referralCode).isEmpty
+                            ? null
+                            : () => _copyTierCode(context, tier),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.goldDeep,
+                          side: BorderSide(
+                            color: AppTheme.primaryGold.withValues(alpha: 0.6),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(Icons.copy_rounded, size: 15),
+                        label: const Text(
+                          'Copy code',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(

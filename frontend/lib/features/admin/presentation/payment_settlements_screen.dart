@@ -346,88 +346,117 @@ class _PaymentSettlementsScreenState
                 const SizedBox(height: 16),
 
                 // Search input
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search by customer name, mobile, email, or payment ID...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                  ),
-                  onChanged: (val) => setState(() => _searchQuery = val),
+                Builder(
+                  builder: (context) {
+                    final theme = Theme.of(context);
+                    final isDark = theme.brightness == Brightness.dark;
+                    final inputFill = isDark ? theme.cardColor : Colors.white;
+                    final inputBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
+                    return TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search by customer name, mobile, email, or payment ID...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: inputFill,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: inputBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: inputBorder),
+                        ),
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 
                 // Customers Section Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      queryClean.isEmpty
-                          ? 'Paying Customers (${customers.length})'
-                          : 'Paying Customers (${displayedCustomers.length})',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E1B18),
-                      ),
-                    ),
-                    if (_selectedCustomerMobile != null || queryClean.isNotEmpty)
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _selectedCustomerMobile = null;
-                            if (queryClean.isNotEmpty) {
-                              _searchController.clear();
-                              _searchQuery = '';
-                            }
-                          });
-                        },
-                        icon: const Icon(Icons.close, size: 16),
-                        label: const Text('View All Customers'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFC59A27),
-                          visualDensity: VisualDensity.compact,
+                Builder(
+                  builder: (context) {
+                    final theme = Theme.of(context);
+                    final isDark = theme.brightness == Brightness.dark;
+                    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+                    final goldAccent = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          queryClean.isEmpty
+                              ? 'Paying Customers (${customers.length})'
+                              : 'Paying Customers (${displayedCustomers.length})',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimary,
+                          ),
                         ),
-                      ),
-                  ],
+                        if (_selectedCustomerMobile != null || queryClean.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedCustomerMobile = null;
+                                if (queryClean.isNotEmpty) {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.close, size: 16),
+                            label: const Text('View All Customers'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: goldAccent,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
 
                 // Horizontal Customer Selector
                 if (displayedCustomers.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'No paying customers match "$_searchQuery"',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final theme = Theme.of(context);
+                      final isDark = theme.brightness == Brightness.dark;
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.cardColor : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? theme.dividerColor : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'No paying customers match "$_searchQuery"',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   )
                 else
                   SizedBox(
@@ -437,6 +466,19 @@ class _PaymentSettlementsScreenState
                       itemCount: displayedCustomers.length + (queryClean.isEmpty ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(width: 10),
                       itemBuilder: (context, idx) {
+                        final theme = Theme.of(context);
+                        final isDark = theme.brightness == Brightness.dark;
+                        final cardBg = isDark ? theme.cardColor : Colors.white;
+                        final selectedCardBg = isDark
+                            ? const Color(0xFFD4AF37).withValues(alpha: 0.14)
+                            : const Color(0xFFFFFBEB);
+                        final cardBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
+                        final selectedBorder = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+                        final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+                        final textMuted = isDark
+                            ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+                            : const Color(0xFF64748B);
+
                         if (queryClean.isEmpty && idx == 0) {
                           final isSelected = _selectedCustomerMobile == null;
                           return InkWell(
@@ -447,10 +489,10 @@ class _PaymentSettlementsScreenState
                               width: 130,
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFFFFBEB) : Colors.white,
+                                color: isSelected ? selectedCardBg : cardBg,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
+                                  color: isSelected ? selectedBorder : cardBorder,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -461,29 +503,29 @@ class _PaymentSettlementsScreenState
                                     radius: 16,
                                     backgroundColor: isSelected
                                         ? const Color(0xFFC59A27)
-                                        : const Color(0xFFF1F5F9),
+                                        : (isDark ? const Color(0xFF1A2432) : const Color(0xFFF1F5F9)),
                                     child: Icon(
                                       Icons.group,
                                       size: 16,
-                                      color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                      color: isSelected ? Colors.white : textMuted,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  const Text(
+                                  Text(
                                     'All Customers',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1E1B18),
+                                      color: textPrimary,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     '${items.length} orders',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10.5,
-                                      color: Color(0xFF64748B),
+                                      color: textMuted,
                                     ),
                                   ),
                                 ],
@@ -513,10 +555,10 @@ class _PaymentSettlementsScreenState
                             width: 175,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFFFFFBEB) : Colors.white,
+                              color: isSelected ? selectedCardBg : cardBg,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isSelected ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
+                                color: isSelected ? selectedBorder : cardBorder,
                                 width: isSelected ? 2 : 1,
                               ),
                             ),
@@ -530,13 +572,15 @@ class _PaymentSettlementsScreenState
                                       radius: 14,
                                       backgroundColor: isSelected
                                           ? const Color(0xFFC59A27)
-                                          : const Color(0xFFE2E8F0),
+                                          : (isDark ? const Color(0xFF1A2432) : const Color(0xFFE2E8F0)),
                                       child: Text(
                                         _getInitials(c.name),
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w800,
-                                          color: isSelected ? Colors.white : const Color(0xFF334155),
+                                          color: isSelected
+                                              ? Colors.white
+                                              : (isDark ? theme.colorScheme.onSurface : const Color(0xFF334155)),
                                         ),
                                       ),
                                     ),
@@ -547,10 +591,10 @@ class _PaymentSettlementsScreenState
                                         children: [
                                           Text(
                                             c.name,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
-                                              color: Color(0xFF1E1B18),
+                                              color: textPrimary,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -558,9 +602,9 @@ class _PaymentSettlementsScreenState
                                           if (c.mobile.isNotEmpty)
                                             Text(
                                               c.mobile,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 10,
-                                                color: Color(0xFF64748B),
+                                                color: textMuted,
                                               ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -576,17 +620,17 @@ class _PaymentSettlementsScreenState
                                   children: [
                                     Text(
                                       currency.format(c.totalPaid),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF16A34A),
+                                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF16A34A),
                                       ),
                                     ),
                                     Text(
                                       '${c.orderCount} order${c.orderCount == 1 ? '' : 's'}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 10,
-                                        color: Color(0xFF64748B),
+                                        color: textMuted,
                                       ),
                                     ),
                                   ],
@@ -602,35 +646,54 @@ class _PaymentSettlementsScreenState
 
                 // Active filter banner (Requirement 10)
                 if (_selectedCustomerMobile != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFF59E0B)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.filter_alt, size: 18, color: Color(0xFFB45309)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Showing payment history for: ${_selectedCustomerMobile!}',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF92400E),
-                            ),
+                  Builder(
+                    builder: (context) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.14)
+                              : const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFFD4AF37).withValues(alpha: 0.4)
+                                : const Color(0xFFF59E0B),
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 18, color: Color(0xFFB45309)),
-                          onPressed: () => setState(() => _selectedCustomerMobile = null),
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.filter_alt,
+                              size: 18,
+                              color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFB45309),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Showing payment history for: ${_selectedCustomerMobile!}',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFB45309),
+                              ),
+                              onPressed: () => setState(() => _selectedCustomerMobile = null),
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -660,7 +723,11 @@ class _PaymentSettlementsScreenState
                         setState(() => _selectedMethod = val);
                       }),
                       const SizedBox(width: 12),
-                      Container(height: 20, width: 1, color: Colors.grey.shade300),
+                      Container(
+                        height: 20,
+                        width: 1,
+                        color: Theme.of(context).dividerColor,
+                      ),
                       const SizedBox(width: 12),
                       _filterChip('All Metals', null, _selectedMetal, (val) {
                         setState(() => _selectedMetal = val);
@@ -681,10 +748,12 @@ class _PaymentSettlementsScreenState
                 // Transactions Count Title
                 Text(
                   'Payment Records (${filteredItems.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E1B18),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.onSurface
+                        : const Color(0xFF1E1B18),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -701,6 +770,14 @@ class _PaymentSettlementsScreenState
                   )
                 else
                   ...filteredItems.map((row) {
+                    final theme = Theme.of(context);
+                    final isDark = theme.brightness == Brightness.dark;
+                    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+                    final textMuted = isDark
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+                        : const Color(0xFF64748B);
+                    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
+
                     final gross = _num(row['gross_amount_inr'] ?? row['amount_inr']);
                     final gst = _num(row['gst_amount_inr']);
                     final fee = _num(row['razorpay_fee_inr']);
@@ -729,7 +806,7 @@ class _PaymentSettlementsScreenState
                       margin: const EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: BorderSide(color: cardBorder),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
@@ -752,13 +829,15 @@ class _PaymentSettlementsScreenState
                               children: [
                                 CircleAvatar(
                                   radius: 18,
-                                  backgroundColor: const Color(0xFFFEF3C7),
+                                  backgroundColor: isDark
+                                      ? const Color(0xFFD4AF37).withValues(alpha: 0.18)
+                                      : const Color(0xFFFEF3C7),
                                   child: Text(
                                     _getInitials(customerName),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFFB45309),
+                                      color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFB45309),
                                     ),
                                   ),
                                 ),
@@ -769,19 +848,19 @@ class _PaymentSettlementsScreenState
                                     children: [
                                       Text(
                                         customerName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 15,
-                                          color: Color(0xFF1E1B18),
+                                          color: textPrimary,
                                         ),
                                       ),
                                       if (subtitle.isNotEmpty)
                                         Text(
                                           subtitle,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.w500,
-                                            color: Color(0xFF64748B),
+                                            color: textMuted,
                                           ),
                                         ),
                                       if (paidAt != null)
@@ -789,20 +868,30 @@ class _PaymentSettlementsScreenState
                                           margin: const EdgeInsets.only(top: 4),
                                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFEF3C7),
+                                            color: isDark
+                                                ? const Color(0xFFD4AF37).withValues(alpha: 0.14)
+                                                : const Color(0xFFFEF3C7),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const Icon(Icons.schedule, size: 13, color: Color(0xFFB45309)),
+                                              Icon(
+                                                Icons.schedule,
+                                                size: 13,
+                                                color: isDark
+                                                    ? const Color(0xFFD4AF37)
+                                                    : const Color(0xFFB45309),
+                                              ),
                                               const SizedBox(width: 4),
                                               Text(
                                                 dateFormat.format(paidAt.toLocal()),
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 11.5,
                                                   fontWeight: FontWeight.w700,
-                                                  color: Color(0xFF92400E),
+                                                  color: isDark
+                                                      ? const Color(0xFFFDE68A)
+                                                      : const Color(0xFF92400E),
                                                 ),
                                               ),
                                             ],
@@ -814,10 +903,22 @@ class _PaymentSettlementsScreenState
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: isGold ? const Color(0xFFFEF9C3) : const Color(0xFFE2E8F0),
+                                    color: isGold
+                                        ? (isDark
+                                            ? const Color(0xFFD4AF37).withValues(alpha: 0.16)
+                                            : const Color(0xFFFEF9C3))
+                                        : (isDark
+                                            ? const Color(0xFF94A3B8).withValues(alpha: 0.18)
+                                            : const Color(0xFFE2E8F0)),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: isGold ? const Color(0xFFFACC15) : const Color(0xFFCBD5E1),
+                                      color: isGold
+                                          ? (isDark
+                                              ? const Color(0xFFD4AF37).withValues(alpha: 0.45)
+                                              : const Color(0xFFFACC15))
+                                          : (isDark
+                                              ? const Color(0xFF94A3B8).withValues(alpha: 0.4)
+                                              : const Color(0xFFCBD5E1)),
                                     ),
                                   ),
                                   child: Column(
@@ -826,7 +927,9 @@ class _PaymentSettlementsScreenState
                                       Text(
                                         '${grams.toStringAsFixed(4)} g',
                                         style: TextStyle(
-                                          color: isGold ? const Color(0xFF854D0E) : const Color(0xFF334155),
+                                          color: isGold
+                                              ? (isDark ? const Color(0xFFFDE68A) : const Color(0xFF854D0E))
+                                              : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155)),
                                           fontWeight: FontWeight.w900,
                                           fontSize: 12,
                                         ),
@@ -834,7 +937,9 @@ class _PaymentSettlementsScreenState
                                       Text(
                                         isGold ? 'Gold Bought' : 'Silver Bought',
                                         style: TextStyle(
-                                          color: isGold ? const Color(0xFF854D0E) : const Color(0xFF334155),
+                                          color: isGold
+                                              ? (isDark ? const Color(0xFFD4AF37) : const Color(0xFF854D0E))
+                                              : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
                                           fontWeight: FontWeight.w600,
                                           fontSize: 10,
                                         ),
@@ -853,20 +958,20 @@ class _PaymentSettlementsScreenState
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Customer Paid',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Color(0xFF64748B),
+                                        color: textMuted,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     Text(
                                       currency.format(gross),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w900,
-                                        color: Color(0xFF1E1B18),
+                                        color: textPrimary,
                                       ),
                                     ),
                                   ],
@@ -876,15 +981,19 @@ class _PaymentSettlementsScreenState
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFE0E7FF),
+                                        color: isDark
+                                            ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                                            : const Color(0xFFE0E7FF),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         method,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF3730A3),
+                                          color: isDark
+                                              ? const Color(0xFFA5B4FC)
+                                              : const Color(0xFF3730A3),
                                         ),
                                       ),
                                     ),
@@ -892,15 +1001,19 @@ class _PaymentSettlementsScreenState
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFDCFCE7),
+                                        color: isDark
+                                            ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                                            : const Color(0xFFDCFCE7),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         status,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF166534),
+                                          color: isDark
+                                              ? const Color(0xFF34D399)
+                                              : const Color(0xFF166534),
                                         ),
                                       ),
                                     ),
@@ -917,7 +1030,7 @@ class _PaymentSettlementsScreenState
                               'Merchant Receives',
                               currency.format(merchant),
                               bold: true,
-                              valueColor: const Color(0xFF16A34A),
+                              valueColor: isDark ? const Color(0xFF34D399) : const Color(0xFF16A34A),
                             ),
 
                             // Metadata & references
@@ -948,19 +1061,21 @@ class _PaymentSettlementsScreenState
                                           Flexible(
                                             child: Text(
                                               'Payment ID: $paymentId',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
-                                                color: Color(0xFF64748B),
+                                                color: textMuted,
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                           const SizedBox(width: 4),
-                                          const Icon(
+                                          Icon(
                                             Icons.copy_rounded,
                                             size: 13,
-                                            color: Color(0xFFC59A27),
+                                            color: isDark
+                                                ? const Color(0xFFD4AF37)
+                                                : const Color(0xFFC59A27),
                                           ),
                                         ],
                                       ),
@@ -969,10 +1084,10 @@ class _PaymentSettlementsScreenState
                                 if (rrn != null && rrn.isNotEmpty)
                                   Text(
                                     'Bank RRN: $rrn',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF64748B),
+                                      color: textMuted,
                                     ),
                                   ),
                               ],
@@ -997,21 +1112,33 @@ class _PaymentSettlementsScreenState
     String? selectedValue,
     ValueChanged<String?> onSelected,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isSelected = selectedValue == value;
+    final selectedBg = isDark
+        ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+        : const Color(0xFFFEF3C7);
+    final selectedFg = isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E);
+    final unselectedFg = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.75)
+        : const Color(0xFF475569);
+    final borderColor = isSelected
+        ? (isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27))
+        : (isDark ? theme.dividerColor : const Color(0xFFE2E8F0));
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onSelected(value),
-      selectedColor: const Color(0xFFFEF3C7),
-      checkmarkColor: const Color(0xFF92400E),
+      selectedColor: selectedBg,
+      backgroundColor: isDark ? theme.cardColor : null,
+      checkmarkColor: selectedFg,
       labelStyle: TextStyle(
         fontSize: 11.5,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-        color: isSelected ? const Color(0xFF92400E) : const Color(0xFF475569),
+        color: isSelected ? selectedFg : unselectedFg,
       ),
-      side: BorderSide(
-        color: isSelected ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
-      ),
+      side: BorderSide(color: borderColor),
       visualDensity: VisualDensity.compact,
     );
   }
@@ -1022,6 +1149,15 @@ class _PaymentSettlementsScreenState
     bool bold = false,
     Color? valueColor,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final labelColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF64748B);
+    final defaultValueColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.9)
+        : const Color(0xFF334155);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
@@ -1031,7 +1167,7 @@ class _PaymentSettlementsScreenState
             label,
             style: TextStyle(
               fontSize: 11.5,
-              color: const Color(0xFF64748B),
+              color: labelColor,
               fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -1040,7 +1176,7 @@ class _PaymentSettlementsScreenState
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-              color: valueColor ?? const Color(0xFF334155),
+              color: valueColor ?? defaultValueColor,
             ),
           ),
         ],

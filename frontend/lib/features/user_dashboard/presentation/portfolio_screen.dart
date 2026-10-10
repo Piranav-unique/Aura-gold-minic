@@ -13,11 +13,10 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/user_sta
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_hero_portfolio_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_investment_summary_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_recent_transactions_card.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_transaction_history_section.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
 
 /// Consumer "My Portfolio" tab: luxury portfolio hero, investment summary,
-/// recent transactions snippet, and dedicated filterable transaction history.
+/// and recent transactions snippet with "View All" navigation.
 class PortfolioScreen extends ConsumerWidget {
   const PortfolioScreen({super.key});
 
@@ -99,10 +98,6 @@ class PortfolioScreen extends ConsumerWidget {
                 AurumRecentTransactionsCard(
                   onViewAll: () => context.push('/user-transactions'),
                 ),
-                const SizedBox(height: 14),
-
-                // 4. Dedicated Filterable Transaction History (All, Buy, Sell, Successful, Pending, Failed)
-                const AurumTransactionHistorySection(),
               ],
             );
           },

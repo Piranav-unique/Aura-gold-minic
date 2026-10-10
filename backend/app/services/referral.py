@@ -23,6 +23,31 @@ from app.schemas.referral import (
 _VALID_SCHEME_GRAMS = frozenset({Decimal("1"), Decimal("5"), Decimal("10")})
 
 
+def build_tier_referral_code(base_code: str, scheme_grams: int) -> str:
+    clean = (base_code or "").strip().upper()
+    if not clean:
+        return ""
+    return f"{clean}-{int(scheme_grams)}G"
+
+
+def parse_referral_code(raw_code: str | None) -> tuple[str, int | None]:
+    cleaned = (raw_code or "").strip().upper()
+    if not cleaned:
+        return "", None
+    for tier in (10, 5, 1):
+        hyphen_suffix = f"-{tier}G"
+        plain_suffix = f"{tier}G"
+        if cleaned.endswith(hyphen_suffix) and len(cleaned) > len(hyphen_suffix):
+            base = cleaned[: -len(hyphen_suffix)].rstrip("-")
+            if base:
+                return base, tier
+        if cleaned.endswith(plain_suffix) and len(cleaned) >= len(plain_suffix) + 6:
+            base = cleaned[: -len(plain_suffix)].rstrip("-")
+            if base:
+                return base, tier
+    return cleaned, None
+
+
 class ReferralService:
     def __init__(
         self,
@@ -56,15 +81,23 @@ class ReferralService:
         if not referral_code or not referral_code.strip():
             return
 
-        referrer = await self.user_repo.get_by_referral_code(referral_code.strip().upper())
+        base_code, parsed_tier_grams = parse_referral_code(referral_code)
+        referrer = await self.user_repo.get_by_referral_code(base_code)
+        if not referrer and base_code != referral_code.strip().upper():
+            referrer = await self.user_repo.get_by_referral_code(
+                referral_code.strip().upper()
+            )
         if not referrer:
             raise ValidationException("Invalid referral code.")
         if referrer.id == user.id:
             raise ValidationException("You cannot use your own referral code.")
 
         user.referred_by_user_id = referrer.id
-        if scheme_grams is not None:
-            grams = Decimal(str(scheme_grams))
+        effective_scheme_grams = (
+            parsed_tier_grams if parsed_tier_grams is not None else scheme_grams
+        )
+        if effective_scheme_grams is not None:
+            grams = Decimal(str(effective_scheme_grams))
             if grams not in _VALID_SCHEME_GRAMS:
                 raise ValidationException("Invalid referral scheme. Choose 1 g, 5 g, or 10 g.")
             user.referral_scheme_grams = grams
@@ -292,6 +325,7 @@ class ReferralService:
                 scheme_grams=grams,
                 reward_inr=amount,
                 min_purchase_inr=REFERRAL_MIN_PURCHASE_INR.get(grams, Decimal("100")),
+                referral_code=build_tier_referral_code(code, grams),
             )
             for grams, amount in sorted(REFERRAL_REWARD_INR.items())
         ]

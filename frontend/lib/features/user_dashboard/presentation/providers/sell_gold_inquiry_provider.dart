@@ -8,16 +8,21 @@ final submitSellGoldInquiryProvider = Provider((ref) {
     required String mobileNumber,
     required double quantityGrams,
     required String message,
+    String? bankAccountId,
   }) async {
     final apiClient = ref.read(apiClientProvider);
+    final payload = <String, dynamic>{
+      'name': name,
+      'mobile_number': mobileNumber,
+      'quantity_grams': quantityGrams,
+      'message': message,
+    };
+    if (bankAccountId != null && bankAccountId.isNotEmpty) {
+      payload['bank_account_id'] = bankAccountId;
+    }
     final response = await apiClient.post(
       '/sell-inquiries',
-      data: {
-        'name': name,
-        'mobile_number': mobileNumber,
-        'quantity_grams': quantityGrams,
-        'message': message,
-      },
+      data: payload,
     );
     return SellGoldInquiry.fromJson(response.data as Map<String, dynamic>);
   };

@@ -89,7 +89,12 @@ class _ConsumerProfileBody extends ConsumerWidget {
                 ListTile(
                   title: Text(option.nativeLabel),
                   trailing: settings.locale == option.code
-                      ? const Icon(Icons.check, color: AppTheme.goldDeep)
+                      ? Icon(
+                          Icons.check,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppTheme.primaryGold
+                              : AppTheme.goldDeep,
+                        )
                       : null,
                   onTap: () async {
                     await ref
@@ -219,6 +224,12 @@ class _ConsumerProfileBody extends ConsumerWidget {
               ),
 
               ProfileSettingsTile(
+                icon: Icons.account_balance_outlined,
+                title: l10n.bankAccounts,
+                subtitle: l10n.manageBankAccounts,
+                onTap: () => context.push('/bank-accounts'),
+              ),
+              ProfileSettingsTile(
                 icon: Icons.description_outlined,
                 title: l10n.statements,
                 onTap: () => context.push('/user-transactions'),
@@ -318,7 +329,10 @@ class _KycStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final Color color = verified ? AppTheme.emerald : AppTheme.goldDeep;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color color = verified
+        ? AppTheme.emerald
+        : (isDark ? AppTheme.primaryGold : AppTheme.goldDeep);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

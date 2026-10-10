@@ -237,9 +237,33 @@ class AurumConsumerTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
       ),
+      dividerTheme: DividerThemeData(color: border, space: 1),
+      chipTheme: ChipThemeData(
+        backgroundColor: surfaceElevated,
+        selectedColor: AppTheme.primaryGold,
+        checkmarkColor: const Color(0xFF1A1200),
+        side: BorderSide(color: border),
+        labelStyle: TextStyle(
+          color: textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: const TextStyle(color: Color(0xFF1A1200)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: border, width: 1),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surface,
-        selectedItemColor: const Color(0xFF60A5FA),
+        selectedItemColor: AppTheme.primaryGold,
         unselectedItemColor: textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,

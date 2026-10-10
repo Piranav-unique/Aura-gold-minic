@@ -1026,8 +1026,6 @@ class MetalPriceService:
             if metal == "gold"
             else "INR/gm · Chennai silver T+1"
         )
-        customer_trend = [_apply_market_display_price(p, metal) for p in trend]
-
         return MetalQuote(
             metal=metal,
             unit=unit,
@@ -1035,7 +1033,7 @@ class MetalPriceService:
             change_percent=_quantize(change_percent),
             retail_price=retail_price,
             retail=_to_tn_retail(market_price, metal),
-            trend=customer_trend,
+            trend=list(trend),
         )
 
 

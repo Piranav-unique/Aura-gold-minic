@@ -8,7 +8,12 @@ import 'package:ags_gold/features/user_dashboard/presentation/widgets/live_price
 
 /// Compact 24K price chip beside the notification bell — opens live price sheet.
 class LivePriceAppBarChip extends ConsumerWidget {
-  const LivePriceAppBarChip({super.key});
+  final EdgeInsetsGeometry padding;
+
+  const LivePriceAppBarChip({
+    super.key,
+    this.padding = const EdgeInsets.only(right: 6),
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +25,7 @@ class LivePriceAppBarChip extends ConsumerWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: padding,
       child: pricesAsync.when(
         data: (data) {
           final price = currency.format(data.gold.displayPrice);

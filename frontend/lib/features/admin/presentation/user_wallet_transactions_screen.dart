@@ -26,8 +26,15 @@ class _UserWalletTransactionsScreenState
     extends ConsumerState<UserWalletTransactionsScreen> {
   int _page = 1;
 
-  Color _typeBgColor(String type) {
+  Color _typeBgColor(String type, bool isDark) {
     final t = type.toUpperCase();
+    if (isDark) {
+      if (t == 'BUY') return const Color(0xFF3B82F6).withValues(alpha: 0.2);
+      if (t == 'SELL') return const Color(0xFFF97316).withValues(alpha: 0.2);
+      if (t == 'REFERRAL') return const Color(0xFFA855F7).withValues(alpha: 0.2);
+      if (t == 'SAVINGS') return const Color(0xFF10B981).withValues(alpha: 0.2);
+      return const Color(0xFF94A3B8).withValues(alpha: 0.2);
+    }
     if (t == 'BUY') return const Color(0xFFEFF6FF);
     if (t == 'SELL') return const Color(0xFFFFF7ED);
     if (t == 'REFERRAL') return const Color(0xFFF3E8FF);
@@ -35,8 +42,15 @@ class _UserWalletTransactionsScreenState
     return const Color(0xFFF1F5F9);
   }
 
-  Color _typeTextColor(String type) {
+  Color _typeTextColor(String type, bool isDark) {
     final t = type.toUpperCase();
+    if (isDark) {
+      if (t == 'BUY') return const Color(0xFF93C5FD);
+      if (t == 'SELL') return const Color(0xFFFDBA74);
+      if (t == 'REFERRAL') return const Color(0xFFD8B4FE);
+      if (t == 'SAVINGS') return const Color(0xFF6EE7B7);
+      return const Color(0xFFCBD5E1);
+    }
     if (t == 'BUY') return const Color(0xFF1D4ED8);
     if (t == 'SELL') return const Color(0xFFC2410C);
     if (t == 'REFERRAL') return const Color(0xFF7E22CE);
@@ -44,8 +58,19 @@ class _UserWalletTransactionsScreenState
     return const Color(0xFF475569);
   }
 
-  Color _statusBgColor(String status) {
+  Color _statusBgColor(String status, bool isDark) {
     final s = status.toLowerCase();
+    if (isDark) {
+      if (s == 'paid' || s == 'success' || s == 'completed') {
+        return const Color(0xFF10B981).withValues(alpha: 0.2);
+      }
+      if (s == 'pending') return const Color(0xFFD4AF37).withValues(alpha: 0.2);
+      if (s == 'approved') return const Color(0xFF3B82F6).withValues(alpha: 0.2);
+      if (s == 'rejected' || s == 'failed') {
+        return const Color(0xFFF43F5E).withValues(alpha: 0.2);
+      }
+      return const Color(0xFF94A3B8).withValues(alpha: 0.2);
+    }
     if (s == 'paid' || s == 'success' || s == 'completed') return const Color(0xFFDCFCE7);
     if (s == 'pending') return const Color(0xFFFEF3C7);
     if (s == 'approved') return const Color(0xFFDBEAFE);
@@ -53,8 +78,15 @@ class _UserWalletTransactionsScreenState
     return const Color(0xFFF1F5F9);
   }
 
-  Color _statusTextColor(String status) {
+  Color _statusTextColor(String status, bool isDark) {
     final s = status.toLowerCase();
+    if (isDark) {
+      if (s == 'paid' || s == 'success' || s == 'completed') return const Color(0xFF34D399);
+      if (s == 'pending') return const Color(0xFFFDE68A);
+      if (s == 'approved') return const Color(0xFF93C5FD);
+      if (s == 'rejected' || s == 'failed') return const Color(0xFFFDA4AF);
+      return const Color(0xFFCBD5E1);
+    }
     if (s == 'paid' || s == 'success' || s == 'completed') return const Color(0xFF166534);
     if (s == 'pending') return const Color(0xFF92400E);
     if (s == 'approved') return const Color(0xFF1E40AF);
@@ -66,17 +98,26 @@ class _UserWalletTransactionsScreenState
     String? tempType = ref.read(walletTxnTypeFilterProvider);
     String? tempMetal = ref.read(walletTxnMetalFilterProvider);
     String? tempStatus = ref.read(walletTxnStatusFilterProvider);
+    final outerTheme = Theme.of(context);
+    final isDark = outerTheme.brightness == Brightness.dark;
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? outerTheme.cardColor : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (modalCtx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final theme = Theme.of(context);
+            final sheetIsDark = theme.brightness == Brightness.dark;
+            final textPrimary = sheetIsDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+            final textMuted = sheetIsDark
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+                : const Color(0xFF64748B);
+
             return SafeArea(
               top: false,
               child: Padding(
@@ -90,7 +131,7 @@ class _UserWalletTransactionsScreenState
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
+                          color: sheetIsDark ? theme.dividerColor : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -99,12 +140,12 @@ class _UserWalletTransactionsScreenState
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Filter Wallet Activity',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1E1B18),
+                            color: textPrimary,
                           ),
                         ),
                         IconButton(
@@ -116,12 +157,12 @@ class _UserWalletTransactionsScreenState
                     const Divider(height: 20),
 
                     // Activity Type
-                    const Text(
+                    Text(
                       'Activity Type',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B),
+                        color: textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -129,22 +170,22 @@ class _UserWalletTransactionsScreenState
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _choiceChip('All', null, tempType, (v) => setModalState(() => tempType = v)),
-                        _choiceChip('Buy', 'BUY', tempType, (v) => setModalState(() => tempType = v)),
-                        _choiceChip('Sell', 'SELL', tempType, (v) => setModalState(() => tempType = v)),
-                        _choiceChip('Referral', 'REFERRAL', tempType, (v) => setModalState(() => tempType = v)),
-                        _choiceChip('Savings', 'SAVINGS', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip(context, 'All', null, tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip(context, 'Buy', 'BUY', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip(context, 'Sell', 'SELL', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip(context, 'Referral', 'REFERRAL', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip(context, 'Savings', 'SAVINGS', tempType, (v) => setModalState(() => tempType = v)),
                       ],
                     ),
                     const SizedBox(height: 16),
 
                     // Metal
-                    const Text(
+                    Text(
                       'Metal',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B),
+                        color: textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -152,20 +193,20 @@ class _UserWalletTransactionsScreenState
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _choiceChip('All', null, tempMetal, (v) => setModalState(() => tempMetal = v)),
-                        _choiceChip('Gold', 'gold', tempMetal, (v) => setModalState(() => tempMetal = v)),
-                        _choiceChip('Silver', 'silver', tempMetal, (v) => setModalState(() => tempMetal = v)),
+                        _choiceChip(context, 'All', null, tempMetal, (v) => setModalState(() => tempMetal = v)),
+                        _choiceChip(context, 'Gold', 'gold', tempMetal, (v) => setModalState(() => tempMetal = v)),
+                        _choiceChip(context, 'Silver', 'silver', tempMetal, (v) => setModalState(() => tempMetal = v)),
                       ],
                     ),
                     const SizedBox(height: 16),
 
                     // Status
-                    const Text(
+                    Text(
                       'Status',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B),
+                        color: textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -173,11 +214,11 @@ class _UserWalletTransactionsScreenState
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _choiceChip('All', null, tempStatus, (v) => setModalState(() => tempStatus = v)),
-                        _choiceChip('Paid', 'paid', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                        _choiceChip('Pending', 'pending', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                        _choiceChip('Approved', 'approved', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                        _choiceChip('Rejected / Failed', 'rejected', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip(context, 'All', null, tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip(context, 'Paid', 'paid', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip(context, 'Pending', 'pending', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip(context, 'Approved', 'approved', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip(context, 'Rejected / Failed', 'rejected', tempStatus, (v) => setModalState(() => tempStatus = v)),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -196,7 +237,9 @@ class _UserWalletTransactionsScreenState
                             },
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              side: BorderSide(
+                                color: sheetIsDark ? theme.dividerColor : const Color(0xFFCBD5E1),
+                              ),
                             ),
                             child: const Text('Reset'),
                           ),
@@ -233,34 +276,49 @@ class _UserWalletTransactionsScreenState
   }
 
   Widget _choiceChip(
+    BuildContext context,
     String label,
     String? value,
     String? selectedValue,
     ValueChanged<String?> onSelected,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isSelected = (selectedValue == value) ||
         (value != null && selectedValue != null && selectedValue.toLowerCase() == value.toLowerCase());
+    final selectedBg = isDark
+        ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+        : const Color(0xFFFEF3C7);
+    final unselectedBg = isDark ? const Color(0xFF1A2432) : const Color(0xFFF1EDE3);
+    final selectedFg = isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E);
+    final unselectedFg = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.75)
+        : const Color(0xFF475569);
+    final borderColor = isSelected
+        ? (isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27))
+        : (isDark ? theme.dividerColor : const Color(0xFFE2E8F0));
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onSelected(value),
-      selectedColor: const Color(0xFFFEF3C7),
-      backgroundColor: const Color(0xFFF1EDE3),
-      checkmarkColor: const Color(0xFF92400E),
+      selectedColor: selectedBg,
+      backgroundColor: unselectedBg,
+      checkmarkColor: selectedFg,
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-        color: isSelected ? const Color(0xFF92400E) : const Color(0xFF475569),
+        color: isSelected ? selectedFg : unselectedFg,
       ),
-      side: BorderSide(
-        color: isSelected ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
-      ),
+      side: BorderSide(color: borderColor),
       visualDensity: VisualDensity.compact,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final detailAsync = ref.watch(walletUserDetailProvider(widget.userId));
     final typeFilter = ref.watch(walletTxnTypeFilterProvider);
     final metalFilter = ref.watch(walletTxnMetalFilterProvider);
@@ -301,7 +359,7 @@ class _UserWalletTransactionsScreenState
           ),
         ),
         data: (detail) => Container(
-          color: const Color(0xFFFAF7F2),
+          color: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFFAF7F2),
           child: Padding(
             padding: EdgeInsets.all(isDesktop ? 24 : 16),
             child: Column(
@@ -310,7 +368,7 @@ class _UserWalletTransactionsScreenState
                 // Header
                 Text(
                   'Wallet Activity',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
                       ),
@@ -318,10 +376,10 @@ class _UserWalletTransactionsScreenState
                 const SizedBox(height: 4),
                 Text(
                   detail.fullName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFFC59A27),
+                    color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -329,10 +387,7 @@ class _UserWalletTransactionsScreenState
                   'All buy, sell, referral and savings activity for this user.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -357,22 +412,30 @@ class _UserWalletTransactionsScreenState
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? theme.cardColor : Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(
+                            color: isDark ? theme.dividerColor : const Color(0xFFE2E8F0),
+                          ),
                         ),
                         child: Row(
                           children: [
                             Text(
                               typeFilter != null ? typeFilter.toUpperCase() : 'All Activity',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E1B18),
+                                color: isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.arrow_drop_down, size: 20, color: Color(0xFF64748B)),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              size: 20,
+                              color: isDark
+                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+                                  : const Color(0xFF64748B),
+                            ),
                           ],
                         ),
                       ),
@@ -390,16 +453,16 @@ class _UserWalletTransactionsScreenState
                             const SizedBox(width: 4),
                             Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1A2432) : Colors.white,
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
                                 '${(typeFilter != null ? 1 : 0) + (metalFilter != null ? 1 : 0) + (statusFilter != null ? 1 : 0)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
-                                  color: Color(0xFFC59A27),
+                                  color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27),
                                 ),
                               ),
                             ),
@@ -407,12 +470,20 @@ class _UserWalletTransactionsScreenState
                         ],
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: hasActiveFilters ? const Color(0xFFFFFBEB) : Colors.white,
-                        foregroundColor: hasActiveFilters ? const Color(0xFFB45309) : const Color(0xFF1E1B18),
+                        backgroundColor: hasActiveFilters
+                            ? (isDark
+                                ? const Color(0xFFD4AF37).withValues(alpha: 0.16)
+                                : const Color(0xFFFFFBEB))
+                            : (isDark ? theme.cardColor : Colors.white),
+                        foregroundColor: hasActiveFilters
+                            ? (isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309))
+                            : (isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18)),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         side: BorderSide(
-                          color: hasActiveFilters ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
+                          color: hasActiveFilters
+                              ? (isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27))
+                              : (isDark ? theme.dividerColor : const Color(0xFFE2E8F0)),
                           width: hasActiveFilters ? 1.5 : 1,
                         ),
                         textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
@@ -437,9 +508,17 @@ class _UserWalletTransactionsScreenState
                             setState(() => _page = 1);
                           },
                           deleteIcon: const Icon(Icons.close, size: 14),
-                          backgroundColor: const Color(0xFFFFFBEB),
-                          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
-                          side: const BorderSide(color: Color(0xFFF59E0B)),
+                          backgroundColor: isDark
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.18)
+                              : const Color(0xFFFFFBEB),
+                          labelStyle: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                          ),
+                          side: BorderSide(
+                            color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFF59E0B),
+                          ),
                           visualDensity: VisualDensity.compact,
                         ),
                       if (metalFilter != null)
@@ -450,9 +529,17 @@ class _UserWalletTransactionsScreenState
                             setState(() => _page = 1);
                           },
                           deleteIcon: const Icon(Icons.close, size: 14),
-                          backgroundColor: const Color(0xFFFEF3C7),
-                          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
-                          side: const BorderSide(color: Color(0xFFF59E0B)),
+                          backgroundColor: isDark
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.18)
+                              : const Color(0xFFFEF3C7),
+                          labelStyle: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                          ),
+                          side: BorderSide(
+                            color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFF59E0B),
+                          ),
                           visualDensity: VisualDensity.compact,
                         ),
                       if (statusFilter != null)
@@ -463,9 +550,17 @@ class _UserWalletTransactionsScreenState
                             setState(() => _page = 1);
                           },
                           deleteIcon: const Icon(Icons.close, size: 14),
-                          backgroundColor: const Color(0xFFFEF3C7),
-                          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
-                          side: const BorderSide(color: Color(0xFFF59E0B)),
+                          backgroundColor: isDark
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.18)
+                              : const Color(0xFFFEF3C7),
+                          labelStyle: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
+                          ),
+                          side: BorderSide(
+                            color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFF59E0B),
+                          ),
                           visualDensity: VisualDensity.compact,
                         ),
                       TextButton(
@@ -475,7 +570,13 @@ class _UserWalletTransactionsScreenState
                           ref.read(walletTxnStatusFilterProvider.notifier).update(null);
                           setState(() => _page = 1);
                         },
-                        child: const Text('Clear All', style: TextStyle(fontSize: 11, color: Color(0xFFC59A27))),
+                        child: Text(
+                          'Clear All',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -540,6 +641,13 @@ class _UserWalletTransactionsScreenState
     NumberFormat currency,
     DateFormat dateFormat,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final textMuted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF64748B);
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
     final String displayId = (txn.referenceId != null && txn.referenceId!.isNotEmpty)
         ? txn.referenceId!
         : txn.id;
@@ -549,7 +657,7 @@ class _UserWalletTransactionsScreenState
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
+        side: BorderSide(color: cardBorder),
       ),
       child: InkWell(
         onTap: () => openWalletTransactionDetail(context, txn.id),
@@ -566,7 +674,7 @@ class _UserWalletTransactionsScreenState
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _typeBgColor(txn.transactionType),
+                      color: _typeBgColor(txn.transactionType, isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -574,14 +682,14 @@ class _UserWalletTransactionsScreenState
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
-                        color: _typeTextColor(txn.transactionType),
+                        color: _typeTextColor(txn.transactionType, isDark),
                       ),
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _statusBgColor(txn.status),
+                      color: _statusBgColor(txn.status, isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -589,7 +697,7 @@ class _UserWalletTransactionsScreenState
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: _statusTextColor(txn.status),
+                        color: _statusTextColor(txn.status, isDark),
                       ),
                     ),
                   ),
@@ -607,18 +715,18 @@ class _UserWalletTransactionsScreenState
                       if (txn.metal != null || txn.quantityGrams != null)
                         Text(
                           '${(txn.metal ?? 'Metal').toUpperCase()} • ${txn.quantityGrams != null ? '${txn.quantityGrams!.toStringAsFixed(4)} g' : ''}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E1B18),
+                            color: textPrimary,
                           ),
                         ),
                       const SizedBox(height: 2),
                       Text(
                         dateFormat.format(txn.occurredAt.toLocal()),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
-                          color: Color(0xFF64748B),
+                          color: textMuted,
                         ),
                       ),
                     ],
@@ -635,20 +743,20 @@ class _UserWalletTransactionsScreenState
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Amount',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF64748B),
+                          color: textMuted,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         txn.amountInr != null ? currency.format(txn.amountInr) : '—',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E1B18),
+                          color: textPrimary,
                         ),
                       ),
                     ],
@@ -673,17 +781,17 @@ class _UserWalletTransactionsScreenState
                         children: [
                           Text(
                             'ID: ${displayId.length > 12 ? '${displayId.substring(0, 8)}...' : displayId}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
+                              color: textMuted,
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(
+                          Icon(
                             Icons.copy_rounded,
                             size: 13,
-                            color: Color(0xFFC59A27),
+                            color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27),
                           ),
                         ],
                       ),

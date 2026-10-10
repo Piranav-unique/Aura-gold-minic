@@ -11,7 +11,6 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/kyc_prov
 import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_prices_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_buy_sell_buttons.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_dashboard_header.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_hero_portfolio_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_live_gold_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_quick_buy_card.dart';
@@ -57,7 +56,8 @@ class UserDashboardScreen extends ConsumerWidget {
               maybeShowEmailPrompt(context, ref, currentEmail: data.email);
             }
 
-            final goldRate = pricesAsync.asData?.value.gold.displayPrice ?? 15736.0;
+            final goldQuote = pricesAsync.asData?.value.gold;
+            final goldRate = goldQuote?.displayPrice ?? 15736.0;
             final silverRate = pricesAsync.asData?.value.silver.displayPrice ?? 255.0;
 
             final goldValue = MarketLinkedHoldings.currentValueInr(
@@ -163,12 +163,7 @@ class UserDashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Header (Greeting, User Name/Initials, Notification Icon with badge, Profile Avatar)
-                  AurumDashboardHeader(
-                    unreadNotifications: data.unreadNotifications,
-                  ),
                   if (!hasValidEmail) ...[
-                    const SizedBox(height: 12),
                     _GmailVerificationBanner(
                       onVerifyTap: () => showAddEmailDialog(
                         context,
@@ -176,10 +171,10 @@ class UserDashboardScreen extends ConsumerWidget {
                         currentEmail: data.email,
                       ),
                     ),
+                    const SizedBox(height: 12),
                   ],
-                  const SizedBox(height: 12),
 
-                  // 2. Portfolio Overview (Total Value, Returns/Gain, Gold/Silver holdings, privacy toggle)
+                  // 1. Portfolio Overview (Total Value, Returns/Gain, Gold/Silver holdings, privacy toggle)
                   AurumHeroPortfolioCard(
                     totalValue: totalValue,
                     gainPct: gainPct,
@@ -190,10 +185,11 @@ class UserDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 14),
 
-                  // 3. Live 24K Gold Price (24K only, live rate, 24h change, sparkline chart, [Full Chart >] linking to /live-price)
+                  // 2. Live 24K Gold Price (24K only, live rate, real change %, real sparkline chart, [Full Chart >] linking to /live-price)
                   AurumLiveGoldCard(
                     livePricePerGram: goldRate,
-                    change24hPct: 0.2,
+                    change24hPct: goldQuote?.changePercent ?? 0.0,
+                    initialTrend: goldQuote?.trend ?? const [],
                     onChartTap: () => context.push('/live-price'),
                   ),
                   const SizedBox(height: 14),

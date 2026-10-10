@@ -9,6 +9,7 @@ import 'package:ags_gold/core/theme/aurum_consumer_theme.dart';
 import 'package:ags_gold/core/responsive/responsive_layout.dart';
 import 'package:ags_gold/core/navigation/app_nav_destinations.dart';
 import 'package:ags_gold/core/navigation/app_navigation_utils.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_dashboard_header.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/live_price_app_bar_chip.dart';
 import 'package:ags_gold/core/widgets/app_exit_guard.dart';
 import 'package:ags_gold/l10n/l10n_extension.dart';
@@ -218,6 +219,11 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
         (d) => d.routePrefix == '/profile',
       );
       if (bottomNavIndex < 0) bottomNavIndex = 0;
+    } else if (currentPath.startsWith('/user-transactions')) {
+      bottomNavIndex = bottomNavDestinations.indexWhere(
+        (d) => d.routePrefix == '/portfolio',
+      );
+      if (bottomNavIndex < 0) bottomNavIndex = 0;
     } else {
       bottomNavIndex = bottomNavDestinations.isNotEmpty
           ? selectedNavIndexForPath(currentPath, bottomNavDestinations)
@@ -230,6 +236,8 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       platformBrightness,
     );
 
+    final isUserDashboard = currentPath == '/user-dashboard';
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: handleBack,
@@ -240,17 +248,24 @@ class ResponsiveNavigationWrapper extends ConsumerWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: mobileLeading,
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-          ),
-        ),
-        actions: [
-          if (audience == AppAudience.endUser || currentPath.startsWith('/inventory'))
-            const LivePriceAppBarChip(),
-        ],
+        toolbarHeight: isUserDashboard ? 64 : null,
+        titleSpacing: isUserDashboard ? 16 : null,
+        title: isUserDashboard
+            ? const AurumDashboardHeader()
+            : Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+        actions: isUserDashboard
+            ? const []
+            : [
+                if (audience == AppAudience.endUser ||
+                    currentPath.startsWith('/inventory'))
+                  const LivePriceAppBarChip(),
+              ],
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -340,7 +355,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedColor = AppTheme.goldDeep;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedColor = isDark ? AppTheme.primaryGold : AppTheme.goldDeep;
     final mutedColor = AurumConsumerTheme.muted(context);
 
     return InkWell(

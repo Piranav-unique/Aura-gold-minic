@@ -4,7 +4,8 @@ enum MetalHistoryRange {
   m1('1M', '1 Month'),
   m3('3M', '3 Months'),
   m6('6M', '6 Months'),
-  y1('1Y', '1 Year');
+  y1('1Y', '1 Year'),
+  y3('3Y', '3 Years');
 
   final String apiValue;
   final String label;

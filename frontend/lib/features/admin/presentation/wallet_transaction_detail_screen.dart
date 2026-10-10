@@ -17,6 +17,8 @@ class WalletTransactionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detailAsync = ref.watch(walletTransactionDetailProvider(transactionId));
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return ResponsiveNavigationWrapper(
       title: 'Transaction Detail',
@@ -31,32 +33,36 @@ class WalletTransactionDetailScreen extends ConsumerWidget {
                 Container(
                   width: 64,
                   height: 64,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEE2E2),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFFF43F5E).withValues(alpha: 0.2)
+                        : const Color(0xFFFEE2E2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.error_outline_rounded,
                     size: 32,
-                    color: Color(0xFFDC2626),
+                    color: isDark ? const Color(0xFFFDA4AF) : const Color(0xFFDC2626),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Failed to Load Transaction',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E1B18),
+                    color: isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18),
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '$e',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF64748B),
+                    color: isDark
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+                        : const Color(0xFF64748B),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -102,6 +108,11 @@ class _TransactionDetailLoadingSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.cardColor : Colors.white;
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
+
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
@@ -109,9 +120,9 @@ class _TransactionDetailLoadingSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header shimmer
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               PremiumSkeleton(width: 160, height: 24),
               PremiumSkeleton(width: 70, height: 24),
             ],
@@ -122,13 +133,13 @@ class _TransactionDetailLoadingSkeleton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: cardBorder),
             ),
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 PremiumSkeleton(width: 80, height: 14),
                 SizedBox(height: 8),
                 PremiumSkeleton(width: 140, height: 28),
@@ -142,27 +153,35 @@ class _TransactionDetailLoadingSkeleton extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Transaction Information Card shimmer
-          _buildCardSkeleton(titleWidth: 150, rows: 4),
+          _buildCardSkeleton(context, titleWidth: 150, rows: 4),
           const SizedBox(height: 14),
 
           // Customer Information Card shimmer
-          _buildCardSkeleton(titleWidth: 140, rows: 3),
+          _buildCardSkeleton(context, titleWidth: 140, rows: 3),
           const SizedBox(height: 14),
 
           // Payment Details Card shimmer
-          _buildCardSkeleton(titleWidth: 120, rows: 3),
+          _buildCardSkeleton(context, titleWidth: 120, rows: 3),
         ],
       ),
     );
   }
 
-  static Widget _buildCardSkeleton({required double titleWidth, required int rows}) {
+  static Widget _buildCardSkeleton(
+    BuildContext context, {
+    required double titleWidth,
+    required int rows,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? theme.cardColor : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? theme.dividerColor : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,10 +189,10 @@ class _TransactionDetailLoadingSkeleton extends StatelessWidget {
           PremiumSkeleton(width: titleWidth, height: 16),
           const SizedBox(height: 14),
           for (int i = 0; i < rows; i++) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
               child: Row(
-                children: const [
+                children: [
                   PremiumSkeleton(width: 100, height: 14),
                   SizedBox(width: 16),
                   Expanded(

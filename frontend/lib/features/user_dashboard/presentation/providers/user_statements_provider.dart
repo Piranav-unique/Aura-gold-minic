@@ -19,20 +19,35 @@ final userStatementsProvider =
     throw StateError('Not authenticated');
   }
   final apiClient = ref.read(apiClientProvider);
-  final response = await apiClient.get(
-    '/profile/statements',
-    queryParameters: const {'limit': 100},
-  );
-  final data = response.data as Map<String, dynamic>;
-  final items = (data['items'] as List<dynamic>? ?? [])
-      .map(
-        (item) => WalletTransactionItem.fromJson(
-          item as Map<String, dynamic>,
-        ),
-      )
-      .toList();
+  const pageSize = 100;
+  final allItems = <WalletTransactionItem>[];
+  var skip = 0;
+  var total = 0;
+
+  while (true) {
+    final response = await apiClient.get(
+      '/profile/statements',
+      queryParameters: {'skip': skip, 'limit': pageSize},
+    );
+    final data = response.data as Map<String, dynamic>;
+    final pageItems = (data['items'] as List<dynamic>? ?? [])
+        .map(
+          (item) => WalletTransactionItem.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+    total = data['total'] as int? ?? (skip + pageItems.length);
+    allItems.addAll(pageItems);
+
+    if (pageItems.length < pageSize || allItems.length >= total) {
+      break;
+    }
+    skip += pageSize;
+  }
+
   return UserStatementsPage(
-    items: items,
-    total: data['total'] as int? ?? items.length,
+    items: allItems,
+    total: total,
   );
 });

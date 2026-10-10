@@ -39,11 +39,15 @@ final respondSellInquiryProvider = Provider((ref) {
 });
 
 final approveSellInquiryProvider = Provider((ref) {
-  return ({required String inquiryId}) async {
+  return ({required String inquiryId, String? payoutMode}) async {
     final apiClient = ref.read(apiClientProvider);
+    final payload = <String, dynamic>{'confirm': true};
+    if (payoutMode != null && payoutMode.isNotEmpty) {
+      payload['payout_mode'] = payoutMode;
+    }
     final response = await apiClient.post(
       '/sell-inquiries/$inquiryId/approve',
-      data: {'confirm': true},
+      data: payload,
     );
     return AdminSellGoldInquiry.fromJson(response.data as Map<String, dynamic>);
   };

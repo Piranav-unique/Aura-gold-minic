@@ -77,7 +77,10 @@ class _SellInquiryDetailScreenState
 
     setState(() => _actionLoading = true);
     try {
-      await ref.read(approveSellInquiryProvider)(inquiryId: widget.inquiryId);
+      await ref.read(approveSellInquiryProvider)(
+        inquiryId: widget.inquiryId,
+        payoutMode: hasBank ? 'bank_transfer' : 'direct_settlement',
+      );
       ref.invalidate(sellInquiryDetailProvider(widget.inquiryId));
       ref.invalidate(sellInquiriesListProvider);
       if (!mounted) return;
@@ -392,6 +395,7 @@ class _SellInquiryDetailScreenState
 
   Widget _actionBar(SellInquiryDetail detail) {
     final isKycVerified = (detail.kycStatus ?? '').toLowerCase() == 'verified';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -402,17 +406,23 @@ class _SellInquiryDetailScreenState
             decoration: BoxDecoration(
               color: Colors.amber.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber.shade700),
+              border: Border.all(
+                color: isDark ? Colors.amber.shade400.withValues(alpha: 0.5) : Colors.amber.shade700,
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 20),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: isDark ? Colors.amber.shade300 : Colors.amber.shade800,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'User is not KYC verified. Approve and Reject actions are disabled until KYC is verified.',
                     style: TextStyle(
-                      color: Colors.amber.shade900,
+                      color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),

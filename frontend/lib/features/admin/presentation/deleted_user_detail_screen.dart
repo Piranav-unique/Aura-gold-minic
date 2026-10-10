@@ -21,6 +21,9 @@ class DeletedUserDetailScreen extends ConsumerWidget {
     final detailAsync = ref.watch(deletedUserDetailProvider(userId));
     final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1E1B18);
+    final secondaryText = isDark ? Colors.white60 : const Color(0xFF64748B);
 
     return ResponsiveNavigationWrapper(
       title: 'Deleted User Details',
@@ -34,19 +37,19 @@ class DeletedUserDetailScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFDC2626)),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Failed to Load User Details',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E1B18),
+                    color: primaryText,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '$err',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 13, color: secondaryText),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -81,6 +84,7 @@ class DeletedUserDetailScreen extends ConsumerWidget {
           final lastActivity = user.lastLoginAt != null
               ? dateFormat.format(user.lastLoginAt!.toLocal())
               : 'None recorded';
+          final isKycVerified = user.kycStatus.toLowerCase() == 'verified';
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -94,21 +98,31 @@ class DeletedUserDetailScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
+                    color: isDark
+                        ? const Color(0xFFDC2626).withValues(alpha: 0.14)
+                        : const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFECACA)),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFFF87171).withValues(alpha: 0.35)
+                          : const Color(0xFFFECACA),
+                    ),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.lock_clock_outlined, size: 20, color: Color(0xFFDC2626)),
-                      SizedBox(width: 10),
+                    children: [
+                      Icon(
+                        Icons.lock_clock_outlined,
+                        size: 20,
+                        color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'READ-ONLY ARCHIVE: This user account has been soft-deleted. Historical records and transactions are preserved.',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF991B1B),
+                            color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
                             height: 1.3,
                           ),
                         ),
@@ -120,57 +134,75 @@ class DeletedUserDetailScreen extends ConsumerWidget {
 
                 // Account Information Card
                 _buildCard(
+                  context,
                   title: 'Customer Account Details',
                   children: [
-                    _row('Full Name', user.fullName.isNotEmpty ? user.fullName : '—'),
+                    _row(context, 'Full Name', user.fullName.isNotEmpty ? user.fullName : '—'),
                     _rowWithCopy(context, 'Customer ID', user.id),
-                    _row('Email', user.email.isNotEmpty ? user.email : '—', isEmail: true),
+                    _row(context, 'Email', user.email.isNotEmpty ? user.email : '—', isEmail: true),
                     if (user.mobileNumber != null && user.mobileNumber!.isNotEmpty)
-                      _row('Mobile Number', user.mobileNumber!),
-                    _rowWithBadge('Account Status', 'DELETED', const Color(0xFFFEE2E2), const Color(0xFFDC2626)),
+                      _row(context, 'Mobile Number', user.mobileNumber!),
                     _rowWithBadge(
+                      context,
+                      'Account Status',
+                      'DELETED',
+                      isDark ? const Color(0xFFDC2626).withValues(alpha: 0.2) : const Color(0xFFFEE2E2),
+                      isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                    ),
+                    _rowWithBadge(
+                      context,
                       'KYC Status',
                       user.kycStatus.toUpperCase(),
-                      user.kycStatus.toLowerCase() == 'verified'
-                          ? const Color(0xFFDCFCE7)
-                          : const Color(0xFFFEF3C7),
-                      user.kycStatus.toLowerCase() == 'verified'
-                          ? const Color(0xFF166534)
-                          : const Color(0xFF92400E),
+                      isKycVerified
+                          ? (isDark
+                              ? const Color(0xFF16A34A).withValues(alpha: 0.2)
+                              : const Color(0xFFDCFCE7))
+                          : (isDark
+                              ? const Color(0xFFD97706).withValues(alpha: 0.2)
+                              : const Color(0xFFFEF3C7)),
+                      isKycVerified
+                          ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF166534))
+                          : (isDark ? const Color(0xFFFCD34D) : const Color(0xFF92400E)),
                     ),
-                    _row('Registered On', regDate),
-                    _row('Deleted On', delDate),
-                    _row('Last Activity', lastActivity),
+                    _row(context, 'Registered On', regDate),
+                    _row(context, 'Deleted On', delDate),
+                    _row(context, 'Last Activity', lastActivity),
                   ],
                 ),
                 const SizedBox(height: 16),
 
                 // Previous Wallet Holdings Card
                 _buildCard(
+                  context,
                   title: 'Previous Retained Wallet Balances',
                   children: [
                     _row(
+                      context,
                       'Gold Balance',
                       '${user.wallet.goldBalanceGrams.toStringAsFixed(4)} g',
                       valueColor: const Color(0xFFC59A27),
                       bold: true,
                     ),
                     _row(
+                      context,
                       'Silver Balance',
                       '${user.wallet.silverBalanceGrams.toStringAsFixed(4)} g',
                       bold: true,
                     ),
                     _row(
+                      context,
                       'Total Invested',
                       currency.format(user.wallet.totalInrInvested),
                     ),
                     _row(
+                      context,
                       'Wallet Cash Balance',
                       currency.format(user.wallet.walletBalanceInr),
-                      valueColor: const Color(0xFF16A34A),
+                      valueColor: isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A),
                       bold: true,
                     ),
                     _row(
+                      context,
                       'Savings Scheme',
                       user.wallet.savingsSchemeStatus.toUpperCase(),
                     ),
@@ -180,21 +212,26 @@ class DeletedUserDetailScreen extends ConsumerWidget {
 
                 // Historical Transactions & Payments Card
                 _buildCard(
+                  context,
                   title: 'Historical Transactions & Payments (${user.transactions.length})',
                   children: [
                     if (user.transactions.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
                           child: Text(
                             'No historical transactions found for this customer.',
-                            style: TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                            ),
                           ),
                         ),
                       )
                     else
                       ...user.transactions.map((txn) {
                         final txnDate = dateFormat.format(txn.occurredAt.toLocal());
+                        final isBuy = txn.transactionType.toUpperCase() == 'BUY';
                         return InkWell(
                           onTap: () => openWalletTransactionDetail(context, txn.id),
                           borderRadius: BorderRadius.circular(10),
@@ -202,18 +239,28 @@ class DeletedUserDetailScreen extends ConsumerWidget {
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: txn.transactionType.toUpperCase() == 'BUY'
-                                        ? const Color(0xFFEFF6FF)
-                                        : const Color(0xFFFFF7ED),
+                                    color: isBuy
+                                        ? (isDark
+                                            ? const Color(0xFF2563EB).withValues(alpha: 0.2)
+                                            : const Color(0xFFEFF6FF))
+                                        : (isDark
+                                            ? const Color(0xFFEA580C).withValues(alpha: 0.2)
+                                            : const Color(0xFFFFF7ED)),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -221,9 +268,9 @@ class DeletedUserDetailScreen extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w800,
-                                      color: txn.transactionType.toUpperCase() == 'BUY'
-                                          ? const Color(0xFF1D4ED8)
-                                          : const Color(0xFFC2410C),
+                                      color: isBuy
+                                          ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8))
+                                          : (isDark ? const Color(0xFFFB923C) : const Color(0xFFC2410C)),
                                     ),
                                   ),
                                 ),
@@ -236,19 +283,19 @@ class DeletedUserDetailScreen extends ConsumerWidget {
                                         txn.quantityGrams != null
                                             ? '${txn.quantityGrams!.toStringAsFixed(4)} g ${txn.metal ?? ''}'
                                             : txn.id,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1E1B18),
+                                          color: primaryText,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         txnDate,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 11,
-                                          color: Color(0xFF64748B),
+                                          color: secondaryText,
                                         ),
                                       ),
                                     ],
@@ -261,28 +308,28 @@ class DeletedUserDetailScreen extends ConsumerWidget {
                                       txn.amountInr != null
                                           ? currency.format(txn.amountInr)
                                           : '—',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF16A34A),
+                                        color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A),
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       txn.status.toUpperCase(),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF64748B),
+                                        color: secondaryText,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(width: 6),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right,
                                   size: 16,
-                                  color: Color(0xFF94A3B8),
+                                  color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
                                 ),
                               ],
                             ),
@@ -299,16 +346,20 @@ class DeletedUserDetailScreen extends ConsumerWidget {
     );
   }
 
-  static Widget _buildCard({
+  static Widget _buildCard(
+    BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1F2227) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,12 +380,14 @@ class DeletedUserDetailScreen extends ConsumerWidget {
   }
 
   static Widget _row(
+    BuildContext context,
     String label,
     String value, {
     bool bold = false,
     Color? valueColor,
     bool isEmail = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -344,8 +397,8 @@ class DeletedUserDetailScreen extends ConsumerWidget {
             width: 130,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              style: TextStyle(
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),
@@ -357,7 +410,7 @@ class DeletedUserDetailScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-                color: valueColor ?? const Color(0xFF1E1B18),
+                color: valueColor ?? (isDark ? Colors.white : const Color(0xFF1E1B18)),
               ),
             ),
           ),
@@ -367,11 +420,13 @@ class DeletedUserDetailScreen extends ConsumerWidget {
   }
 
   static Widget _rowWithBadge(
+    BuildContext context,
     String label,
     String badgeText,
     Color bgColor,
     Color textColor,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -380,8 +435,8 @@ class DeletedUserDetailScreen extends ConsumerWidget {
             width: 130,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              style: TextStyle(
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),
@@ -408,6 +463,7 @@ class DeletedUserDetailScreen extends ConsumerWidget {
   }
 
   static Widget _rowWithCopy(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -417,8 +473,8 @@ class DeletedUserDetailScreen extends ConsumerWidget {
             width: 130,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              style: TextStyle(
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),
@@ -444,10 +500,10 @@ class DeletedUserDetailScreen extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E1B18),
+                        color: isDark ? Colors.white : const Color(0xFF1E1B18),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -473,6 +529,7 @@ class _DeletedUserDetailSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
@@ -483,9 +540,11 @@ class _DeletedUserDetailSkeleton extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1F2227) : Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

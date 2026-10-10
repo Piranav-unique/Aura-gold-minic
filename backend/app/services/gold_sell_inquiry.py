@@ -405,7 +405,10 @@ class GoldSellInquiryService:
         user.gold_savings_grams = holdings - quantity
 
         payout_result = await self.razorpayx_payout_service.initiate_payout(
-            inquiry, user, Decimal(str(payout["net_payable_inr"]))
+            inquiry,
+            user,
+            Decimal(str(payout["net_payable_inr"])),
+            payout_mode=body.payout_mode,
         )
 
         inquiry = await self.inquiry_repo.update(
@@ -457,18 +460,24 @@ class GoldSellInquiryService:
                 },
             )
 
+        is_direct = pay_method == "direct_settlement"
         payout_label = (
-            "sent to your bank account"
-            if payout_result["payout_status"] == "processed"
-            else "initiated via RazorpayX"
+            "processed via direct settlement"
+            if is_direct
+            else (
+                "sent to your bank account"
+                if payout_result["payout_status"] == "processed"
+                else "initiated via RazorpayX"
+            )
         )
+        pay_title = "Direct Settlement" if is_direct else "RazorpayX bank transfer"
         await self.notification_service.create_notification(
             user_id=inquiry.user_id,
             title="Your sell request has been approved",
             message=(
                 f"Amount: ₹{payout['net_payable_inr']}\n"
-                f"Payment: RazorpayX bank transfer ({payout_label})\n"
-                f"Payout ID: {ref}"
+                f"Payment: {pay_title} ({payout_label})\n"
+                f"Reference ID: {ref}"
             ),
             category=NotificationService.CATEGORY_SYSTEM,
             metadata={

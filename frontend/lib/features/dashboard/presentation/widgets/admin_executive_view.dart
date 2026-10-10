@@ -299,6 +299,15 @@ class _AdminHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final textMuted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF1E1B18).withValues(alpha: 0.6);
+    final buttonBg = isDark ? theme.cardColor : Colors.white;
+    final buttonBorder = isDark ? theme.dividerColor : const Color(0xFFEDE8DF);
+    final goldAccent = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
     final timeStr = DateFormat('hh:mm a').format(lastSyncedAt);
 
     return Container(
@@ -340,10 +349,10 @@ class _AdminHeader extends StatelessWidget {
                   displayName != null && displayName!.isNotEmpty
                       ? 'Welcome, $displayName'
                       : 'Welcome Admin',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E1B18),
+                    color: textPrimary,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -353,7 +362,7 @@ class _AdminHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
+                    color: textMuted,
                   ),
                 ),
               ],
@@ -368,42 +377,44 @@ class _AdminHeader extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: buttonBg,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFEDE8DF)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  border: Border.all(color: buttonBorder),
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isSyncing)
-                      const SizedBox(
+                      SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Color(0xFFC59A27),
+                          color: goldAccent,
                         ),
                       )
                     else
-                      const Icon(
+                      Icon(
                         Icons.sync_rounded,
                         size: 16,
-                        color: Color(0xFFC59A27),
+                        color: goldAccent,
                       ),
                     const SizedBox(width: 6),
                     Text(
                       isSyncing ? 'Syncing...' : 'Razorpay Live Sync',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E1B18),
+                        color: textPrimary,
                       ),
                     ),
                   ],
@@ -441,6 +452,7 @@ class _KpiMetricGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currency = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -459,8 +471,10 @@ class _KpiMetricGrid extends StatelessWidget {
                 subtitle: payingCustomersCount > 0 ? '$payingCustomersCount paying' : 'Active users',
                 badgeText: '+12%',
                 icon: Icons.people_alt_rounded,
-                iconBg: const Color(0xFFFFF7ED),
-                iconColor: const Color(0xFFC59A27),
+                iconBg: isDark
+                    ? const Color(0xFFD4AF37).withValues(alpha: 0.16)
+                    : const Color(0xFFFFF7ED),
+                iconColor: isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27),
                 onTap: () => context.go('/customers'),
               ),
             ),
@@ -472,7 +486,9 @@ class _KpiMetricGrid extends StatelessWidget {
                 subtitle: 'Rev: ${currency.format(goldSoldRevenue)}',
                 badgeText: '+8%',
                 icon: Icons.workspace_premium_rounded,
-                iconBg: const Color(0xFFFFFBEB),
+                iconBg: isDark
+                    ? const Color(0xFFD4AF37).withValues(alpha: 0.16)
+                    : const Color(0xFFFFFBEB),
                 iconColor: const Color(0xFFD4AF37),
                 onTap: () => context.go('/inventory'),
               ),
@@ -489,8 +505,10 @@ class _KpiMetricGrid extends StatelessWidget {
                 subtitle: 'Rev: ${currency.format(silverSoldRevenue)}',
                 badgeText: '+10%',
                 icon: Icons.toll_rounded,
-                iconBg: const Color(0xFFF1F5F9),
-                iconColor: const Color(0xFF64748B),
+                iconBg: isDark
+                    ? const Color(0xFF94A3B8).withValues(alpha: 0.18)
+                    : const Color(0xFFF1F5F9),
+                iconColor: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
                 onTap: () => context.go('/inventory'),
               ),
             ),
@@ -502,8 +520,10 @@ class _KpiMetricGrid extends StatelessWidget {
                 subtitle: 'Total revenue',
                 badgeText: '+15%',
                 icon: Icons.currency_rupee_rounded,
-                iconBg: const Color(0xFFECFDF5),
-                iconColor: const Color(0xFF059669),
+                iconBg: isDark
+                    ? const Color(0xFF10B981).withValues(alpha: 0.18)
+                    : const Color(0xFFECFDF5),
+                iconColor: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
                 onTap: () => context.go('/admin/payment-settlements'),
               ),
             ),
@@ -537,22 +557,38 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.cardColor : Colors.white;
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFEDE8DF);
+    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final textMuted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF1E1B18).withValues(alpha: 0.6);
+    final badgeBg = isDark
+        ? const Color(0xFF10B981).withValues(alpha: 0.18)
+        : const Color(0xFFDCFCE7);
+    final badgeFg = isDark ? const Color(0xFF34D399) : const Color(0xFF166534);
+    final goldSubtitle = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFEDE8DF)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          border: Border.all(color: cardBorder),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,24 +610,24 @@ class _MetricCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
+                    color: badgeBg,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.trending_up_rounded,
-                        color: Color(0xFF166534),
+                        color: badgeFg,
                         size: 11,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         badgeText,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF166534),
+                          color: badgeFg,
                         ),
                       ),
                     ],
@@ -604,10 +640,10 @@ class _MetricCard extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF1E1B18),
+                color: textPrimary,
                 letterSpacing: -0.5,
               ),
             ),
@@ -617,7 +653,7 @@ class _MetricCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
+                color: textMuted,
               ),
             ),
             if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -626,10 +662,10 @@ class _MetricCard extends StatelessWidget {
                 subtitle!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFC59A27),
+                  color: goldSubtitle,
                 ),
               ),
             ],
@@ -665,6 +701,19 @@ class _PaymentMethodsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.cardColor : Colors.white;
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFEDE8DF);
+    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final textMuted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF7E7A75);
+    final iconCircleBg = isDark
+        ? const Color(0xFFD4AF37).withValues(alpha: 0.16)
+        : const Color(0xFFFFF7ED);
+    final iconCircleFg = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+
     final currency = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -674,16 +723,18 @@ class _PaymentMethodsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEDE8DF)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        border: Border.all(color: cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,18 +745,18 @@ class _PaymentMethodsSection extends StatelessWidget {
               Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFF7ED),
+                decoration: BoxDecoration(
+                  color: iconCircleBg,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.payments_rounded,
                   size: 18,
-                  color: Color(0xFFC59A27),
+                  color: iconCircleFg,
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -714,14 +765,14 @@ class _PaymentMethodsSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E1B18),
+                        color: textPrimary,
                       ),
                     ),
                     Text(
                       'Live breakdown of customer payment channels',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF7E7A75),
+                        color: textMuted,
                       ),
                     ),
                   ],
@@ -733,7 +784,7 @@ class _PaymentMethodsSection extends StatelessWidget {
                   icon: const Icon(Icons.clear, size: 14),
                   label: const Text('Clear', style: TextStyle(fontSize: 11)),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFDC2626),
+                    foregroundColor: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
@@ -812,31 +863,41 @@ class _PaymentMethodsSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
+                color: isDark
+                    ? const Color(0xFFD4AF37).withValues(alpha: 0.14)
+                    : const Color(0xFFFEF3C7),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFFD4AF37).withValues(alpha: 0.4)
+                      : const Color(0xFFFDE68A),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.filter_alt_rounded, size: 14, color: Color(0xFF92400E)),
+                  Icon(
+                    Icons.filter_alt_rounded,
+                    size: 14,
+                    color: isDark ? const Color(0xFFD4AF37) : const Color(0xFF92400E),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'Filtering lists by: ${methodStats[selectedMethod]?.title ?? selectedMethod}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF92400E),
+                      color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
                     ),
                   ),
                   const Spacer(),
                   GestureDetector(
                     onTap: onClearFilter,
-                    child: const Text(
+                    child: Text(
                       'Show All',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFFB45309),
+                        color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFB45309),
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -866,6 +927,24 @@ class _MethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final tileBg = isSelected
+        ? (isDark
+            ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+            : const Color(0xFFFFFBEB))
+        : (isDark ? const Color(0xFF1A2432) : const Color(0xFFFAF8F5));
+    final tileBorder = isSelected
+        ? (isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27))
+        : (isDark ? theme.dividerColor : const Color(0xFFEDE8DF));
+    final titleColor = isSelected
+        ? (isDark ? const Color(0xFFD4AF37) : const Color(0xFF9A7210))
+        : (isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18));
+    final valueColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final mutedColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF1E1B18).withValues(alpha: 0.6);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -873,10 +952,10 @@ class _MethodCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFFBEB) : const Color(0xFFFAF8F5),
+          color: tileBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? const Color(0xFFC59A27) : const Color(0xFFEDE8DF),
+            color: tileBorder,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -889,7 +968,7 @@ class _MethodCard extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: data.color.withValues(alpha: 0.15),
+                    color: data.color.withValues(alpha: isDark ? 0.22 : 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(data.icon, size: 16, color: data.color),
@@ -903,7 +982,7 @@ class _MethodCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: isSelected ? const Color(0xFF9A7210) : const Color(0xFF1E1B18),
+                      color: titleColor,
                     ),
                   ),
                 ),
@@ -912,10 +991,10 @@ class _MethodCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               currency.format(data.amount),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF1E1B18),
+                color: valueColor,
                 letterSpacing: -0.3,
               ),
             ),
@@ -930,7 +1009,7 @@ class _MethodCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
+                      color: mutedColor,
                     ),
                   ),
                 ),
@@ -960,30 +1039,38 @@ class AdminQuickHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.cardColor : Colors.white;
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFEDE8DF);
+    final titleColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEDE8DF)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        border: Border.all(color: cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Quick Operations',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1E1B18),
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 14),
@@ -1046,6 +1133,13 @@ class _HubTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final tileBg = isDark ? const Color(0xFF1A2432) : const Color(0xFFFAF8F5);
+    final tileBorder = isDark ? theme.dividerColor : const Color(0xFFEDE8DF);
+    final labelColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final iconColor = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+
     return InkWell(
       onTap: () {
         if (Navigator.of(context).canPop()) {
@@ -1057,19 +1151,19 @@ class _HubTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFAF8F5),
+          color: tileBg,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFEDE8DF)),
+          border: Border.all(color: tileBorder),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: const Color(0xFFC59A27).withValues(alpha: 0.12),
+                color: iconColor.withValues(alpha: isDark ? 0.18 : 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: const Color(0xFFC59A27), size: 20),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1077,10 +1171,10 @@ class _HubTile extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E1B18),
+                  color: labelColor,
                 ),
               ),
             ),

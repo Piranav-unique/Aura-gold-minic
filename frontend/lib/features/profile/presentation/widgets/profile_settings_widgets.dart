@@ -17,20 +17,25 @@ abstract final class ProfileTypography {
   }
 
   static TextStyle contactLine(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return TextStyle(
       fontSize: 13,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.6,
-      color: AppTheme.inkMuted,
+      color: isDark
+          ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+          : AppTheme.inkMuted,
     );
   }
 
   static TextStyle sectionLabel(BuildContext context) {
-    return const TextStyle(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w700,
       letterSpacing: 1.35,
-      color: AppTheme.goldDeep,
+      color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
     );
   }
 
@@ -44,11 +49,15 @@ abstract final class ProfileTypography {
   }
 
   static TextStyle tileSubtitle(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.2,
-      color: AppTheme.inkMuted,
+      color: isDark
+          ? theme.colorScheme.onSurface.withValues(alpha: 0.62)
+          : AppTheme.inkMuted,
     );
   }
 }
@@ -138,6 +147,7 @@ class ProfileSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.45);
     return Material(
       color: Colors.transparent,
@@ -152,13 +162,15 @@ class ProfileSettingsTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppTheme.creamElevated,
+                  color: isDark
+                      ? AppTheme.primaryGold.withValues(alpha: 0.14)
+                      : AppTheme.creamElevated,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
                   size: 20,
-                  color: AppTheme.goldDeep,
+                  color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
                 ),
               ),
               const SizedBox(width: 14),
@@ -206,13 +218,15 @@ class ProfileAccountShortcuts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldAccent = isDark ? AppTheme.primaryGold : AppTheme.goldDeep;
     return _ProfileShortcutCard(
       icon: kycVerified ? Icons.verified_user_rounded : Icons.badge_outlined,
       title: kycVerified ? l10n.kycVerifiedHeading : l10n.kycVerification,
       subtitle: kycVerified
           ? l10n.identityVerified
           : l10n.completeKycToStartTrading,
-      accent: kycVerified ? AppTheme.emerald : AppTheme.goldDeep,
+      accent: kycVerified ? AppTheme.emerald : goldAccent,
       onTap: () => context.push('/kyc'),
     );
   }
@@ -236,6 +250,10 @@ class _ProfileShortcutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final muted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.62)
+        : AppTheme.inkMuted;
     return Material(
       color: theme.cardColor,
       borderRadius: BorderRadius.circular(18),
@@ -247,7 +265,7 @@ class _ProfileShortcutCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: theme.dividerColor),
-            boxShadow: theme.brightness == Brightness.dark
+            boxShadow: isDark
                 ? null
                 : AppTheme.softShadow,
           ),
@@ -259,7 +277,7 @@ class _ProfileShortcutCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.1),
+                    color: accent.withValues(alpha: isDark ? 0.16 : 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(icon, color: accent, size: 22),
@@ -276,7 +294,7 @@ class _ProfileShortcutCard extends StatelessWidget {
                         style: ProfileTypography.tileSubtitle(context).copyWith(
                           color: accent == AppTheme.emerald
                               ? AppTheme.emerald
-                              : AppTheme.inkMuted,
+                              : muted,
                         ),
                       ),
                     ],
@@ -285,7 +303,7 @@ class _ProfileShortcutCard extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 14,
-                  color: AppTheme.inkMuted,
+                  color: muted,
                 ),
               ],
             ),
@@ -319,6 +337,7 @@ class ProfileHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
@@ -326,7 +345,7 @@ class ProfileHeaderCard extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.dividerColor),
-        boxShadow: theme.brightness == Brightness.dark
+        boxShadow: isDark
             ? null
             : AppTheme.softShadow,
       ),
@@ -339,7 +358,7 @@ class ProfileHeaderCard extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: AppTheme.goldGradient,
                   ),
@@ -348,8 +367,8 @@ class ProfileHeaderCard extends StatelessWidget {
                     backgroundColor: theme.cardColor,
                     child: Text(
                       initials,
-                      style: const TextStyle(
-                        color: AppTheme.goldDeep,
+                      style: TextStyle(
+                        color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,

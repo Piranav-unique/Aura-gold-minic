@@ -14,7 +14,7 @@ class UserTransactionsScreen extends ConsumerWidget {
     final l10n = context.l10n;
 
     return ResponsiveNavigationWrapper(
-      title: l10n.statements,
+      title: l10n.transactionHistory,
       child: RefreshIndicator(
         color: AurumConsumerTheme.chipGold,
         onRefresh: () async {

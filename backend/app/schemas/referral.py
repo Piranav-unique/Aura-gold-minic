@@ -22,6 +22,7 @@ class ReferralTierInfo(BaseModel):
     scheme_grams: int
     reward_inr: Decimal
     min_purchase_inr: Decimal = Decimal("100")
+    referral_code: str = ""
 
 
 class ReferralRewardItem(BaseModel):

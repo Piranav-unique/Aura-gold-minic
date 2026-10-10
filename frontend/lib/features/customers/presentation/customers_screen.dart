@@ -624,19 +624,21 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   }
 
   Widget _silverBadge(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final badgeColor = isDark ? const Color(0xFFCBD5E1) : Colors.blueGrey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.withValues(alpha: 0.14),
+        color: badgeColor.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.4)),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.4)),
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Colors.blueGrey,
+          color: badgeColor,
         ),
       ),
     );

@@ -150,7 +150,7 @@ class AurumRecentTransactionsCard extends ConsumerWidget {
                 ),
                 itemBuilder: (context, index) {
                   final item = recentList[index];
-                  final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.occurredAt);
+                  final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(item.occurredAt.toLocal());
                   final isBuy = item.transactionType.toUpperCase() == 'BUY';
                   final isSell = item.transactionType.toUpperCase() == 'SELL';
                   final isCredit = item.transactionType.toLowerCase().contains('credit') ||

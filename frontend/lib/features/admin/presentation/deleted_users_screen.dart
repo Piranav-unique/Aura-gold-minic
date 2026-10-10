@@ -37,6 +37,12 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
     final currentPage = ref.watch(deletedUsersPageProvider);
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
     final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1F2227) : Colors.white;
+    final cardBorder = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0);
+    final primaryText = isDark ? Colors.white : const Color(0xFF1E1B18);
+    final secondaryText = isDark ? Colors.white60 : const Color(0xFF64748B);
+    final mutedText = isDark ? Colors.white54 : const Color(0xFF94A3B8);
 
     return ResponsiveNavigationWrapper(
       title: 'Deleted Users',
@@ -52,9 +58,9 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBg,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: cardBorder),
               ),
               child: Row(
                 children: [
@@ -62,12 +68,14 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
+                      color: isDark
+                          ? const Color(0xFFDC2626).withValues(alpha: 0.18)
+                          : const Color(0xFFFEE2E2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person_off_rounded,
-                      color: Color(0xFFDC2626),
+                      color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                       size: 24,
                     ),
                   ),
@@ -75,21 +83,21 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'Archived Customer Records',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1E1B18),
+                            color: primaryText,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           'Read-only view of soft-deleted customer accounts, historical balances, and payment records.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF64748B),
+                            color: secondaryText,
                             height: 1.3,
                           ),
                         ),
@@ -110,8 +118,8 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'Search by name, email, phone, or ID...',
-                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
+                hintStyle: TextStyle(fontSize: 13, color: mutedText),
+                prefixIcon: Icon(Icons.search, size: 20, color: secondaryText),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, size: 18),
@@ -123,15 +131,15 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: cardBg,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  borderSide: BorderSide(color: cardBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  borderSide: BorderSide(color: cardBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -144,12 +152,12 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
             // Sort & Filter Controls
             Row(
               children: [
-                const Text(
+                Text(
                   'Sort by Deletion:',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: secondaryText,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -167,11 +175,13 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: currentSort == 'desc' ? Colors.white : const Color(0xFF334155),
+                    color: currentSort == 'desc'
+                        ? Colors.white
+                        : (isDark ? Colors.white70 : const Color(0xFF334155)),
                   ),
-                  backgroundColor: Colors.white,
+                  backgroundColor: cardBg,
                   side: BorderSide(
-                    color: currentSort == 'desc' ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
+                    color: currentSort == 'desc' ? const Color(0xFFC59A27) : cardBorder,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -189,11 +199,13 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: currentSort == 'asc' ? Colors.white : const Color(0xFF334155),
+                    color: currentSort == 'asc'
+                        ? Colors.white
+                        : (isDark ? Colors.white70 : const Color(0xFF334155)),
                   ),
-                  backgroundColor: Colors.white,
+                  backgroundColor: cardBg,
                   side: BorderSide(
-                    color: currentSort == 'asc' ? const Color(0xFFC59A27) : const Color(0xFFE2E8F0),
+                    color: currentSort == 'asc' ? const Color(0xFFC59A27) : cardBorder,
                   ),
                 ),
               ],
@@ -213,7 +225,7 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                       Text(
                         'Failed to load deleted users: $err',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                        style: TextStyle(color: secondaryText, fontSize: 13),
                       ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
@@ -248,10 +260,10 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                   children: [
                     Text(
                       'Deleted Accounts (${paginated.total})',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B),
+                        color: secondaryText,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -262,9 +274,11 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
+                        color: cardBg,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          side: BorderSide(color: cardBorder),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
@@ -279,14 +293,16 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 20,
-                                      backgroundColor: const Color(0xFFF1F5F9),
+                                      backgroundColor: isDark
+                                          ? Colors.white.withValues(alpha: 0.08)
+                                          : const Color(0xFFF1F5F9),
                                       child: Text(
                                         user.fullName.isNotEmpty
                                             ? user.fullName[0].toUpperCase()
                                             : 'U',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF475569),
+                                          color: isDark ? Colors.white70 : const Color(0xFF475569),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -300,10 +316,10 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                             user.fullName.isNotEmpty
                                                 ? user.fullName
                                                 : 'Unnamed Customer',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w800,
-                                              color: Color(0xFF1E1B18),
+                                              color: primaryText,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
@@ -311,9 +327,9 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                             user.email.isNotEmpty
                                                 ? user.email
                                                 : (user.mobileNumber ?? '—'),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: Color(0xFF64748B),
+                                              color: secondaryText,
                                             ),
                                           ),
                                         ],
@@ -325,42 +341,51 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFEE2E2),
+                                        color: isDark
+                                            ? const Color(0xFFDC2626).withValues(alpha: 0.2)
+                                            : const Color(0xFFFEE2E2),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'DELETED',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFFDC2626),
+                                          color: isDark
+                                              ? const Color(0xFFF87171)
+                                              : const Color(0xFFDC2626),
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : const Color(0xFFF1F5F9),
+                                ),
                                 const SizedBox(height: 10),
 
                                 // Customer ID with copy button
                                 Row(
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Customer ID: ',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Color(0xFF64748B),
+                                        color: secondaryText,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                     Expanded(
                                       child: Text(
                                         user.id,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1E1B18),
+                                          color: primaryText,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -393,17 +418,17 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                 // Deletion Date
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.calendar_today_outlined,
                                       size: 13,
-                                      color: Color(0xFF94A3B8),
+                                      color: mutedText,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Deleted on $deletionDateStr',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11.5,
-                                        color: Color(0xFF64748B),
+                                        color: secondaryText,
                                       ),
                                     ),
                                   ],
@@ -420,18 +445,24 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFFAF7F2),
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.04)
+                                          : const Color(0xFFFAF7F2),
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFF1EAD9)),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.1)
+                                            : const Color(0xFFF1EAD9),
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Text(
+                                        Text(
                                           'Retained: ',
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
-                                            color: Color(0xFF78716C),
+                                            color: isDark ? Colors.white60 : const Color(0xFF78716C),
                                           ),
                                         ),
                                         if (user.goldBalanceGrams > 0)
@@ -446,19 +477,23 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                                         if (user.silverBalanceGrams > 0)
                                           Text(
                                             '${user.silverBalanceGrams.toStringAsFixed(4)} g Silver  ',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w700,
-                                              color: Color(0xFF64748B),
+                                              color: isDark
+                                                  ? const Color(0xFFCBD5E1)
+                                                  : const Color(0xFF64748B),
                                             ),
                                           ),
                                         if (user.walletBalanceInr > 0)
                                           Text(
                                             currency.format(user.walletBalanceInr),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w700,
-                                              color: Color(0xFF16A34A),
+                                              color: isDark
+                                                  ? const Color(0xFF4ADE80)
+                                                  : const Color(0xFF16A34A),
                                             ),
                                           ),
                                       ],
@@ -516,6 +551,7 @@ class _DeletedUsersListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: List.generate(
         4,
@@ -523,9 +559,11 @@ class _DeletedUsersListSkeleton extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF1F2227) : Colors.white,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

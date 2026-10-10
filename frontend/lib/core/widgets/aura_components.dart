@@ -187,6 +187,7 @@ class MilestoneProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     final clamped = progress.clamp(0.0, 1.0);
     return Column(
@@ -207,8 +208,8 @@ class MilestoneProgressBar extends StatelessWidget {
             if (percentLabel != null)
               Text(
                 percentLabel!,
-                style: const TextStyle(
-                  color: AppTheme.goldDeep,
+                style: TextStyle(
+                  color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
@@ -324,6 +325,7 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: padding,
       child: Row(
@@ -345,8 +347,8 @@ class SectionHeader extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Text(
                 actionLabel!,
-                style: const TextStyle(
-                  color: AppTheme.goldDeep,
+                style: TextStyle(
+                  color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -383,6 +385,7 @@ class ListRowTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     return InkWell(
       onTap: onTap,
@@ -398,7 +401,11 @@ class ListRowTile extends StatelessWidget {
                 color: AppTheme.primaryGold.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppTheme.goldDeep, size: 20),
+              child: Icon(
+                icon,
+                color: isDark ? AppTheme.primaryGold : AppTheme.goldDeep,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(

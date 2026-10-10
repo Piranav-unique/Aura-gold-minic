@@ -57,6 +57,10 @@ class GoldSellInquiryReject(BaseModel):
 
 class GoldSellInquiryApprove(BaseModel):
     confirm: bool = Field(default=True)
+    payout_mode: Optional[str] = Field(
+        default=None,
+        description="Payout routing mode: bank_transfer or direct_settlement",
+    )
 
 
 class SellPayoutBreakdown(BaseModel):

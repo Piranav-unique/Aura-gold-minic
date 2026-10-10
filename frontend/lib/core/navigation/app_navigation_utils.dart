@@ -83,7 +83,7 @@ String? parentRouteFor(String location) {
     '/sell-gold': '/user-dashboard',
     '/sell-gold-inquiry': '/user-dashboard',
     '/my-savings': '/user-dashboard',
-    '/user-transactions': '/user-dashboard',
+    '/user-transactions': '/portfolio',
     '/bank-accounts': '/user-dashboard',
     '/kyc': '/user-dashboard',
     '/live-price': '/user-dashboard',
