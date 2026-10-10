@@ -10,6 +10,9 @@ from app.core.exceptions import NotFoundException
 from app.models.user import User
 from app.repositories.admin_wallet import AdminWalletRepository, _user_display_name
 from app.schemas.admin_wallet import (
+    DeletedUserDetailResponse,
+    DeletedUserListItem,
+    DeletedUserListResponse,
     WalletPaymentDetails,
     WalletReferralDetails,
     WalletSavingsDetails,
@@ -345,27 +348,67 @@ class AdminWalletService:
         *,
         admin_user_id: uuid.UUID,
     ) -> WalletTransactionDetailResponse:
-        if ":" not in transaction_id:
-            raise NotFoundException("Transaction not found")
+        transaction_id = transaction_id.strip()
 
-        kind, raw_id = transaction_id.split(":", 1)
+        kind: Optional[str] = None
+        raw_id = transaction_id
+        if ":" in transaction_id:
+            kind, raw_id = transaction_id.split(":", 1)
+
+        source_id: Optional[uuid.UUID] = None
         try:
             source_id = uuid.UUID(raw_id)
         except ValueError:
-            raise NotFoundException("Transaction not found")
+            pass
 
-        if kind == "buy":
+        if kind == "buy" and source_id:
             return await self._detail_from_buy(source_id, transaction_id, admin_user_id)
-        if kind == "sell":
+        if kind == "sell" and source_id:
             return await self._detail_from_sell(source_id, transaction_id, admin_user_id)
-        if kind == "referral":
+        if kind == "referral" and source_id:
             return await self._detail_from_referral(
                 source_id, transaction_id, admin_user_id
             )
-        if kind == "savings":
+        if kind == "savings" and source_id:
             return await self._detail_from_savings(
                 source_id, transaction_id, admin_user_id
             )
+
+        # Fallback 1: Direct UUID lookup across payment orders, inquiries, rewards, savings
+        if source_id:
+            order = await self.wallet_repo.get_payment_order(source_id)
+            if order:
+                return await self._detail_from_buy(
+                    source_id, f"buy:{source_id}", admin_user_id
+                )
+
+            inquiry = await self.wallet_repo.get_sell_inquiry(source_id)
+            if inquiry:
+                return await self._detail_from_sell(
+                    source_id, f"sell:{source_id}", admin_user_id
+                )
+
+            reward = await self.wallet_repo.get_referral_reward(source_id)
+            if reward:
+                return await self._detail_from_referral(
+                    source_id, f"referral:{source_id}", admin_user_id
+                )
+
+            user = await self.wallet_repo.get_wallet_user(
+                source_id, include_deleted=True
+            )
+            if user and user.gold_scheme_started_at:
+                return await self._detail_from_savings(
+                    source_id, f"savings:{source_id}", admin_user_id
+                )
+
+        # Fallback 2: Check Razorpay order/payment ID string
+        order_by_rz = await self.wallet_repo.get_payment_order_by_razorpay_id(raw_id)
+        if order_by_rz:
+            return await self._detail_from_buy(
+                order_by_rz.id, f"buy:{order_by_rz.id}", admin_user_id
+            )
+
         raise NotFoundException("Transaction not found")
 
     async def _detail_from_buy(
@@ -374,16 +417,17 @@ class AdminWalletService:
         order = await self.wallet_repo.get_payment_order(order_id)
         if not order:
             raise NotFoundException("Transaction not found")
-        user = await self.wallet_repo.get_wallet_user(order.user_id)
-        if not user:
-            raise NotFoundException("User not found")
-
-        await self._log_wallet_view(
-            admin_user_id,
-            user.id,
-            action=audit_actions.WALLET_TRANSACTION_VIEW,
-            metadata={"transaction_id": txn_id, "type": "BUY"},
+        user = await self.wallet_repo.get_wallet_user(
+            order.user_id, include_deleted=True
         )
+
+        if user:
+            await self._log_wallet_view(
+                admin_user_id,
+                user.id,
+                action=audit_actions.WALLET_TRANSACTION_VIEW,
+                metadata={"transaction_id": txn_id, "type": "BUY"},
+            )
 
         amount = Decimal(order.amount_paise) / Decimal("100")
         history = [
@@ -402,20 +446,24 @@ class AdminWalletService:
                 WalletStatusHistoryItem(
                     status="failed",
                     occurred_at=order.created_at,
-                    note="Payment failed or abandoned",
+                    note=order.failure_reason or "Payment failed or abandoned",
                 )
             )
+
+        user_name = _user_display_name(user) if user else (order.customer_contact or "Customer")
+        user_email = user.email if user else ""
+        user_mobile = user.mobile_number if user else order.customer_contact
 
         platform_fee = order.razorpay_fee_inr
         return WalletTransactionDetailResponse(
             id=txn_id,
-            user_id=user.id,
-            user_name=_user_display_name(user),
-            user_email=user.email,
-            user_mobile=user.mobile_number,
+            user_id=order.user_id,
+            user_name=user_name,
+            user_email=user_email,
+            user_mobile=user_mobile,
             occurred_at=order.paid_at or order.created_at,
             transaction_type="BUY",
-            metal=order.metal.upper(),
+            metal=order.metal.upper() if order.metal else "GOLD",
             quantity_grams=order.grams,
             amount_inr=amount,
             rate_per_gram=order.rate_per_gram,
@@ -424,9 +472,13 @@ class AdminWalletService:
             total_amount_inr=amount,
             status=order.status,
             reference_id=order.razorpay_order_id,
+            payment_method=order.payment_method,
+            bank_rrn=order.bank_rrn,
             payment_details=WalletPaymentDetails(
                 razorpay_order_id=order.razorpay_order_id,
                 razorpay_payment_id=order.razorpay_payment_id,
+                payment_method=order.payment_method,
+                bank_rrn=order.bank_rrn,
                 rate_per_gram=order.rate_per_gram,
                 gst_percent=order.gst_percent,
                 gst_amount_inr=order.gst_amount_inr,
@@ -443,16 +495,17 @@ class AdminWalletService:
         inquiry = await self.wallet_repo.get_sell_inquiry(inquiry_id)
         if not inquiry:
             raise NotFoundException("Transaction not found")
-        user = await self.wallet_repo.get_wallet_user(inquiry.user_id)
-        if not user:
-            raise NotFoundException("User not found")
-
-        await self._log_wallet_view(
-            admin_user_id,
-            user.id,
-            action=audit_actions.WALLET_TRANSACTION_VIEW,
-            metadata={"transaction_id": txn_id, "type": "SELL"},
+        user = await self.wallet_repo.get_wallet_user(
+            inquiry.user_id, include_deleted=True
         )
+
+        if user:
+            await self._log_wallet_view(
+                admin_user_id,
+                user.id,
+                action=audit_actions.WALLET_TRANSACTION_VIEW,
+                metadata={"transaction_id": txn_id, "type": "SELL"},
+            )
 
         history = [
             WalletStatusHistoryItem(
@@ -474,12 +527,16 @@ class AdminWalletService:
         if amount is None and inquiry.quantity_grams and inquiry.sell_rate_per_gram:
             amount = inquiry.quantity_grams * inquiry.sell_rate_per_gram
 
+        user_name = _user_display_name(user) if user else (inquiry.name or "Customer")
+        user_email = user.email if user else ""
+        user_mobile = inquiry.mobile_number or (user.mobile_number if user else None)
+
         return WalletTransactionDetailResponse(
             id=txn_id,
-            user_id=user.id,
-            user_name=_user_display_name(user),
-            user_email=user.email,
-            user_mobile=inquiry.mobile_number,
+            user_id=inquiry.user_id,
+            user_name=user_name,
+            user_email=user_email,
+            user_mobile=user_mobile,
             occurred_at=inquiry.created_at,
             transaction_type="SELL",
             metal="GOLD",
@@ -507,23 +564,28 @@ class AdminWalletService:
         reward = await self.wallet_repo.get_referral_reward(reward_id)
         if not reward:
             raise NotFoundException("Transaction not found")
-        user = await self.wallet_repo.get_wallet_user(reward.referrer_id)
-        if not user:
-            raise NotFoundException("User not found")
-
-        await self._log_wallet_view(
-            admin_user_id,
-            user.id,
-            action=audit_actions.WALLET_TRANSACTION_VIEW,
-            metadata={"transaction_id": txn_id, "type": "REFERRAL"},
+        user = await self.wallet_repo.get_wallet_user(
+            reward.referrer_id, include_deleted=True
         )
+
+        if user:
+            await self._log_wallet_view(
+                admin_user_id,
+                user.id,
+                action=audit_actions.WALLET_TRANSACTION_VIEW,
+                metadata={"transaction_id": txn_id, "type": "REFERRAL"},
+            )
+
+        user_name = _user_display_name(user) if user else "Customer"
+        user_email = user.email if user else ""
+        user_mobile = user.mobile_number if user else None
 
         return WalletTransactionDetailResponse(
             id=txn_id,
-            user_id=user.id,
-            user_name=_user_display_name(user),
-            user_email=user.email,
-            user_mobile=user.mobile_number,
+            user_id=reward.referrer_id,
+            user_name=user_name,
+            user_email=user_email,
+            user_mobile=user_mobile,
             occurred_at=reward.created_at,
             transaction_type="REFERRAL",
             metal="GOLD",
@@ -549,7 +611,7 @@ class AdminWalletService:
     async def _detail_from_savings(
         self, user_id: uuid.UUID, txn_id: str, admin_user_id: uuid.UUID
     ) -> WalletTransactionDetailResponse:
-        user = await self.wallet_repo.get_wallet_user(user_id)
+        user = await self.wallet_repo.get_wallet_user(user_id, include_deleted=True)
         if not user or not user.gold_scheme_started_at:
             raise NotFoundException("Transaction not found")
 
@@ -585,3 +647,97 @@ class AdminWalletService:
                 )
             ],
         )
+
+    async def list_deleted_users(
+        self,
+        *,
+        search: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort_order: str = "desc",
+        from_date: Optional[date] = None,
+        to_date: Optional[date] = None,
+    ) -> DeletedUserListResponse:
+        users, total = await self.wallet_repo.list_deleted_users(
+            search=search,
+            skip=skip,
+            limit=limit,
+            sort_order=sort_order,
+            from_date=from_date,
+            to_date=to_date,
+        )
+        items = [
+            DeletedUserListItem(
+                id=u.id,
+                full_name=_user_display_name(u),
+                email=u.email,
+                mobile_number=u.mobile_number,
+                created_at=u.created_at,
+                deleted_at=u.deleted_at,
+                status="Deleted",
+                gold_balance_grams=u.gold_savings_grams or Decimal("0"),
+                silver_balance_grams=u.silver_savings_grams or Decimal("0"),
+                wallet_balance_inr=u.wallet_balance_inr or Decimal("0"),
+            )
+            for u in users
+        ]
+        return DeletedUserListResponse(
+            items=items,
+            total=total,
+            skip=skip,
+            limit=limit,
+        )
+
+    async def get_deleted_user_detail(
+        self, user_id: uuid.UUID, *, admin_user_id: uuid.UUID
+    ) -> DeletedUserDetailResponse:
+        user = await self.wallet_repo.get_wallet_user(user_id, include_deleted=True)
+        if not user or not user.is_deleted:
+            raise NotFoundException("Deleted user not found")
+
+        await self._log_wallet_view(
+            admin_user_id,
+            user.id,
+            action="deleted_user_view",
+            metadata={"user_id": str(user_id)},
+        )
+
+        summary = await self._build_wallet_summary(user)
+        tx_rows, _ = await self.wallet_repo.list_transactions(
+            user_id=user_id, skip=0, limit=50
+        )
+        transactions = [
+            WalletTransactionItem(
+                id=r.id,
+                user_id=r.user_id,
+                user_name=r.user_name,
+                user_mobile=r.user_mobile,
+                occurred_at=r.occurred_at,
+                transaction_type=r.transaction_type,  # type: ignore
+                metal=r.metal,  # type: ignore
+                quantity_grams=r.quantity_grams,
+                amount_inr=r.amount_inr,
+                status=r.status,
+                reference_id=r.reference_id,
+            )
+            for r in tx_rows
+        ]
+
+        last_activity = user.updated_at
+        if tx_rows:
+            last_activity = max(r.occurred_at for r in tx_rows)
+
+        return DeletedUserDetailResponse(
+            id=user.id,
+            full_name=_user_display_name(user),
+            email=user.email,
+            mobile_number=user.mobile_number,
+            created_at=user.created_at,
+            deleted_at=user.deleted_at,
+            last_activity_at=last_activity,
+            status="Deleted",
+            kyc_status=user.kyc_status,
+            wallet=summary,
+            transactions=transactions,
+        )
+

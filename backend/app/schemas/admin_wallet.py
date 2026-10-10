@@ -110,6 +110,8 @@ class WalletStatusHistoryItem(BaseModel):
 class WalletPaymentDetails(BaseModel):
     razorpay_order_id: Optional[str] = None
     razorpay_payment_id: Optional[str] = None
+    payment_method: Optional[str] = None
+    bank_rrn: Optional[str] = None
     rate_per_gram: Optional[Decimal] = None
     gst_percent: Optional[Decimal] = None
     gst_amount_inr: Optional[Decimal] = None
@@ -154,9 +156,46 @@ class WalletTransactionDetailResponse(BaseModel):
     total_amount_inr: Optional[Decimal] = None
     status: str
     reference_id: Optional[str] = None
+    payment_method: Optional[str] = None
+    bank_rrn: Optional[str] = None
     payment_details: Optional[WalletPaymentDetails] = None
     sell_details: Optional[WalletSellDetails] = None
     referral_details: Optional[WalletReferralDetails] = None
     savings_details: Optional[WalletSavingsDetails] = None
     status_history: list[WalletStatusHistoryItem] = Field(default_factory=list)
     admin_notes: Optional[str] = None
+
+
+class DeletedUserListItem(BaseModel):
+    id: UUID
+    full_name: str
+    email: str
+    mobile_number: Optional[str] = None
+    created_at: datetime
+    deleted_at: Optional[datetime] = None
+    status: str = "Deleted"
+    gold_balance_grams: Decimal = Decimal("0")
+    silver_balance_grams: Decimal = Decimal("0")
+    wallet_balance_inr: Decimal = Decimal("0")
+
+
+class DeletedUserListResponse(BaseModel):
+    items: list[DeletedUserListItem]
+    total: int
+    skip: int
+    limit: int
+
+
+class DeletedUserDetailResponse(BaseModel):
+    id: UUID
+    full_name: str
+    email: str
+    mobile_number: Optional[str] = None
+    created_at: datetime
+    deleted_at: Optional[datetime] = None
+    last_activity_at: Optional[datetime] = None
+    status: str = "Deleted"
+    kyc_status: Optional[str] = None
+    wallet: WalletSummary
+    transactions: list[WalletTransactionItem] = Field(default_factory=list)
+

@@ -11,35 +11,39 @@ SPLIT_REGEX = re.compile(r"[:.]")
 
 
 class PermissionChecker:
-    """FastAPI dependency to verify a user has a specific permission."""
+    """FastAPI dependency to verify a user has a specific permission (or one of multiple)."""
 
-    def __init__(self, permission_name: str):
-        self.permission_name = permission_name
+    def __init__(self, permission_name: str | list[str] | tuple[str, ...]):
+        if isinstance(permission_name, (list, tuple)):
+            self.permission_names = [str(p) for p in permission_name]
+        else:
+            self.permission_names = [str(permission_name)]
 
     def __call__(self, current_user: User = Depends(get_current_user)) -> User:
         if current_user.is_superuser:
             return current_user
 
-        req_parts = SPLIT_REGEX.split(self.permission_name)
+        for required_perm in self.permission_names:
+            req_parts = SPLIT_REGEX.split(required_perm)
 
-        # User's roles -> permissions check
-        for role in current_user.roles:
-            for perm in role.permissions:
-                if perm.name == self.permission_name:
-                    return current_user
+            # User's roles -> permissions check
+            for role in current_user.roles:
+                for perm in role.permissions:
+                    if perm.name == required_perm:
+                        return current_user
 
-                # Wildcard check (e.g. "user:*" matches "user:create")
-                perm_parts = SPLIT_REGEX.split(perm.name)
-                if (
-                    len(perm_parts) == 2
-                    and perm_parts[1] == "*"
-                    and len(req_parts) > 0
-                    and perm_parts[0] == req_parts[0]
-                ):
-                    return current_user
+                    # Wildcard check (e.g. "user:*" matches "user:create")
+                    perm_parts = SPLIT_REGEX.split(perm.name)
+                    if (
+                        len(perm_parts) == 2
+                        and perm_parts[1] == "*"
+                        and len(req_parts) > 0
+                        and perm_parts[0] == req_parts[0]
+                    ):
+                        return current_user
 
         raise ForbiddenException(
-            message=f"Permission '{self.permission_name}' is required"
+            message=f"Permission '{', '.join(self.permission_names)}' is required"
         )
 
 

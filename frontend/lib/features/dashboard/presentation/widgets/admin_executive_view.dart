@@ -92,11 +92,9 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
 
     final isSyncing = ref.watch(razorpaySyncProvider).isLoading;
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
           // 1. Welcome Header with Live Sync & Notifications
           _AdminHeader(
             displayName: data.displayName,
@@ -169,9 +167,8 @@ class _AdminExecutiveViewState extends ConsumerState<AdminExecutiveView> {
           const AdminQuickHub(),
           const SizedBox(height: 36),
         ],
-      ),
-    );
-  }
+      );
+    }
 
   static String _normalizeMethod(String? raw) {
     if (raw == null) return 'other';

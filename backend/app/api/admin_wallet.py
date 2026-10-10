@@ -10,6 +10,8 @@ from app.api.dependencies import get_admin_wallet_service, get_current_user
 from app.core.authorization import PermissionChecker
 from app.models.user import User
 from app.schemas.admin_wallet import (
+    DeletedUserDetailResponse,
+    DeletedUserListResponse,
     UpdateCustomerNameRequest,
     WalletTransactionDetailResponse,
     WalletTransactionListResponse,
@@ -112,7 +114,7 @@ async def list_recent_wallet_transactions(
     search: Optional[str] = Query(None, min_length=1, max_length=100),
     from_date: Optional[date] = Query(None),
     to_date: Optional[date] = Query(None),
-    current_user: User = Depends(PermissionChecker("transaction.view")),
+    current_user: User = Depends(PermissionChecker(["transaction.view", "wallet.view"])),
     wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
 ) -> WalletTransactionListResponse:
     skip = (page - 1) * limit
@@ -131,14 +133,56 @@ async def list_recent_wallet_transactions(
 @router.get(
     "/transactions/{transaction_id}",
     response_model=WalletTransactionDetailResponse,
-    summary="Get wallet transaction detail by composite id (buy:/sell:/referral:/savings:)",
+    summary="Get wallet transaction detail by composite id or direct transaction identifier",
 )
 async def get_wallet_transaction_detail(
     transaction_id: str,
-    current_user: User = Depends(PermissionChecker("wallet.view")),
+    current_user: User = Depends(PermissionChecker(["wallet.view", "transaction.view"])),
+    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
 ) -> WalletTransactionDetailResponse:
     return await wallet_service.get_transaction_detail(
         transaction_id, admin_user_id=current_user.id
+    )
+
+
+@router.get(
+    "/deleted-users",
+    response_model=DeletedUserListResponse,
+    summary="List all soft-deleted customer accounts",
+)
+async def list_deleted_users(
+    search: Optional[str] = Query(None, min_length=1, max_length=100),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
+    from_date: Optional[date] = Query(None),
+    to_date: Optional[date] = Query(None),
+    current_user: User = Depends(PermissionChecker(["user.view", "wallet.view"])),
+    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
+) -> DeletedUserListResponse:
+    skip = (page - 1) * limit
+    return await wallet_service.list_deleted_users(
+        search=search,
+        skip=skip,
+        limit=limit,
+        sort_order=sort_order,
+        from_date=from_date,
+        to_date=to_date,
+    )
+
+
+@router.get(
+    "/deleted-users/{user_id}",
+    response_model=DeletedUserDetailResponse,
+    summary="Get dedicated read-only details of a soft-deleted customer",
+)
+async def get_deleted_user_detail(
+    user_id: uuid.UUID,
+    current_user: User = Depends(PermissionChecker(["user.view", "wallet.view"])),
+    wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
+) -> DeletedUserDetailResponse:
+    return await wallet_service.get_deleted_user_detail(
+        user_id, admin_user_id=current_user.id
     )
 
 
@@ -151,12 +195,15 @@ async def delete_user_wallet(
     current_user: User = Depends(PermissionChecker("wallet.view")),
     wallet_service: AdminWalletService = Depends(get_admin_wallet_service),
 ):
+    from datetime import datetime, timezone
     from app.core.exceptions import NotFoundException
     user = await wallet_service.wallet_repo.db.get(User, user_id)
     if not user:
         raise NotFoundException("User not found")
     user.is_deleted = True
     user.is_active = False
+    user.deleted_at = datetime.now(timezone.utc)
     await wallet_service.wallet_repo.db.commit()
     return {"message": "User wallet deleted successfully", "user_id": str(user_id)}
+
 

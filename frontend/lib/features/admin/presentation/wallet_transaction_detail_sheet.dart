@@ -82,19 +82,19 @@ class WalletTransactionDetailContent extends StatelessWidget {
 
   Color _statusBgColor(String status) {
     final s = status.toLowerCase();
-    if (s == 'paid' || s == 'success' || s == 'completed') return const Color(0xFFDCFCE7);
-    if (s == 'pending') return const Color(0xFFFEF3C7);
+    if (s == 'paid' || s == 'success' || s == 'completed' || s == 'captured') return const Color(0xFFDCFCE7);
+    if (s == 'pending' || s == 'created' || s == 'processing') return const Color(0xFFFEF3C7);
     if (s == 'approved') return const Color(0xFFDBEAFE);
-    if (s == 'rejected' || s == 'failed') return const Color(0xFFFEE2E2);
+    if (s == 'rejected' || s == 'failed' || s == 'cancelled' || s == 'canceled') return const Color(0xFFFEE2E2);
     return const Color(0xFFF1F5F9);
   }
 
   Color _statusTextColor(String status) {
     final s = status.toLowerCase();
-    if (s == 'paid' || s == 'success' || s == 'completed') return const Color(0xFF166534);
-    if (s == 'pending') return const Color(0xFF92400E);
+    if (s == 'paid' || s == 'success' || s == 'completed' || s == 'captured') return const Color(0xFF166534);
+    if (s == 'pending' || s == 'created' || s == 'processing') return const Color(0xFF92400E);
     if (s == 'approved') return const Color(0xFF1E40AF);
-    if (s == 'rejected' || s == 'failed') return const Color(0xFF991B1B);
+    if (s == 'rejected' || s == 'failed' || s == 'cancelled' || s == 'canceled') return const Color(0xFF991B1B);
     return const Color(0xFF475569);
   }
 
@@ -268,8 +268,10 @@ class WalletTransactionDetailContent extends StatelessWidget {
           _buildCard(
             title: 'Customer information',
             children: [
-              _row('Customer Name', detail.userName),
-              _row('Email', detail.userEmail, isEmail: true),
+              _row('Customer Name', detail.userName.isNotEmpty ? detail.userName : '—'),
+              if (detail.userId.isNotEmpty)
+                _rowWithCopy(context, 'Customer ID', detail.userId),
+              _row('Email', detail.userEmail.isNotEmpty ? detail.userEmail : '—', isEmail: true),
               if (detail.userMobile != null && detail.userMobile!.isNotEmpty)
                 _row('Mobile', detail.userMobile!),
             ],
@@ -281,6 +283,10 @@ class WalletTransactionDetailContent extends StatelessWidget {
             _buildCard(
               title: 'Payment Details',
               children: [
+                if (paymentMode != null)
+                  _row('Payment Mode', paymentMode),
+                if (detail.paymentDetails!['status'] != null)
+                  _row('Payment Status', '${detail.paymentDetails!['status']}'.toUpperCase()),
                 if (detail.paymentDetails!['razorpay_payment_id'] != null)
                   _rowWithCopy(
                     context,
@@ -293,17 +299,31 @@ class WalletTransactionDetailContent extends StatelessWidget {
                     'Order ID',
                     '${detail.paymentDetails!['razorpay_order_id']}',
                   ),
+                if (detail.paymentDetails!['bank_rrn'] != null && '${detail.paymentDetails!['bank_rrn']}'.isNotEmpty)
+                  _rowWithCopy(
+                    context,
+                    'Bank RRN',
+                    '${detail.paymentDetails!['bank_rrn']}',
+                  ),
                 if (detail.paymentDetails!['merchant_settlement_inr'] != null)
                   _row(
                     'Merchant Receives',
-                    currency.format(
-                      double.tryParse(
-                            '${detail.paymentDetails!['merchant_settlement_inr']}',
-                          ) ??
-                          0,
-                    ),
+                    double.tryParse('${detail.paymentDetails!['merchant_settlement_inr']}') != null
+                        ? currency.format(
+                            double.parse('${detail.paymentDetails!['merchant_settlement_inr']}'),
+                          )
+                        : '—',
                     bold: true,
                     valueColor: const Color(0xFF16A34A),
+                  ),
+                if (detail.paymentDetails!['razorpay_fee_inr'] != null)
+                  _row(
+                    'Razorpay Fee',
+                    double.tryParse('${detail.paymentDetails!['razorpay_fee_inr']}') != null
+                        ? currency.format(
+                            double.parse('${detail.paymentDetails!['razorpay_fee_inr']}'),
+                          )
+                        : '—',
                   ),
               ],
             ),
@@ -337,9 +357,11 @@ class WalletTransactionDetailContent extends StatelessWidget {
                 if (detail.referralDetails!['reward_inr'] != null)
                   _row(
                     'Reward',
-                    currency.format(
-                      double.tryParse('${detail.referralDetails!['reward_inr']}') ?? 0,
-                    ),
+                    double.tryParse('${detail.referralDetails!['reward_inr']}') != null
+                        ? currency.format(
+                            double.parse('${detail.referralDetails!['reward_inr']}'),
+                          )
+                        : '—',
                   ),
               ],
             ),
@@ -513,9 +535,9 @@ class WalletTransactionDetailContent extends StatelessWidget {
                 Clipboard.setData(ClipboardData(text: value));
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Transaction ID copied'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: Text('$label copied to clipboard'),
+                    duration: const Duration(seconds: 2),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );

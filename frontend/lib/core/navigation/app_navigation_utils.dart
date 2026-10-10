@@ -19,6 +19,7 @@ String? parentRouteFor(String location) {
     '/admin/profile': '/profile',
     '/admin/user-wallets': '/profile',
     '/admin/sell-inquiries': '/profile',
+    '/admin/deleted-users': '/profile',
     '/audit-logs': '/profile',
     '/settings': '/profile',
     '/privacy-policy': '/profile',
@@ -27,6 +28,11 @@ String? parentRouteFor(String location) {
   };
   if (directParents.containsKey(location)) {
     return directParents[location];
+  }
+
+  if (location.startsWith('/admin/deleted-users/') &&
+      location != '/admin/deleted-users') {
+    return '/admin/deleted-users';
   }
 
   if (location.startsWith('/admin/sell-inquiries/') &&

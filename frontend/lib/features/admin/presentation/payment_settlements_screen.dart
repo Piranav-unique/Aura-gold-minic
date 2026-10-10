@@ -6,6 +6,7 @@ import 'package:ags_gold/core/widgets/empty_state.dart';
 import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/admin/presentation/providers/payment_settlements_provider.dart';
+import 'package:ags_gold/features/admin/presentation/wallet_transaction_detail_sheet.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 class PaymentSettlementsScreen extends ConsumerStatefulWidget {
@@ -730,11 +731,21 @@ class _PaymentSettlementsScreenState
                         borderRadius: BorderRadius.circular(14),
                         side: const BorderSide(color: Color(0xFFE2E8F0)),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          final targetId = row['id'] ??
+                              row['razorpay_order_id'] ??
+                              row['razorpay_payment_id'];
+                          if (targetId != null && targetId.toString().isNotEmpty) {
+                            openWalletTransactionDetail(context, targetId.toString());
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                             // Header row: Customer name & Metal badge
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -969,7 +980,8 @@ class _PaymentSettlementsScreenState
                           ],
                         ),
                       ),
-                    );
+                    ),
+                  );
                   }),
               ],
             ),

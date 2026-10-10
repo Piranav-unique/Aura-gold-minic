@@ -5,34 +5,12 @@ import 'package:ags_gold/core/widgets/premium_skeleton.dart';
 import 'package:ags_gold/core/widgets/shared_drawer.dart';
 import 'package:ags_gold/features/dashboard/presentation/providers/executive_dashboard_provider.dart';
 import 'package:ags_gold/features/dashboard/presentation/widgets/admin_executive_view.dart';
-import 'package:ags_gold/features/dashboard/presentation/widgets/dashboard_shared.dart';
 import 'package:ags_gold/features/dashboard/presentation/widgets/employee_executive_view.dart';
 import 'package:ags_gold/features/dashboard/presentation/widgets/manager_executive_view.dart';
 import 'package:ags_gold/services/service_providers.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
-
-  String _greeting(String name) {
-    final hour = DateTime.now().hour;
-    final salutation = hour < 12
-        ? 'Good morning'
-        : hour < 17
-        ? 'Good afternoon'
-        : 'Good evening';
-    return '$salutation, $name';
-  }
-
-  String _subtitle(ExecutiveRole role) {
-    switch (role) {
-      case ExecutiveRole.admin:
-        return 'Executive overview across app revenue, members, metal inventory, and wallet activity.';
-      case ExecutiveRole.manager:
-        return 'Monitor team performance, approval queues, and inventory risk.';
-      case ExecutiveRole.employee:
-        return 'Your assigned tasks and daily activity at a glance.';
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,24 +40,12 @@ class DashboardScreen extends ConsumerWidget {
             );
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DashboardHero(
-                    greeting: _greeting(data.displayName),
-                    subtitle: _subtitle(resolvedRole),
-                    roleLabel: executiveRoleLabel(resolvedRole),
-                    refreshedAt: data.refreshedAt,
-                  ),
-                  const SizedBox(height: 24),
-                  switch (resolvedRole) {
-                    ExecutiveRole.admin => AdminExecutiveView(data: data),
-                    ExecutiveRole.manager => ManagerExecutiveView(data: data),
-                    ExecutiveRole.employee => EmployeeExecutiveView(data: data),
-                  },
-                ],
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: switch (resolvedRole) {
+                ExecutiveRole.admin => AdminExecutiveView(data: data),
+                ExecutiveRole.manager => ManagerExecutiveView(data: data),
+                ExecutiveRole.employee => EmployeeExecutiveView(data: data),
+              },
             );
           },
           loading: () => const SingleChildScrollView(

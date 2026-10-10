@@ -422,6 +422,12 @@ class _AdminProfileBody extends ConsumerWidget {
               subtitle: 'Customer gold buyback requests & payouts',
               onTap: () => context.push('/admin/sell-inquiries'),
             ),
+            ProfileSettingsTile(
+              icon: Icons.person_off_outlined,
+              title: 'Deleted Users',
+              subtitle: 'Soft-deleted customer accounts & history',
+              onTap: () => context.push('/admin/deleted-users'),
+            ),
           ],
         ),
         ProfileSectionHeader(title: 'PREFERENCES & SYSTEM'),

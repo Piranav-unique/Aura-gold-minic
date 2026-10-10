@@ -163,11 +163,102 @@ class AdminWalletRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all()), total
 
-    async def get_wallet_user(self, user_id: uuid.UUID) -> Optional[User]:
-        result = await self.db.execute(
-            select(User).where(User.id == user_id, User.is_deleted.is_(False))
-        )
+    async def get_wallet_user(
+        self, user_id: uuid.UUID, include_deleted: bool = True
+    ) -> Optional[User]:
+        query = select(User).where(User.id == user_id)
+        if not include_deleted:
+            query = query.where(User.is_deleted.is_(False))
+        result = await self.db.execute(query)
         return result.scalars().first()
+
+    async def get_payment_order_by_razorpay_id(
+        self, rz_id: str
+    ) -> Optional[PaymentOrder]:
+        query = select(PaymentOrder).where(
+            or_(
+                PaymentOrder.razorpay_order_id == rz_id,
+                PaymentOrder.razorpay_payment_id == rz_id,
+            )
+        )
+        result = await self.db.execute(query)
+        return result.scalars().first()
+
+    async def list_deleted_users(
+        self,
+        *,
+        search: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort_order: str = "desc",
+        from_date: Optional[date] = None,
+        to_date: Optional[date] = None,
+    ) -> tuple[list[User], int]:
+        from sqlalchemy import String, cast
+        from app.models.associations import user_roles
+        from app.models.role import Role
+
+        limit = min(max(limit, 1), 100)
+
+        admin_subq = (
+            select(user_roles.c.user_id)
+            .join(Role, user_roles.c.role_id == Role.id)
+            .where(Role.name.in_(["super_admin", "admin", "superadmin", "manager"]))
+        )
+
+        clauses = [
+            User.is_deleted.is_(True),
+            User.is_superuser.is_(False),
+            User.email.not_ilike("%superadmin%"),
+            User.email.not_ilike("%admin@agsgold%"),
+            ~User.id.in_(admin_subq),
+        ]
+
+        if from_date:
+            from_dt = datetime.combine(from_date, time.min, tzinfo=timezone.utc)
+            clauses.append(User.deleted_at >= from_dt)
+        if to_date:
+            to_dt = datetime.combine(to_date, time.max, tzinfo=timezone.utc)
+            clauses.append(User.deleted_at <= to_dt)
+
+        if search:
+            term = search.strip()
+            if term:
+                pattern = f"%{term}%"
+                search_filters = [
+                    User.email.ilike(pattern),
+                    User.first_name.ilike(pattern),
+                    User.last_name.ilike(pattern),
+                    User.mobile_number.ilike(pattern),
+                ]
+                try:
+                    u_id = uuid.UUID(term)
+                    search_filters.append(User.id == u_id)
+                except ValueError:
+                    search_filters.append(cast(User.id, String).ilike(pattern))
+                if len(term) >= 2:
+                    search_filters.append(
+                        func.concat(User.first_name, " ", User.last_name).ilike(pattern)
+                    )
+                clauses.append(or_(*search_filters))
+
+        count_q = select(func.count(User.id)).where(*clauses)
+        total = int((await self.db.execute(count_q)).scalar_one() or 0)
+
+        order_col = (
+            User.deleted_at.asc().nullsfirst()
+            if sort_order.lower() == "asc"
+            else User.deleted_at.desc().nullslast()
+        )
+        query = (
+            select(User)
+            .where(*clauses)
+            .order_by(order_col, User.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        return list(result.scalars().all()), total
 
     _IGNORED_ORDERS = (
         "order_dev_3e67692f9a9a4b1fa6e39aa3",

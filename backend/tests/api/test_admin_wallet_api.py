@@ -163,3 +163,121 @@ async def test_wallet_transaction_detail_buy(
     assert data["transaction_type"] == "BUY"
     assert data["payment_details"]["razorpay_order_id"] == order.razorpay_order_id
     assert data["platform_fee_inr"] is not None
+
+
+@pytest.mark.asyncio
+async def test_wallet_transaction_detail_raw_uuid(
+    db_client: AsyncClient, test_db: AsyncSession, wallet_end_user: User
+):
+    from sqlalchemy import select
+
+    result = await test_db.execute(
+        select(PaymentOrder).where(PaymentOrder.user_id == wallet_end_user.id)
+    )
+    order = result.scalars().first()
+    assert order is not None
+
+    _, headers = await create_user_with_permissions(test_db, ["wallet.view"])
+    # Fetch using raw UUID without "buy:" prefix
+    response = await db_client.get(
+        f"/api/v1/admin/wallets/transactions/{order.id}",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["transaction_type"] == "BUY"
+    assert data["payment_details"]["razorpay_order_id"] == order.razorpay_order_id
+
+
+@pytest.mark.asyncio
+async def test_wallet_transaction_detail_razorpay_id(
+    db_client: AsyncClient, test_db: AsyncSession, wallet_end_user: User
+):
+    from sqlalchemy import select
+
+    result = await test_db.execute(
+        select(PaymentOrder).where(PaymentOrder.user_id == wallet_end_user.id)
+    )
+    order = result.scalars().first()
+    assert order is not None
+
+    _, headers = await create_user_with_permissions(test_db, ["wallet.view"])
+    # Fetch using razorpay order ID
+    response = await db_client.get(
+        f"/api/v1/admin/wallets/transactions/{order.razorpay_order_id}",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["transaction_type"] == "BUY"
+    assert data["payment_details"]["razorpay_order_id"] == order.razorpay_order_id
+
+
+@pytest.mark.asyncio
+async def test_wallet_transaction_detail_deleted_customer(
+    db_client: AsyncClient, test_db: AsyncSession, wallet_end_user: User
+):
+    from sqlalchemy import select
+
+    # Mark user as soft deleted
+    wallet_end_user.is_deleted = True
+    wallet_end_user.deleted_at = datetime.now(timezone.utc)
+    await test_db.flush()
+
+    result = await test_db.execute(
+        select(PaymentOrder).where(PaymentOrder.user_id == wallet_end_user.id)
+    )
+    order = result.scalars().first()
+    assert order is not None
+
+    _, headers = await create_user_with_permissions(test_db, ["wallet.view"])
+    response = await db_client.get(
+        f"/api/v1/admin/wallets/transactions/buy:{order.id}",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["user_id"] == str(wallet_end_user.id)
+    assert data["user_name"] == f"{wallet_end_user.first_name} {wallet_end_user.last_name}"
+
+
+@pytest.mark.asyncio
+async def test_deleted_users_list_and_detail(
+    db_client: AsyncClient, test_db: AsyncSession, wallet_end_user: User
+):
+    # Before deletion, user should not appear in deleted-users list
+    _, headers = await create_user_with_permissions(test_db, ["user.view", "wallet.view"])
+    res1 = await db_client.get("/api/v1/admin/wallets/deleted-users", headers=headers)
+    assert res1.status_code == 200
+    assert not any(u["id"] == str(wallet_end_user.id) for u in res1.json()["items"])
+
+    # Now soft delete the user
+    wallet_end_user.is_deleted = True
+    wallet_end_user.deleted_at = datetime.now(timezone.utc)
+    await test_db.flush()
+
+    # User must now appear in deleted-users list
+    res2 = await db_client.get(
+        "/api/v1/admin/wallets/deleted-users",
+        params={"search": wallet_end_user.mobile_number},
+        headers=headers,
+    )
+    assert res2.status_code == 200
+    items = res2.json()["items"]
+    assert any(u["id"] == str(wallet_end_user.id) for u in items)
+    matched = next(u for u in items if u["id"] == str(wallet_end_user.id))
+    assert matched["status"] == "Deleted"
+
+    # Fetch deleted user detail
+    res3 = await db_client.get(
+        f"/api/v1/admin/wallets/deleted-users/{wallet_end_user.id}",
+        headers=headers,
+    )
+    assert res3.status_code == 200
+    detail = res3.json()
+    assert detail["id"] == str(wallet_end_user.id)
+    assert detail["status"] == "Deleted"
+    assert detail["deleted_at"] is not None
+    assert detail["wallet"]["gold_balance_grams"] == "1.5000"
+    assert len(detail["transactions"]) >= 1
+

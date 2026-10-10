@@ -33,6 +33,8 @@ import 'package:ags_gold/features/admin/presentation/user_wallet_transactions_sc
 import 'package:ags_gold/features/admin/presentation/wallet_transaction_detail_screen.dart';
 import 'package:ags_gold/features/admin/presentation/sell_inquiries_screen.dart';
 import 'package:ags_gold/features/admin/presentation/sell_inquiry_detail_screen.dart';
+import 'package:ags_gold/features/admin/presentation/deleted_users_screen.dart';
+import 'package:ags_gold/features/admin/presentation/deleted_user_detail_screen.dart';
 import 'package:ags_gold/features/admin/presentation/admin_organization_profile_screen.dart';
 import 'package:ags_gold/features/admin/presentation/users_screen.dart';
 import 'package:ags_gold/features/admin/presentation/roles_screen.dart';
@@ -51,7 +53,6 @@ import 'package:ags_gold/features/inventory/presentation/inventory_form_screen.d
 import 'package:ags_gold/features/inventory/presentation/inventory_detail_screen.dart';
 import 'package:ags_gold/features/inventory/presentation/suppliers_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transactions_screen.dart';
-import 'package:ags_gold/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ags_gold/features/transactions/presentation/transaction_permission_gate.dart';
 import 'package:ags_gold/features/workflows/presentation/workflows_screen.dart';
@@ -441,7 +442,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/transactions/:id',
         builder: (context, state) => TransactionPermissionGate(
           requiredPermission: 'transaction.view',
-          child: TransactionDetailScreen(
+          child: WalletTransactionDetailScreen(
             transactionId: state.pathParameters['id']!,
           ),
         ),
@@ -536,6 +537,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           requiredPermission: 'transaction.view',
           child: SellInquiryDetailScreen(
             inquiryId: state.pathParameters['id']!,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/deleted-users',
+        builder: (context, state) => const PermissionGate(
+          requiredPermission: 'user.view',
+          child: DeletedUsersScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/deleted-users/:userId',
+        builder: (context, state) => PermissionGate(
+          requiredPermission: 'user.view',
+          child: DeletedUserDetailScreen(
+            userId: state.pathParameters['userId']!,
           ),
         ),
       ),
