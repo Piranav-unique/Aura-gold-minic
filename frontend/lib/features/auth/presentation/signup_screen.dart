@@ -497,10 +497,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   selected: _selectedSchemeGrams == 1,
                   onSelected: (_) => setState(() => _selectedSchemeGrams = 1),
                   selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  checkmarkColor: AppTheme.goldDeep,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: _selectedSchemeGrams == 1 ? FontWeight.w700 : FontWeight.w500,
-                    color: _selectedSchemeGrams == 1 ? AppTheme.primaryGold : null,
+                    color: _selectedSchemeGrams == 1 ? AppTheme.goldDeep : null,
                   ),
                 ),
                 ChoiceChip(
@@ -508,10 +509,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   selected: _selectedSchemeGrams == 5,
                   onSelected: (_) => setState(() => _selectedSchemeGrams = 5),
                   selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  checkmarkColor: AppTheme.goldDeep,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: _selectedSchemeGrams == 5 ? FontWeight.w700 : FontWeight.w500,
-                    color: _selectedSchemeGrams == 5 ? AppTheme.primaryGold : null,
+                    color: _selectedSchemeGrams == 5 ? AppTheme.goldDeep : null,
                   ),
                 ),
                 ChoiceChip(
@@ -519,10 +521,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   selected: _selectedSchemeGrams == 10,
                   onSelected: (_) => setState(() => _selectedSchemeGrams = 10),
                   selectedColor: AppTheme.primaryGold.withValues(alpha: 0.25),
+                  checkmarkColor: AppTheme.goldDeep,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: _selectedSchemeGrams == 10 ? FontWeight.w700 : FontWeight.w500,
-                    color: _selectedSchemeGrams == 10 ? AppTheme.primaryGold : null,
+                    color: _selectedSchemeGrams == 10 ? AppTheme.goldDeep : null,
                   ),
                 ),
               ],

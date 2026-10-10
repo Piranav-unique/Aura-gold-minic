@@ -1003,6 +1003,7 @@ class _PaymentSettlementsScreenState
       selected: isSelected,
       onSelected: (_) => onSelected(value),
       selectedColor: const Color(0xFFFEF3C7),
+      checkmarkColor: const Color(0xFF92400E),
       labelStyle: TextStyle(
         fontSize: 11.5,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,

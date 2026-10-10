@@ -213,6 +213,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: creamElevated,
         selectedColor: primaryGold,
+        checkmarkColor: ink,
         side: const BorderSide(color: creamBorder),
         labelStyle: const TextStyle(
           color: ink,

@@ -163,6 +163,7 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                     }
                   },
                   selectedColor: const Color(0xFFC59A27),
+                  checkmarkColor: Colors.white,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -184,6 +185,7 @@ class _DeletedUsersScreenState extends ConsumerState<DeletedUsersScreen> {
                     }
                   },
                   selectedColor: const Color(0xFFC59A27),
+                  checkmarkColor: Colors.white,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

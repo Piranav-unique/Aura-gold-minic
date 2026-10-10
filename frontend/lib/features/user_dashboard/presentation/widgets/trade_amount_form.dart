@@ -143,6 +143,7 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
               ),
               selected: isSelected,
               selectedColor: AppTheme.primaryGold,
+              checkmarkColor: Colors.black,
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),

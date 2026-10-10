@@ -77,150 +77,153 @@ class _UserWalletTransactionsScreenState
       builder: (modalCtx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filter Wallet Activity',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E1B18),
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => Navigator.pop(modalCtx),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 20),
-
-                  // Activity Type
-                  const Text(
-                    'Activity Type',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF64748B),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _choiceChip('All', null, tempType, (v) => setModalState(() => tempType = v)),
-                      _choiceChip('Buy', 'BUY', tempType, (v) => setModalState(() => tempType = v)),
-                      _choiceChip('Sell', 'SELL', tempType, (v) => setModalState(() => tempType = v)),
-                      _choiceChip('Referral', 'REFERRAL', tempType, (v) => setModalState(() => tempType = v)),
-                      _choiceChip('Savings', 'SAVINGS', tempType, (v) => setModalState(() => tempType = v)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Metal
-                  const Text(
-                    'Metal',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _choiceChip('All', null, tempMetal, (v) => setModalState(() => tempMetal = v)),
-                      _choiceChip('Gold', 'gold', tempMetal, (v) => setModalState(() => tempMetal = v)),
-                      _choiceChip('Silver', 'silver', tempMetal, (v) => setModalState(() => tempMetal = v)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Status
-                  const Text(
-                    'Status',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _choiceChip('All', null, tempStatus, (v) => setModalState(() => tempStatus = v)),
-                      _choiceChip('Paid', 'paid', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                      _choiceChip('Pending', 'pending', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                      _choiceChip('Approved', 'approved', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                      _choiceChip('Rejected / Failed', 'rejected', tempStatus, (v) => setModalState(() => tempStatus = v)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            setModalState(() {
-                              tempType = null;
-                              tempMetal = null;
-                              tempStatus = null;
-                            });
-                          },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Filter Wallet Activity',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E1B18),
                           ),
-                          child: const Text('Reset'),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => Navigator.pop(modalCtx),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
+
+                    // Activity Type
+                    const Text(
+                      'Activity Type',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            ref.read(walletTxnTypeFilterProvider.notifier).update(tempType);
-                            ref.read(walletTxnMetalFilterProvider.notifier).update(tempMetal);
-                            ref.read(walletTxnStatusFilterProvider.notifier).update(tempStatus);
-                            setState(() => _page = 1);
-                            Navigator.pop(modalCtx);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFC59A27),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _choiceChip('All', null, tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip('Buy', 'BUY', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip('Sell', 'SELL', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip('Referral', 'REFERRAL', tempType, (v) => setModalState(() => tempType = v)),
+                        _choiceChip('Savings', 'SAVINGS', tempType, (v) => setModalState(() => tempType = v)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Metal
+                    const Text(
+                      'Metal',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _choiceChip('All', null, tempMetal, (v) => setModalState(() => tempMetal = v)),
+                        _choiceChip('Gold', 'gold', tempMetal, (v) => setModalState(() => tempMetal = v)),
+                        _choiceChip('Silver', 'silver', tempMetal, (v) => setModalState(() => tempMetal = v)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Status
+                    const Text(
+                      'Status',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _choiceChip('All', null, tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip('Paid', 'paid', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip('Pending', 'pending', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip('Approved', 'approved', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                        _choiceChip('Rejected / Failed', 'rejected', tempStatus, (v) => setModalState(() => tempStatus = v)),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setModalState(() {
+                                tempType = null;
+                                tempMetal = null;
+                                tempStatus = null;
+                              });
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            ),
+                            child: const Text('Reset'),
                           ),
-                          child: const Text('Apply Filters'),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              ref.read(walletTxnTypeFilterProvider.notifier).update(tempType);
+                              ref.read(walletTxnMetalFilterProvider.notifier).update(tempMetal);
+                              ref.read(walletTxnStatusFilterProvider.notifier).update(tempStatus);
+                              setState(() => _page = 1);
+                              Navigator.pop(modalCtx);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC59A27),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            child: const Text('Apply Filters'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -242,6 +245,8 @@ class _UserWalletTransactionsScreenState
       selected: isSelected,
       onSelected: (_) => onSelected(value),
       selectedColor: const Color(0xFFFEF3C7),
+      backgroundColor: const Color(0xFFF1EDE3),
+      checkmarkColor: const Color(0xFF92400E),
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
