@@ -62,8 +62,15 @@ class WalletTransactionDetailContent extends StatelessWidget {
     this.scrollController,
   });
 
-  Color _typeBgColor(String type) {
+  Color _typeBgColor(String type, bool isDark) {
     final t = type.toUpperCase();
+    if (isDark) {
+      if (t == 'BUY') return const Color(0xFF3B82F6).withValues(alpha: 0.2);
+      if (t == 'SELL') return const Color(0xFFF97316).withValues(alpha: 0.2);
+      if (t == 'REFERRAL') return const Color(0xFFA855F7).withValues(alpha: 0.2);
+      if (t == 'SAVINGS') return const Color(0xFF10B981).withValues(alpha: 0.2);
+      return const Color(0xFF94A3B8).withValues(alpha: 0.2);
+    }
     if (t == 'BUY') return const Color(0xFFEFF6FF);
     if (t == 'SELL') return const Color(0xFFFFF7ED);
     if (t == 'REFERRAL') return const Color(0xFFF3E8FF);
@@ -71,8 +78,15 @@ class WalletTransactionDetailContent extends StatelessWidget {
     return const Color(0xFFF1F5F9);
   }
 
-  Color _typeTextColor(String type) {
+  Color _typeTextColor(String type, bool isDark) {
     final t = type.toUpperCase();
+    if (isDark) {
+      if (t == 'BUY') return const Color(0xFF93C5FD);
+      if (t == 'SELL') return const Color(0xFFFDBA74);
+      if (t == 'REFERRAL') return const Color(0xFFD8B4FE);
+      if (t == 'SAVINGS') return const Color(0xFF6EE7B7);
+      return const Color(0xFFCBD5E1);
+    }
     if (t == 'BUY') return const Color(0xFF1D4ED8);
     if (t == 'SELL') return const Color(0xFFC2410C);
     if (t == 'REFERRAL') return const Color(0xFF7E22CE);
@@ -80,8 +94,21 @@ class WalletTransactionDetailContent extends StatelessWidget {
     return const Color(0xFF475569);
   }
 
-  Color _statusBgColor(String status) {
+  Color _statusBgColor(String status, bool isDark) {
     final s = status.toLowerCase();
+    if (isDark) {
+      if (s == 'paid' || s == 'success' || s == 'completed' || s == 'captured') {
+        return const Color(0xFF10B981).withValues(alpha: 0.2);
+      }
+      if (s == 'pending' || s == 'created' || s == 'processing') {
+        return const Color(0xFFD4AF37).withValues(alpha: 0.2);
+      }
+      if (s == 'approved') return const Color(0xFF3B82F6).withValues(alpha: 0.2);
+      if (s == 'rejected' || s == 'failed' || s == 'cancelled' || s == 'canceled') {
+        return const Color(0xFFF43F5E).withValues(alpha: 0.2);
+      }
+      return const Color(0xFF94A3B8).withValues(alpha: 0.2);
+    }
     if (s == 'paid' || s == 'success' || s == 'completed' || s == 'captured') return const Color(0xFFDCFCE7);
     if (s == 'pending' || s == 'created' || s == 'processing') return const Color(0xFFFEF3C7);
     if (s == 'approved') return const Color(0xFFDBEAFE);
@@ -89,8 +116,21 @@ class WalletTransactionDetailContent extends StatelessWidget {
     return const Color(0xFFF1F5F9);
   }
 
-  Color _statusTextColor(String status) {
+  Color _statusTextColor(String status, bool isDark) {
     final s = status.toLowerCase();
+    if (isDark) {
+      if (s == 'paid' || s == 'success' || s == 'completed' || s == 'captured') {
+        return const Color(0xFF34D399);
+      }
+      if (s == 'pending' || s == 'created' || s == 'processing') {
+        return const Color(0xFFFDE68A);
+      }
+      if (s == 'approved') return const Color(0xFF93C5FD);
+      if (s == 'rejected' || s == 'failed' || s == 'cancelled' || s == 'canceled') {
+        return const Color(0xFFFDA4AF);
+      }
+      return const Color(0xFFCBD5E1);
+    }
     if (s == 'paid' || s == 'success' || s == 'completed' || s == 'captured') return const Color(0xFF166534);
     if (s == 'pending' || s == 'created' || s == 'processing') return const Color(0xFF92400E);
     if (s == 'approved') return const Color(0xFF1E40AF);
@@ -107,6 +147,15 @@ class WalletTransactionDetailContent extends StatelessWidget {
     );
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final textMuted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF64748B);
+    final cardBg = isDark ? theme.cardColor : Colors.white;
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
+    final goldAccent = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+    final emeraldColor = isDark ? const Color(0xFF34D399) : const Color(0xFF16A34A);
 
     final String? paymentMode = detail.paymentDetails != null && detail.paymentDetails!['payment_method'] != null
         ? '${detail.paymentDetails!['payment_method']}'.toUpperCase()
@@ -117,7 +166,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
         : detail.id;
 
     return Material(
-      color: const Color(0xFFFAF7F2),
+      color: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFFAF7F2),
       child: ListView(
         controller: scrollController,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -143,7 +192,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
                 'Transaction Details',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1E1B18),
+                  color: textPrimary,
                 ),
               ),
               Row(
@@ -151,7 +200,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _typeBgColor(detail.transactionType),
+                      color: _typeBgColor(detail.transactionType, isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -159,7 +208,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
-                        color: _typeTextColor(detail.transactionType),
+                        color: _typeTextColor(detail.transactionType, isDark),
                       ),
                     ),
                   ),
@@ -167,7 +216,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _statusBgColor(detail.status),
+                      color: _statusBgColor(detail.status, isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -175,7 +224,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
-                        color: _statusTextColor(detail.status),
+                        color: _statusTextColor(detail.status, isDark),
                       ),
                     ),
                   ),
@@ -185,13 +234,13 @@ class WalletTransactionDetailContent extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Main Summary Card (White, rounded)
+          // Main Summary Card
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: cardBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,19 +248,19 @@ class WalletTransactionDetailContent extends StatelessWidget {
                 if (detail.metal != null || detail.quantityGrams != null) ...[
                   Text(
                     detail.metal != null ? detail.metal!.toUpperCase() : 'METAL',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
+                      color: textMuted,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     detail.quantityGrams != null ? '${detail.quantityGrams!.toStringAsFixed(4)} g' : '—',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF1E1B18),
+                      color: textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -220,10 +269,10 @@ class WalletTransactionDetailContent extends StatelessWidget {
                   (detail.status.toLowerCase() == 'pending' && detail.transactionType.toUpperCase() == 'SELL')
                       ? 'Requested Amount'
                       : 'Amount',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: textMuted,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -231,10 +280,10 @@ class WalletTransactionDetailContent extends StatelessWidget {
                   detail.amountInr != null
                       ? currency.format(detail.amountInr)
                       : (detail.totalAmountInr != null ? currency.format(detail.totalAmountInr) : '—'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF16A34A),
+                    color: emeraldColor,
                   ),
                 ),
               ],
@@ -244,21 +293,22 @@ class WalletTransactionDetailContent extends StatelessWidget {
 
           // Transaction Information Section
           _buildCard(
+            context,
             title: 'Transaction information',
             children: [
               if (detail.metal != null)
-                _row('Metal', detail.metal!.toUpperCase()),
+                _row(context, 'Metal', detail.metal!.toUpperCase()),
               if (detail.quantityGrams != null)
-                _row('Quantity', '${detail.quantityGrams!.toStringAsFixed(4)} g'),
+                _row(context, 'Quantity', '${detail.quantityGrams!.toStringAsFixed(4)} g'),
               if (detail.ratePerGram != null && detail.ratePerGram! > 0)
-                _row('Rate', '${currency.format(detail.ratePerGram)}/g'),
-              _row('Date', dateFormat.format(detail.occurredAt.toLocal())),
+                _row(context, 'Rate', '${currency.format(detail.ratePerGram)}/g'),
+              _row(context, 'Date', dateFormat.format(detail.occurredAt.toLocal())),
               if (paymentMode != null)
-                _row('Payment Mode', paymentMode),
+                _row(context, 'Payment Mode', paymentMode),
               if (detail.gstAmountInr != null && detail.gstAmountInr! > 0)
-                _row('GST Amount', currency.format(detail.gstAmountInr)),
+                _row(context, 'GST Amount', currency.format(detail.gstAmountInr)),
               if (detail.platformFeeInr != null && detail.platformFeeInr! > 0)
-                _row('Platform Fee', currency.format(detail.platformFeeInr)),
+                _row(context, 'Platform Fee', currency.format(detail.platformFeeInr)),
               _rowWithCopy(context, 'Transaction ID', displayId),
             ],
           ),
@@ -266,14 +316,15 @@ class WalletTransactionDetailContent extends StatelessWidget {
           // Customer Information Section
           const SizedBox(height: 14),
           _buildCard(
+            context,
             title: 'Customer information',
             children: [
-              _row('Customer Name', detail.userName.isNotEmpty ? detail.userName : '—'),
+              _row(context, 'Customer Name', detail.userName.isNotEmpty ? detail.userName : '—'),
               if (detail.userId.isNotEmpty)
                 _rowWithCopy(context, 'Customer ID', detail.userId),
-              _row('Email', detail.userEmail.isNotEmpty ? detail.userEmail : '—', isEmail: true),
+              _row(context, 'Email', detail.userEmail.isNotEmpty ? detail.userEmail : '—', isEmail: true),
               if (detail.userMobile != null && detail.userMobile!.isNotEmpty)
-                _row('Mobile', detail.userMobile!),
+                _row(context, 'Mobile', detail.userMobile!),
             ],
           ),
 
@@ -281,12 +332,13 @@ class WalletTransactionDetailContent extends StatelessWidget {
           if (detail.paymentDetails != null && detail.paymentDetails!.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildCard(
+              context,
               title: 'Payment Details',
               children: [
                 if (paymentMode != null)
-                  _row('Payment Mode', paymentMode),
+                  _row(context, 'Payment Mode', paymentMode),
                 if (detail.paymentDetails!['status'] != null)
-                  _row('Payment Status', '${detail.paymentDetails!['status']}'.toUpperCase()),
+                  _row(context, 'Payment Status', '${detail.paymentDetails!['status']}'.toUpperCase()),
                 if (detail.paymentDetails!['razorpay_payment_id'] != null)
                   _rowWithCopy(
                     context,
@@ -307,6 +359,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
                   ),
                 if (detail.paymentDetails!['merchant_settlement_inr'] != null)
                   _row(
+                    context,
                     'Merchant Receives',
                     double.tryParse('${detail.paymentDetails!['merchant_settlement_inr']}') != null
                         ? currency.format(
@@ -314,10 +367,11 @@ class WalletTransactionDetailContent extends StatelessWidget {
                           )
                         : '—',
                     bold: true,
-                    valueColor: const Color(0xFF16A34A),
+                    valueColor: emeraldColor,
                   ),
                 if (detail.paymentDetails!['razorpay_fee_inr'] != null)
                   _row(
+                    context,
                     'Razorpay Fee',
                     double.tryParse('${detail.paymentDetails!['razorpay_fee_inr']}') != null
                         ? currency.format(
@@ -333,12 +387,13 @@ class WalletTransactionDetailContent extends StatelessWidget {
           if (detail.sellDetails != null && detail.sellDetails!.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildCard(
+              context,
               title: 'Sell Inquiry Information',
               children: [
                 if (detail.sellDetails!['message'] != null)
-                  _row('User Note', '${detail.sellDetails!['message']}'),
+                  _row(context, 'User Note', '${detail.sellDetails!['message']}'),
                 if (detail.adminNotes != null && detail.adminNotes!.isNotEmpty)
-                  _row('Admin Response', detail.adminNotes!),
+                  _row(context, 'Admin Response', detail.adminNotes!),
               ],
             ),
           ],
@@ -347,15 +402,47 @@ class WalletTransactionDetailContent extends StatelessWidget {
           if (detail.referralDetails != null && detail.referralDetails!.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildCard(
+              context,
               title: 'Referral Details',
               children: [
+                if (detail.referralDetails!['referee_name'] != null &&
+                    '${detail.referralDetails!['referee_name']}'.isNotEmpty)
+                  _row(
+                    context,
+                    'Referred Customer',
+                    '${detail.referralDetails!['referee_name']}',
+                    bold: true,
+                  ),
+                if (detail.referralDetails!['referee_mobile'] != null &&
+                    '${detail.referralDetails!['referee_mobile']}'.isNotEmpty)
+                  _row(
+                    context,
+                    'Customer Mobile',
+                    '${detail.referralDetails!['referee_mobile']}',
+                  ),
+                if (detail.referralDetails!['referrer_name'] != null &&
+                    '${detail.referralDetails!['referrer_name']}'.isNotEmpty)
+                  _row(
+                    context,
+                    'Referred By',
+                    '${detail.referralDetails!['referrer_name']}',
+                  ),
+                if (detail.referralDetails!['referrer_mobile'] != null &&
+                    '${detail.referralDetails!['referrer_mobile']}'.isNotEmpty)
+                  _row(
+                    context,
+                    'Referrer Mobile',
+                    '${detail.referralDetails!['referrer_mobile']}',
+                  ),
                 if (detail.referralDetails!['scheme_grams'] != null)
                   _row(
+                    context,
                     'Scheme Grams',
                     '${detail.referralDetails!['scheme_grams']} g',
                   ),
                 if (detail.referralDetails!['reward_inr'] != null)
                   _row(
+                    context,
                     'Reward',
                     double.tryParse('${detail.referralDetails!['reward_inr']}') != null
                         ? currency.format(
@@ -371,15 +458,17 @@ class WalletTransactionDetailContent extends StatelessWidget {
           if (detail.savingsDetails != null && detail.savingsDetails!.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildCard(
+              context,
               title: 'Savings Scheme Information',
               children: [
                 if (detail.savingsDetails!['target_grams'] != null)
                   _row(
+                    context,
                     'Target Grams',
                     '${detail.savingsDetails!['target_grams']} g',
                   ),
                 if (detail.savingsDetails!['scheme_status'] != null)
-                  _row('Status', '${detail.savingsDetails!['scheme_status']}'),
+                  _row(context, 'Status', '${detail.savingsDetails!['scheme_status']}'),
               ],
             ),
           ],
@@ -388,6 +477,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
           if (detail.statusHistory.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildCard(
+              context,
               title: 'Status History',
               children: [
                 ...detail.statusHistory.map(
@@ -396,10 +486,10 @@ class WalletTransactionDetailContent extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.circle,
                           size: 8,
-                          color: Color(0xFFC59A27),
+                          color: goldAccent,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -408,17 +498,17 @@ class WalletTransactionDetailContent extends StatelessWidget {
                             children: [
                               Text(
                                 h.status.toUpperCase(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 12,
-                                  color: Color(0xFF1E1B18),
+                                  color: textPrimary,
                                 ),
                               ),
                               Text(
                                 dateFormat.format(h.occurredAt.toLocal()),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
-                                  color: Color(0xFF64748B),
+                                  color: textMuted,
                                 ),
                               ),
                               if (h.note != null && h.note!.isNotEmpty)
@@ -441,26 +531,31 @@ class WalletTransactionDetailContent extends StatelessWidget {
     );
   }
 
-  Widget _buildCard({
+  Widget _buildCard(
+    BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? theme.cardColor : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? theme.dividerColor : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 14,
-              color: Color(0xFFC59A27),
+              color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27),
             ),
           ),
           const SizedBox(height: 12),
@@ -471,12 +566,19 @@ class WalletTransactionDetailContent extends StatelessWidget {
   }
 
   Widget _row(
+    BuildContext context,
     String label,
     String value, {
     bool bold = false,
     Color? valueColor,
     bool isEmail = false,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final labelColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF64748B);
+    final defaultValueColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
     final displayValue = isEmail
         ? value.replaceAll('@', '@\u200B').replaceAll('.', '.\u200B')
         : value;
@@ -490,8 +592,8 @@ class WalletTransactionDetailContent extends StatelessWidget {
             width: 115,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              style: TextStyle(
+                color: labelColor,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),
@@ -503,7 +605,7 @@ class WalletTransactionDetailContent extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-                color: valueColor ?? const Color(0xFF1E1B18),
+                color: valueColor ?? defaultValueColor,
               ),
             ),
           ),
@@ -513,6 +615,14 @@ class WalletTransactionDetailContent extends StatelessWidget {
   }
 
   Widget _rowWithCopy(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final labelColor = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF64748B);
+    final valueColor = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final copyColor = isDark ? const Color(0xFFD4AF37) : const Color(0xFFC59A27);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -522,8 +632,8 @@ class WalletTransactionDetailContent extends StatelessWidget {
             width: 115,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              style: TextStyle(
+                color: labelColor,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),
@@ -549,19 +659,19 @@ class WalletTransactionDetailContent extends StatelessWidget {
                   Flexible(
                     child: Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E1B18),
+                        color: valueColor,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(
+                  Icon(
                     Icons.copy_rounded,
                     size: 14,
-                    color: Color(0xFFC59A27),
+                    color: copyColor,
                   ),
                 ],
               ),

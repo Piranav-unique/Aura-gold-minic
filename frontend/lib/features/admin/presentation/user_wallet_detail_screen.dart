@@ -282,10 +282,20 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
               'Referral cash reward',
               '${currency.format(w.referralRewardInr)} (${w.referralRewardGrams.toStringAsFixed(0)} g scheme)',
             ),
+            if (w.referredCustomers.isNotEmpty)
+              _infoRow(
+                'Referred customers',
+                w.referredCustomers.join(', '),
+              ),
+            if (w.referredBy != null && w.referredBy!.isNotEmpty)
+              _infoRow(
+                'Referred by',
+                w.referredBy!,
+              ),
             if (w.savingsSchemeTargetGrams != null)
               _infoRow(
                 'Savings scheme',
-                '${w.savingsSchemeTargetGrams!.toStringAsFixed(0)} g • ${w.savingsSchemeStatus}',
+                '${w.savingsSchemeTargetGrams!.toStringAsFixed(0)} g • ${w.savingsSchemeStatus.split('\n').first}',
               ),
           ],
         ),
@@ -294,6 +304,8 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
   }
 
   Widget _infoRow(String label, String value, {bool isEmail = false}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final displayValue = isEmail
         ? value.replaceAll('@', '@\u200B').replaceAll('.', '.\u200B')
         : value;
@@ -307,7 +319,12 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
             width: 115,
             child: Text(
               label,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+              style: TextStyle(
+                color: isDark
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+                    : Colors.grey.shade600,
+                fontSize: 15,
+              ),
             ),
           ),
           Expanded(
@@ -328,6 +345,14 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
     DateFormat dateFormat,
     bool isDesktop,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = isDark ? theme.colorScheme.onSurface : const Color(0xFF1E1B18);
+    final textMuted = isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.65)
+        : const Color(0xFF64748B);
+    final cardBorder = isDark ? theme.dividerColor : const Color(0xFFE2E8F0);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -375,7 +400,7 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                           margin: const EdgeInsets.only(bottom: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            side: BorderSide(color: cardBorder),
                           ),
                           child: InkWell(
                             onTap: () => openWalletTransactionDetail(context, txn.id),
@@ -390,24 +415,28 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                                     children: [
                                       Text(
                                         '${txn.transactionType.toUpperCase()} ${txn.metal != null ? '• ${txn.metal!.toUpperCase()}' : ''}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 12,
-                                          color: Color(0xFF1E1B18),
+                                          color: textPrimary,
                                         ),
                                       ),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFEF3C7),
+                                          color: isDark
+                                              ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+                                              : const Color(0xFFFEF3C7),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           txn.status.toUpperCase(),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w800,
-                                            color: Color(0xFF92400E),
+                                            color: isDark
+                                                ? const Color(0xFFFDE68A)
+                                                : const Color(0xFF92400E),
                                           ),
                                         ),
                                       ),
@@ -416,7 +445,7 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                                   const SizedBox(height: 4),
                                   Text(
                                     dateFormat.format(txn.occurredAt.toLocal()),
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    style: TextStyle(fontSize: 11, color: textMuted),
                                   ),
                                   const SizedBox(height: 6),
                                   Row(
@@ -424,10 +453,10 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                                     children: [
                                       Text(
                                         txn.amountInr != null ? currency.format(txn.amountInr) : '—',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w900,
-                                          color: Color(0xFF1E1B18),
+                                          color: textPrimary,
                                         ),
                                       ),
                                       InkWell(
@@ -447,10 +476,16 @@ class _UserWalletDetailScreenState extends ConsumerState<UserWalletDetailScreen>
                                           children: [
                                             Text(
                                               'ID: ${displayId.length > 10 ? '${displayId.substring(0, 8)}...' : displayId}',
-                                              style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                              style: TextStyle(fontSize: 10.5, color: textMuted),
                                             ),
                                             const SizedBox(width: 4),
-                                            const Icon(Icons.copy_rounded, size: 12, color: Color(0xFFC59A27)),
+                                            Icon(
+                                              Icons.copy_rounded,
+                                              size: 12,
+                                              color: isDark
+                                                  ? const Color(0xFFD4AF37)
+                                                  : const Color(0xFFC59A27),
+                                            ),
                                           ],
                                         ),
                                       ),

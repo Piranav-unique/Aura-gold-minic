@@ -26,6 +26,7 @@ class ReferralTierInfo(BaseModel):
 
 class ReferralRewardItem(BaseModel):
     referee_name: str
+    referee_mobile: str | None = None
     scheme_grams: Decimal
     reward_inr: Decimal
     created_at: str
@@ -36,5 +37,6 @@ class ReferralSummaryResponse(BaseModel):
     wallet_balance_inr: Decimal
     total_referrals: int = 0
     total_earned_inr: Decimal = Decimal("0")
+    referred_by_name: str | None = None
     tiers: list[ReferralTierInfo] = Field(default_factory=list)
     recent_rewards: list[ReferralRewardItem] = Field(default_factory=list)

@@ -7,11 +7,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-WalletTransactionType = Literal["BUY", "SELL", "REFERRAL", "SAVINGS", "ADJUSTMENT"]
-WalletMetalType = Literal["GOLD", "SILVER"]
-WalletTransactionStatus = Literal[
-    "created", "paid", "failed", "pending", "responded", "closed", "completed", "active"
-]
+WalletTransactionType = str
+WalletMetalType = str
+WalletTransactionStatus = str
 
 
 class UpdateCustomerNameRequest(BaseModel):
@@ -62,6 +60,8 @@ class WalletSummary(BaseModel):
     savings_scheme_status: str = "not_selected"
     wallet_balance_inr: Decimal = Decimal("0")
     cash_wallet_inr: Decimal = Decimal("0")
+    referred_by: Optional[str] = None
+    referred_customers: list[str] = Field(default_factory=list)
 
 
 class WalletUserDetailResponse(BaseModel):
@@ -129,6 +129,10 @@ class WalletSellDetails(BaseModel):
 
 class WalletReferralDetails(BaseModel):
     referee_id: UUID
+    referee_name: Optional[str] = None
+    referee_mobile: Optional[str] = None
+    referrer_name: Optional[str] = None
+    referrer_mobile: Optional[str] = None
     scheme_grams: Decimal
     reward_inr: Decimal
 

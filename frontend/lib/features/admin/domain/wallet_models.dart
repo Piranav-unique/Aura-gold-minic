@@ -77,6 +77,8 @@ class WalletSummary {
   final double? savingsSchemeTargetGrams;
   final String savingsSchemeStatus;
   final double walletBalanceInr;
+  final String? referredBy;
+  final List<String> referredCustomers;
 
   const WalletSummary({
     required this.goldBalanceGrams,
@@ -90,9 +92,12 @@ class WalletSummary {
     this.savingsSchemeTargetGrams,
     required this.savingsSchemeStatus,
     required this.walletBalanceInr,
+    this.referredBy,
+    this.referredCustomers = const [],
   });
 
   factory WalletSummary.fromJson(Map<String, dynamic> json) {
+    final rawReferredCustomers = json['referred_customers'];
     return WalletSummary(
       goldBalanceGrams: parseWalletDecimal(json['gold_balance_grams']),
       silverBalanceGrams: parseWalletDecimal(json['silver_balance_grams']),
@@ -108,6 +113,10 @@ class WalletSummary {
       savingsSchemeStatus:
           json['savings_scheme_status'] as String? ?? 'not_selected',
       walletBalanceInr: parseWalletDecimal(json['wallet_balance_inr']),
+      referredBy: json['referred_by'] as String?,
+      referredCustomers: rawReferredCustomers is List
+          ? rawReferredCustomers.map((e) => e.toString()).toList()
+          : const [],
     );
   }
 }

@@ -3,8 +3,11 @@ import uuid
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 
+from sqlalchemy import select
+
 from app.core.exceptions import ValidationException
 from app.core.logging import logger
+from app.models.referral_reward import ReferralReward
 from app.models.user import User
 from app.repositories.referral_reward import ReferralRewardRepository
 from app.repositories.user import UserRepository
@@ -247,20 +250,42 @@ class ReferralService:
     async def get_summary(self, user: User) -> ReferralSummaryResponse:
         code = await self.ensure_referral_code(user)
         count, earned = await self.reward_repo.count_and_sum_for_referrer(user.id)
-        rewards = await self.reward_repo.list_for_referrer(user.id, limit=10)
+        rewards = await self.reward_repo.list_for_referrer(user.id, limit=25)
 
         recent: list[ReferralRewardItem] = []
         for reward in rewards:
-            referee = await self.user_repo.get_with_roles_and_permissions(reward.referee_id)
+            res = await self.user_repo.db.execute(
+                select(User).where(User.id == reward.referee_id)
+            )
+            referee = res.scalar_one_or_none()
             name = _display_name(referee) if referee else "Friend"
+            mobile = (referee.mobile_number or "").strip() if referee else None
             recent.append(
                 ReferralRewardItem(
                     referee_name=name,
+                    referee_mobile=mobile or None,
                     scheme_grams=reward.scheme_grams,
                     reward_inr=reward.reward_inr,
                     created_at=reward.created_at.isoformat(),
                 )
             )
+
+        referred_by_name: str | None = None
+        referrer_id = getattr(user, "referred_by_user_id", None)
+        if not referrer_id:
+            ref_rw_res = await self.user_repo.db.execute(
+                select(ReferralReward.referrer_id)
+                .where(ReferralReward.referee_id == user.id)
+                .limit(1)
+            )
+            referrer_id = ref_rw_res.scalar_one_or_none()
+        if referrer_id:
+            ref_user_res = await self.user_repo.db.execute(
+                select(User).where(User.id == referrer_id)
+            )
+            ref_user = ref_user_res.scalar_one_or_none()
+            if ref_user:
+                referred_by_name = _display_name(ref_user)
 
         tiers = [
             ReferralTierInfo(
@@ -276,11 +301,16 @@ class ReferralService:
             wallet_balance_inr=Decimal(str(user.wallet_balance_inr or 0)),
             total_referrals=count,
             total_earned_inr=earned,
+            referred_by_name=referred_by_name,
             tiers=tiers,
             recent_rewards=recent,
         )
 
 
 def _display_name(user: User) -> str:
-    parts = [p for p in (user.first_name, user.last_name) if p]
-    return " ".join(parts) if parts else user.email
+    parts = [p for p in (user.first_name, user.last_name) if p and str(p).strip()]
+    name = " ".join(str(p).strip() for p in parts) if parts else (user.email or "Customer")
+    mobile = (user.mobile_number or "").strip()
+    if mobile:
+        return f"{name} ({mobile})"
+    return name

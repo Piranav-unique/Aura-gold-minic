@@ -593,41 +593,71 @@ class GoldPaymentService:
     ):
         from sqlalchemy import select
         from app.models.referral_reward import ReferralReward
+        from app.models.user import User as UserModel
         from app.schemas.payment import PaymentSettlementItem, PaymentSettlementListResponse
 
         items = await self.payment_repo.list_paid_orders(skip=skip, limit=limit)
         total = await self.payment_repo.count_paid_orders()
 
-        settlement_items = [
-            PaymentSettlementItem(
-                id=order.id,
-                user_email=order.user.email if order.user else "",
-                user_name=self._display_name(order.user) if order.user else None,
-                user_mobile=(
-                    order.user.mobile_number
-                    if (order.user and order.user.mobile_number)
-                    else order.customer_contact
-                ),
-                payment_method=order.payment_method,
-                metal=order.metal,
-                gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
-                amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
-                gst_percent=Decimal(str(order.gst_percent or 0)),
-                metal_value_inr=Decimal(str(order.metal_value_inr or 0)),
-                gst_amount_inr=Decimal(str(order.gst_amount_inr or 0)),
-                razorpay_fee_inr=Decimal(str(order.razorpay_fee_inr or 0)),
-                merchant_settlement_inr=Decimal(
-                    str(order.merchant_settlement_inr or 0)
-                ),
-                grams=Decimal(str(order.grams)),
-                paid_at=order.paid_at or order.created_at,
-                created_at=order.created_at,
-                status="paid" if order.status == "paid" else (order.status or "paid"),
-                razorpay_payment_id=order.razorpay_payment_id,
-                bank_rrn=order.bank_rrn,
+        # Pre-load referral rewards and user names so we can show who referred whom
+        rewards: list[ReferralReward] = []
+        user_by_id: dict[uuid.UUID, UserModel] = {}
+        referrer_by_referee_id: dict[uuid.UUID, UserModel] = {}
+        try:
+            rr_res = await self.user_repo.db.execute(
+                select(ReferralReward).order_by(ReferralReward.created_at.desc())
             )
-            for order in items
-        ]
+            rewards = list(rr_res.scalars().all())
+            u_res = await self.user_repo.db.execute(select(UserModel))
+            for u_obj in u_res.scalars().all():
+                user_by_id[u_obj.id] = u_obj
+            for u_obj in user_by_id.values():
+                if u_obj.referred_by_user_id and u_obj.referred_by_user_id in user_by_id:
+                    referrer_by_referee_id[u_obj.id] = user_by_id[u_obj.referred_by_user_id]
+            for rw in rewards:
+                if rw.referrer_id in user_by_id:
+                    referrer_by_referee_id[rw.referee_id] = user_by_id[rw.referrer_id]
+        except Exception as exc:
+            logger.warning("list_settlements_preload_referral_error", error=str(exc))
+
+        settlement_items = []
+        for order in items:
+            base_rrn = order.bank_rrn or ""
+            if order.user_id and order.user_id in referrer_by_referee_id:
+                ref_u = referrer_by_referee_id[order.user_id]
+                ref_u_name = self._display_name(ref_u)
+                ref_tag = f"Referred by: {ref_u_name}"
+                base_rrn = f"{base_rrn} • {ref_tag}" if base_rrn else ref_tag
+
+            settlement_items.append(
+                PaymentSettlementItem(
+                    id=order.id,
+                    user_email=order.user.email if order.user else "",
+                    user_name=self._display_name(order.user) if order.user else None,
+                    user_mobile=(
+                        order.user.mobile_number
+                        if (order.user and order.user.mobile_number)
+                        else order.customer_contact
+                    ),
+                    payment_method=order.payment_method,
+                    metal=order.metal,
+                    gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+                    amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+                    gst_percent=Decimal(str(order.gst_percent or 0)),
+                    metal_value_inr=Decimal(str(order.metal_value_inr or 0)),
+                    gst_amount_inr=Decimal(str(order.gst_amount_inr or 0)),
+                    razorpay_fee_inr=Decimal(str(order.razorpay_fee_inr or 0)),
+                    merchant_settlement_inr=Decimal(
+                        str(order.merchant_settlement_inr or 0)
+                    ),
+                    grams=Decimal(str(order.grams)),
+                    paid_at=order.paid_at or order.created_at,
+                    created_at=order.created_at,
+                    status="paid" if order.status == "paid" else (order.status or "paid"),
+                    razorpay_payment_id=order.razorpay_payment_id,
+                    bank_rrn=base_rrn or None,
+                )
+            )
 
         if skip == 0:
             try:
@@ -639,14 +669,13 @@ class GoldPaymentService:
                 except Exception:
                     pass
 
-                rr_res = await self.user_repo.db.execute(
-                    select(ReferralReward).order_by(ReferralReward.created_at.desc())
-                )
-                rewards = list(rr_res.scalars().all())
                 for rw in rewards:
-                    referrer = await self.user_repo.get_ById_include_deleted(rw.referrer_id) if hasattr(self.user_repo, "get_ById_include_deleted") else await self.user_repo.get(rw.referrer_id)
+                    referrer = user_by_id.get(rw.referrer_id)
                     if not referrer:
                         continue
+                    referee = user_by_id.get(rw.referee_id)
+                    referee_name = self._display_name(referee) if referee else "Customer"
+                    referee_mob = f" ({referee.mobile_number})" if (referee and referee.mobile_number) else ""
                     rw_inr = Decimal(str(rw.reward_inr or 0))
                     if rw_inr <= 0:
                         continue
@@ -657,7 +686,7 @@ class GoldPaymentService:
                             user_email=referrer.email or "",
                             user_name=self._display_name(referrer),
                             user_mobile=referrer.mobile_number,
-                            payment_method="REFERRAL",
+                            payment_method=f"REFERRAL • {referee_name}",
                             metal="gold",
                             gross_amount_inr=rw_inr,
                             amount_inr=rw_inr,
@@ -671,7 +700,7 @@ class GoldPaymentService:
                             created_at=rw.created_at,
                             status="paid",
                             razorpay_payment_id=f"ref_{str(rw.id)[:8]}",
-                            bank_rrn=f"Referral ({int(rw.scheme_grams or 1)}g scheme)",
+                            bank_rrn=f"Referred: {referee_name}{referee_mob} • {int(rw.scheme_grams or 1)}g scheme",
                         )
                     )
                 settlement_items.sort(

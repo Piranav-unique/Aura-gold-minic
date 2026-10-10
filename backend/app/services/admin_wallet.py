@@ -164,6 +164,20 @@ class AdminWalletService:
         cash_val = referral_inr
         display_val = gold_val if gold_val > 0 else cash_val
 
+        referred_by, referred_customers = await self.wallet_repo.get_referral_attribution(user)
+        base_scheme_status = user.gold_scheme_status or "not_selected"
+        scheme_parts = [base_scheme_status]
+        if referred_customers:
+            scheme_parts.append(f"Referred: {', '.join(referred_customers)}")
+        if referred_by:
+            scheme_parts.append(f"Referred by: {referred_by}")
+        full_scheme_status = "\n".join(scheme_parts)
+        target_grams = (
+            user.gold_scheme_target_grams
+            or user.referral_scheme_grams
+            or (Decimal("1") if (referred_customers or referred_by) else None)
+        )
+
         return WalletSummary(
             gold_balance_grams=gold_grams,
             silver_balance_grams=silver_grams,
@@ -175,10 +189,12 @@ class AdminWalletService:
             pending_sell_inquiries=pending_sell,
             referral_reward_inr=referral_inr,
             referral_reward_grams=referral_grams,
-            savings_scheme_target_grams=user.gold_scheme_target_grams,
-            savings_scheme_status=user.gold_scheme_status or "not_selected",
+            savings_scheme_target_grams=target_grams,
+            savings_scheme_status=full_scheme_status,
             wallet_balance_inr=display_val,
             cash_wallet_inr=cash_val,
+            referred_by=referred_by,
+            referred_customers=referred_customers,
         )
 
     async def search_users(
@@ -612,6 +628,9 @@ class AdminWalletService:
         user = await self.wallet_repo.get_wallet_user(
             reward.referrer_id, include_deleted=True
         )
+        referee = await self.wallet_repo.get_wallet_user(
+            reward.referee_id, include_deleted=True
+        )
 
         if user:
             await self._log_wallet_view(
@@ -624,6 +643,15 @@ class AdminWalletService:
         user_name = _user_display_name(user) if user else "Customer"
         user_email = user.email if user else ""
         user_mobile = user.mobile_number if user else None
+        referee_name = _user_display_name(referee) if referee else "Customer"
+        referee_mobile = referee.mobile_number if referee else None
+
+        attr_note = (
+            f"Referred Customer: {referee_name}"
+            f"{f' ({referee_mobile})' if referee_mobile else ''}"
+            f" • Referred by: {user_name}"
+            f"{f' ({user_mobile})' if user_mobile else ''}"
+        )
 
         return WalletTransactionDetailResponse(
             id=txn_id,
@@ -633,22 +661,31 @@ class AdminWalletService:
             user_mobile=user_mobile,
             occurred_at=reward.created_at,
             transaction_type="REFERRAL",
-            metal="GOLD",
+            metal=f"GOLD • {referee_name.upper()}",
             quantity_grams=reward.scheme_grams,
             amount_inr=reward.reward_inr,
             total_amount_inr=reward.reward_inr,
             status="completed",
-            reference_id=str(reward.id),
+            reference_id=attr_note,
             referral_details=WalletReferralDetails(
                 referee_id=reward.referee_id,
+                referee_name=referee_name,
+                referee_mobile=referee_mobile,
+                referrer_name=user_name,
+                referrer_mobile=user_mobile,
                 scheme_grams=reward.scheme_grams,
                 reward_inr=reward.reward_inr,
+            ),
+            savings_details=WalletSavingsDetails(
+                target_grams=reward.scheme_grams,
+                scheme_status=attr_note,
+                started_at=reward.created_at,
             ),
             status_history=[
                 WalletStatusHistoryItem(
                     status="completed",
                     occurred_at=reward.created_at,
-                    note="Referral reward credited to INR wallet",
+                    note=attr_note,
                 )
             ],
         )

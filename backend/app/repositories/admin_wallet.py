@@ -439,38 +439,133 @@ class AdminWalletRepository:
             )
         return rows
 
+    async def get_referral_attribution(
+        self, user: User
+    ) -> tuple[Optional[str], list[str]]:
+        referred_by_str: Optional[str] = None
+        referred_customers: list[str] = []
+
+        # 1. Check who referred this user (via user.referred_by_user_id or referral_rewards.referee_id)
+        referrer_id = user.referred_by_user_id
+        if not referrer_id:
+            rw_res = await self.db.execute(
+                select(ReferralReward).where(ReferralReward.referee_id == user.id)
+            )
+            rw = rw_res.scalars().first()
+            if rw:
+                referrer_id = rw.referrer_id
+
+        if referrer_id:
+            ref_user_res = await self.db.execute(
+                select(User).where(User.id == referrer_id)
+            )
+            ref_user = ref_user_res.scalars().first()
+            if ref_user:
+                r_name = _user_display_name(ref_user)
+                r_mob = ref_user.mobile_number or ""
+                referred_by_str = f"{r_name} ({r_mob})" if r_mob else r_name
+
+        # 2. Check customers referred by this user (via referral_rewards.referrer_id and users.referred_by_user_id)
+        seen_referees: set[uuid.UUID] = set()
+        rw_list_res = await self.db.execute(
+            select(ReferralReward)
+            .where(ReferralReward.referrer_id == user.id)
+            .order_by(ReferralReward.created_at.desc())
+        )
+        for rw in rw_list_res.scalars().all():
+            if rw.referee_id in seen_referees:
+                continue
+            seen_referees.add(rw.referee_id)
+            referee_res = await self.db.execute(
+                select(User).where(User.id == rw.referee_id)
+            )
+            referee = referee_res.scalars().first()
+            if referee:
+                c_name = _user_display_name(referee)
+                c_mob = referee.mobile_number or ""
+                referred_customers.append(f"{c_name} ({c_mob})" if c_mob else c_name)
+
+        sub_users_res = await self.db.execute(
+            select(User).where(User.referred_by_user_id == user.id)
+        )
+        for sub_u in sub_users_res.scalars().all():
+            if sub_u.id in seen_referees:
+                continue
+            seen_referees.add(sub_u.id)
+            c_name = _user_display_name(sub_u)
+            c_mob = sub_u.mobile_number or ""
+            referred_customers.append(f"{c_name} ({c_mob})" if c_mob else c_name)
+
+        return referred_by_str, referred_customers
+
     async def _build_referral_rows(
         self,
         user_id: Optional[uuid.UUID] = None,
     ) -> list[_WalletTxnRow]:
         query = select(ReferralReward)
         if user_id:
-            query = query.where(ReferralReward.referrer_id == user_id)
+            query = query.where(
+                or_(
+                    ReferralReward.referrer_id == user_id,
+                    ReferralReward.referee_id == user_id,
+                )
+            )
         result = await self.db.execute(query)
         rewards = list(result.scalars().all())
         rows: list[_WalletTxnRow] = []
         for reward in rewards:
-            user_result = await self.db.execute(
+            referrer_res = await self.db.execute(
                 select(User).where(User.id == reward.referrer_id)
             )
-            user = user_result.scalars().first()
-            rows.append(
-                _WalletTxnRow(
-                    id=f"referral:{reward.id}",
-                    user_id=reward.referrer_id,
-                    user_name=_user_display_name(user) if user else "",
-                    user_mobile=user.mobile_number if user else None,
-                    occurred_at=reward.created_at,
-                    transaction_type="REFERRAL",
-                    metal="GOLD",
-                    quantity_grams=reward.scheme_grams,
-                    amount_inr=reward.reward_inr,
-                    status="completed",
-                    reference_id=str(reward.id),
-                    source="referral_reward",
-                    source_id=reward.id,
-                )
+            referrer = referrer_res.scalars().first()
+            referee_res = await self.db.execute(
+                select(User).where(User.id == reward.referee_id)
             )
+            referee = referee_res.scalars().first()
+
+            referrer_name = _user_display_name(referrer) if referrer else "Customer"
+            referee_name = _user_display_name(referee) if referee else "Customer"
+            referee_mob = f" ({referee.mobile_number})" if (referee and referee.mobile_number) else ""
+            referrer_mob = f" ({referrer.mobile_number})" if (referrer and referrer.mobile_number) else ""
+
+            if user_id and reward.referee_id == user_id and reward.referrer_id != user_id:
+                # Viewing the customer who used the referral code
+                rows.append(
+                    _WalletTxnRow(
+                        id=f"referral:{reward.id}",
+                        user_id=reward.referee_id,
+                        user_name=referee_name,
+                        user_mobile=referee.mobile_number if referee else None,
+                        occurred_at=reward.created_at,
+                        transaction_type="REFERRAL",
+                        metal=f"BY {referrer_name.upper()}{referrer_mob}",
+                        quantity_grams=reward.scheme_grams,
+                        amount_inr=reward.reward_inr,
+                        status="completed",
+                        reference_id=f"Referred by {referrer_name}",
+                        source="referral_reward",
+                        source_id=reward.id,
+                    )
+                )
+            else:
+                # Viewing the referrer who earned the reward (or all transactions)
+                rows.append(
+                    _WalletTxnRow(
+                        id=f"referral:{reward.id}",
+                        user_id=reward.referrer_id,
+                        user_name=referrer_name,
+                        user_mobile=referrer.mobile_number if referrer else None,
+                        occurred_at=reward.created_at,
+                        transaction_type="REFERRAL",
+                        metal=f"GOLD • {referee_name.upper()}{referee_mob}",
+                        quantity_grams=reward.scheme_grams,
+                        amount_inr=reward.reward_inr,
+                        status="completed",
+                        reference_id=f"Referred: {referee_name}",
+                        source="referral_reward",
+                        source_id=reward.id,
+                    )
+                )
         return rows
 
     async def _build_savings_rows(
