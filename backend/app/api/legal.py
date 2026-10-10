@@ -211,189 +211,230 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Join AGS Gold - Pure 24K Gold Savings</title>
+  <title>AGS Gold - Referral Invitation</title>
   <style>
     :root {
-      --gold-primary: #D4AF37;
-      --gold-dark: #AA820A;
-      --bg: #0F1115;
-      --card-bg: #1A1D24;
-      --text-white: #FFFFFF;
-      --text-muted: #9BA3AF;
-      --border: #2A2F3D;
+      --bg: #F7F3EA;
+      --surface: #FFFFFF;
+      --surface-muted: #FAF8F3;
+      --border: #E6E0D2;
+      --ink: #1A1712;
+      --ink-secondary: #5C564B;
+      --ink-muted: #8A8377;
+      --gold: #B8860B;
+      --gold-light: #FDF7E7;
+      --gold-border: #E5CFA0;
+      --cta-bg: #1A1712;
+      --cta-text: #FFFFFF;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text-white);
+      background-color: var(--bg);
+      color: var(--ink);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px 16px;
+      padding: 20px 16px;
+      -webkit-font-smoothing: antialiased;
     }
-    .card {
+    .wrapper {
       width: 100%;
-      max-width: 440px;
-      background: var(--card-bg);
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      padding: 32px 24px;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-      text-align: center;
+      max-width: 420px;
     }
-    .logo-badge {
-      width: 68px;
-      height: 68px;
-      margin: 0 auto 16px;
-      background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
-      border-radius: 50%;
+    .brand-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+    .brand-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: var(--ink);
+      text-transform: uppercase;
+    }
+    .brand-sub {
+      font-size: 12px;
+      color: var(--ink-muted);
+      font-weight: 500;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 28px 22px;
+      box-shadow: 0 2px 10px rgba(26, 23, 18, 0.04);
+    }
+    .section-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--gold);
+      background: var(--gold-light);
+      border: 1px solid var(--gold-border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
     }
     h1 {
-      font-size: 24px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+      line-height: 1.3;
     }
     .subtitle {
       font-size: 14px;
-      color: var(--text-muted);
+      color: var(--ink-secondary);
       line-height: 1.5;
       margin-bottom: 20px;
     }
-    .scheme-pill {
-      display: inline-block;
-      background: rgba(212, 175, 55, 0.15);
-      color: var(--gold-primary);
-      border: 1px solid rgba(212, 175, 55, 0.35);
+    .scheme-row {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .scheme-label {
+      font-size: 12px;
+      color: var(--ink-muted);
+      font-weight: 600;
+    }
+    .scheme-value {
+      font-size: 13px;
+      color: var(--ink);
       font-weight: 700;
-      font-size: 14px;
-      padding: 6px 16px;
-      border-radius: 30px;
-      margin-bottom: 20px;
     }
     .code-box {
-      background: #0B0D11;
-      border: 1px dashed var(--gold-primary);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 24px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .code-info {
-      text-align: left;
-    }
     .code-label {
       font-size: 11px;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--ink-muted);
       letter-spacing: 0.5px;
       font-weight: 600;
+      margin-bottom: 3px;
     }
     .code-value {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      color: var(--gold-primary);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--ink);
     }
     .copy-btn {
-      background: var(--gold-primary);
-      color: #000000;
-      border: none;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px 14px;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 13px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background 0.15s ease;
     }
-    .copy-btn:hover {
-      background: #E5C358;
+    .copy-btn:active {
+      background: var(--bg);
     }
-    .btn-main {
+    .btn-primary {
       display: block;
       width: 100%;
-      background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
-      color: #000000;
+      background: var(--cta-bg);
+      color: var(--cta-text);
       text-decoration: none;
-      font-weight: 800;
-      font-size: 16px;
-      padding: 16px;
-      border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
-      cursor: pointer;
+      text-align: center;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-bottom: 10px;
     }
     .btn-secondary {
       display: block;
       width: 100%;
-      background: transparent;
-      color: var(--text-white);
+      background: var(--surface);
+      color: var(--ink);
       text-decoration: none;
+      text-align: center;
       border: 1px solid var(--border);
       font-weight: 600;
       font-size: 14px;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 13px 16px;
+      border-radius: 10px;
     }
-    .features {
-      margin-top: 24px;
-      padding-top: 20px;
+    .steps {
+      margin-top: 20px;
+      padding-top: 18px;
       border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-around;
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 12.5px;
+      color: var(--ink-secondary);
+      line-height: 1.6;
     }
-    .feature-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+    .steps strong {
+      color: var(--ink);
+    }
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--ink-muted);
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo-badge">🏆</div>
-    <h1>You're Invited to AGS Gold</h1>
-    <p class="subtitle">Join India's trusted 24K pure digital gold savings platform.</p>
-
-    <div class="scheme-pill">✨ {{SCHEME_NAME}}</div>
-
-    <div class="code-box">
-      <div class="code-info">
-        <div class="code-label">Referral Code</div>
-        <div class="code-value" id="refCode">{{REFERRAL_CODE}}</div>
-      </div>
-      <button class="copy-btn" onclick="copyCode()">Copy</button>
+  <div class="wrapper">
+    <div class="brand-header">
+      <span class="brand-name">AGS Gold</span>
+      <span class="brand-sub">Aurum Gold Works</span>
     </div>
 
-    <a href="{{DEEP_LINK}}" class="btn-main" id="openAppBtn">🚀 Open in AGS Gold App</a>
-    <a href="https://play.google.com/store/apps/details?id=com.agsgold.ags_gold" class="btn-secondary" target="_blank">📥 Download on Google Play</a>
+    <div class="card">
+      <span class="section-tag">Referral Invitation</span>
+      <h1>Create your AGS Gold account</h1>
+      <p class="subtitle">You have been invited to join AGS Gold. Use the referral code below during registration.</p>
 
-    <div class="features">
-      <div class="feature-item">
-        <span>🪙</span>
-        <span>24K 99.9% Pure</span>
+      <div class="scheme-row">
+        <span class="scheme-label">Selected Plan</span>
+        <span class="scheme-value">{{SCHEME_NAME}}</span>
       </div>
-      <div class="feature-item">
-        <span>🔒</span>
-        <span>Insured Vault</span>
+
+      <div class="code-box">
+        <div>
+          <div class="code-label">Referral Code</div>
+          <div class="code-value" id="refCode">{{REFERRAL_CODE}}</div>
+        </div>
+        <button class="copy-btn" type="button" onclick="copyCode()">Copy Code</button>
       </div>
-      <div class="feature-item">
-        <span>🎁</span>
-        <span>Gold Rewards</span>
+
+      <a href="{{DEEP_LINK}}" class="btn-primary" id="openAppBtn">Continue in AGS Gold App</a>
+      <a href="https://play.google.com/store/apps/details?id=com.agsgold.ags_gold" class="btn-secondary" target="_blank" rel="noopener">Get the App on Google Play</a>
+
+      <div class="steps">
+        <strong>How to apply:</strong> Open the AGS Gold app, tap <strong>Sign Up</strong>, and enter the referral code <strong>{{REFERRAL_CODE}}</strong> before completing verification.
       </div>
+    </div>
+
+    <div class="footer">
+      &copy; 2026 Aurum Gold Works, Coimbatore
     </div>
   </div>
 
@@ -402,13 +443,13 @@ SIGNUP_LANDING_TEMPLATE = """<!DOCTYPE html>
       const code = document.getElementById('refCode').innerText;
       navigator.clipboard.writeText(code).then(() => {
         const btn = document.querySelector('.copy-btn');
-        btn.innerText = 'Copied!';
-        btn.style.background = '#4CAF50';
-        btn.style.color = '#FFFFFF';
+        btn.innerText = 'Copied';
+        btn.style.borderColor = '#B8860B';
+        btn.style.color = '#B8860B';
         setTimeout(() => {
-          btn.innerText = 'Copy';
-          btn.style.background = 'var(--gold-primary)';
-          btn.style.color = '#000000';
+          btn.innerText = 'Copy Code';
+          btn.style.borderColor = 'var(--border)';
+          btn.style.color = 'var(--ink)';
         }, 2000);
       });
     }
@@ -435,14 +476,22 @@ async def signup_landing_page(
 ):
     code = (ref or "").strip().upper() or "WELCOME"
     scheme_str = (scheme or "").strip()
+    if not scheme_str:
+        if code.endswith("-1G"):
+            scheme_str = "1"
+        elif code.endswith("-5G"):
+            scheme_str = "5"
+        elif code.endswith("-10G"):
+            scheme_str = "10"
+
     if scheme_str == "1":
-        scheme_name = "1 Gram 24K Gold Savings Scheme"
+        scheme_name = "1-Gram Gold Scheme (Min. ₹100)"
     elif scheme_str == "5":
-        scheme_name = "5 Grams 24K Gold Savings Scheme"
+        scheme_name = "5-Gram Gold Scheme (Min. ₹1,000)"
     elif scheme_str == "10":
-        scheme_name = "10 Grams 24K Gold Savings Scheme"
+        scheme_name = "10-Gram Gold Scheme (Min. ₹2,000)"
     else:
-        scheme_name = "24K Pure Digital Gold Savings Scheme"
+        scheme_name = "24K Digital Gold Savings"
 
     deep_link = f"agsgold://signup?ref={code}"
     if scheme_str:
