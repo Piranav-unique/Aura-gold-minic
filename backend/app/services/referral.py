@@ -139,6 +139,12 @@ class ReferralService:
             commit=False,
         )
 
+        referrer.gold_savings_grams = (
+            Decimal(str(referrer.gold_savings_grams or 0)) + gold_reward_grams
+        )
+        referrer.gold_invested_inr = (
+            Decimal(str(referrer.gold_invested_inr or 0)) + reward_inr
+        )
         referrer.wallet_balance_inr = (
             Decimal(str(referrer.wallet_balance_inr or 0)) + reward_inr
         )
@@ -219,6 +225,12 @@ class ReferralService:
                 "reward_inr": reward_inr,
             },
             commit=False,
+        )
+        referrer.gold_savings_grams = (
+            Decimal(str(referrer.gold_savings_grams or 0)) + gold_reward_grams
+        )
+        referrer.gold_invested_inr = (
+            Decimal(str(referrer.gold_invested_inr or 0)) + reward_inr
         )
         referrer.wallet_balance_inr = (
             Decimal(str(referrer.wallet_balance_inr or 0)) + reward_inr

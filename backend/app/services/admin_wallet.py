@@ -115,16 +115,36 @@ class AdminWalletService:
             user.id
         )
 
-        # Keep user record reconciled with verified paid orders and referral rewards
+        gold_rate = Decimal("0")
+        silver_rate = Decimal("0")
+        try:
+            prices = await self.metal_price_service.get_prices()
+            gold_rate = prices.gold.retail_price
+            silver_rate = prices.silver.retail_price
+        except Exception:
+            pass
+
+        effective_rate = gold_rate if gold_rate > 0 else Decimal("15625")
+        referral_gold_grams = (
+            (referral_inr / effective_rate).quantize(Decimal("0.0001"))
+            if referral_inr > 0
+            else Decimal("0")
+        )
+
+        gold_grams = paid_gold + referral_gold_grams
+        silver_grams = paid_silver
+        total_gold_inr = paid_gold_inr + referral_inr
+
+        # Keep user record reconciled with verified paid orders + earned referral rewards
         changed = False
-        if user.gold_savings_grams != paid_gold:
-            user.gold_savings_grams = paid_gold
+        if user.gold_savings_grams != gold_grams:
+            user.gold_savings_grams = gold_grams
             changed = True
-        if user.silver_savings_grams != paid_silver:
-            user.silver_savings_grams = paid_silver
+        if user.silver_savings_grams != silver_grams:
+            user.silver_savings_grams = silver_grams
             changed = True
-        if user.gold_invested_inr != paid_gold_inr:
-            user.gold_invested_inr = paid_gold_inr
+        if user.gold_invested_inr != total_gold_inr:
+            user.gold_invested_inr = total_gold_inr
             changed = True
         if user.silver_invested_inr != paid_silver_inr:
             user.silver_invested_inr = paid_silver_inr
@@ -138,18 +158,8 @@ class AdminWalletService:
             except Exception:
                 pass
 
-        gold_rate = Decimal("0")
-        silver_rate = Decimal("0")
-        try:
-            prices = await self.metal_price_service.get_prices()
-            gold_rate = prices.gold.retail_price
-            silver_rate = prices.silver.retail_price
-        except Exception:
-            pass
-
-        gold_grams = paid_gold
-        silver_grams = paid_silver
-        gold_val = (gold_grams * gold_rate).quantize(Decimal("0.01")) if gold_rate > 0 else Decimal("0")
+        paid_gold_val = (paid_gold * gold_rate).quantize(Decimal("0.01")) if gold_rate > 0 else Decimal("0")
+        gold_val = paid_gold_val + referral_inr
         silver_val = (silver_grams * silver_rate).quantize(Decimal("0.01")) if silver_rate > 0 else Decimal("0")
         cash_val = referral_inr
         display_val = gold_val if gold_val > 0 else cash_val
@@ -159,7 +169,7 @@ class AdminWalletService:
             silver_balance_grams=silver_grams,
             gold_value_inr=gold_val,
             silver_value_inr=silver_val,
-            total_inr_invested=paid_gold_inr + paid_silver_inr,
+            total_inr_invested=paid_gold_inr + paid_silver_inr + referral_inr,
             total_bought_grams=total_bought,
             total_sold_grams=Decimal("0"),
             pending_sell_inquiries=pending_sell,
@@ -184,6 +194,7 @@ class AdminWalletService:
         user_ids = [u.id for u in users]
         paid_gold_map = await self.wallet_repo.batch_sum_paid_grams(user_ids, metal="gold")
         paid_silver_map = await self.wallet_repo.batch_sum_paid_grams(user_ids, metal="silver")
+        referral_inr_map = await self.wallet_repo.batch_sum_referral_rewards(user_ids)
 
         gold_rate = Decimal("0")
         silver_rate = Decimal("0")
@@ -194,12 +205,20 @@ class AdminWalletService:
         except Exception:
             pass
 
+        effective_rate = gold_rate if gold_rate > 0 else Decimal("15625")
+
         items = []
         sync_needed = False
         for u in users:
             paid_gold = paid_gold_map.get(u.id, Decimal("0"))
             paid_silver = paid_silver_map.get(u.id, Decimal("0"))
-            actual_gold = paid_gold
+            ref_inr = referral_inr_map.get(u.id, Decimal("0"))
+            ref_gold = (
+                (ref_inr / effective_rate).quantize(Decimal("0.0001"))
+                if ref_inr > 0
+                else Decimal("0")
+            )
+            actual_gold = paid_gold + ref_gold
             actual_silver = paid_silver
 
             if u.gold_savings_grams != actual_gold or u.silver_savings_grams != actual_silver:

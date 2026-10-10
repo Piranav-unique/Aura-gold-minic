@@ -346,6 +346,22 @@ class AdminWalletRepository:
         row = result.one()
         return Decimal(str(row[0] or 0)), Decimal(str(row[1] or 0))
 
+    async def batch_sum_referral_rewards(
+        self, user_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, Decimal]:
+        if not user_ids:
+            return {}
+        query = (
+            select(
+                ReferralReward.referrer_id,
+                func.coalesce(func.sum(ReferralReward.reward_inr), 0),
+            )
+            .where(ReferralReward.referrer_id.in_(user_ids))
+            .group_by(ReferralReward.referrer_id)
+        )
+        result = await self.db.execute(query)
+        return {row[0]: Decimal(str(row[1] or 0)) for row in result.all()}
+
     async def _build_buy_rows(
         self,
         user_id: Optional[uuid.UUID] = None,

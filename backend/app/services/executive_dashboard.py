@@ -412,6 +412,54 @@ class ExecutiveDashboardService:
                     )
                     for order in orders
                 ]
+
+                try:
+                    from sqlalchemy import select
+                    from app.models.referral_reward import ReferralReward
+
+                    rr_res = await self.user_repo.db.execute(
+                        select(ReferralReward).order_by(ReferralReward.created_at.desc())
+                    )
+                    rewards = list(rr_res.scalars().all())
+                    for rw in rewards:
+                        referrer = await self.user_repo.get(rw.referrer_id)
+                        if not referrer:
+                            continue
+                        rw_inr = Decimal(str(rw.reward_inr or 0))
+                        if rw_inr <= 0:
+                            continue
+                        rw_grams = (rw_inr / Decimal("15625")).quantize(Decimal("0.0001"))
+                        recent_payments.append(
+                            AdminPaymentItem(
+                                id=rw.id,
+                                razorpay_order_id=f"ref_order_{str(rw.id)[:8]}",
+                                razorpay_payment_id=f"ref_{str(rw.id)[:8]}",
+                                bank_rrn=f"Referral ({int(rw.scheme_grams or 1)}g scheme)",
+                                payment_method="REFERRAL",
+                                customer_name=_extract_human_name(referrer) or customer_names_by_user_id.get(str(referrer.id)),
+                                customer_mobile=referrer.mobile_number,
+                                customer_email=referrer.email,
+                                metal="gold",
+                                grams=rw_grams,
+                                amount_inr=rw_inr,
+                                status="captured",
+                                failure_reason=None,
+                                created_at=rw.created_at,
+                                paid_at=rw.created_at,
+                                gst_percent=Decimal("0"),
+                                metal_value_inr=rw_inr,
+                                gst_amount_inr=Decimal("0"),
+                                razorpay_fee_inr=Decimal("0"),
+                                merchant_settlement_inr=rw_inr,
+                            )
+                        )
+                    recent_payments.sort(
+                        key=lambda x: x.paid_at or x.created_at,
+                        reverse=True,
+                    )
+                except Exception as exc:
+                    logger.warning("executive_dashboard_referral_include_error", error=str(exc))
+
                 sum_dict = await self.payment_order_repo.get_orders_summary()
                 sum_dict["last_synced_at"] = refreshed_at
                 payment_summary = AdminPaymentSummary(**sum_dict)

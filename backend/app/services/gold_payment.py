@@ -591,41 +591,99 @@ class GoldPaymentService:
         skip: int = 0,
         limit: int = 50,
     ):
+        from sqlalchemy import select
+        from app.models.referral_reward import ReferralReward
         from app.schemas.payment import PaymentSettlementItem, PaymentSettlementListResponse
 
         items = await self.payment_repo.list_paid_orders(skip=skip, limit=limit)
         total = await self.payment_repo.count_paid_orders()
-        return PaymentSettlementListResponse(
-            items=[
-                PaymentSettlementItem(
-                    id=order.id,
-                    user_email=order.user.email if order.user else "",
-                    user_name=self._display_name(order.user) if order.user else None,
-                    user_mobile=(
-                        order.user.mobile_number
-                        if (order.user and order.user.mobile_number)
-                        else order.customer_contact
-                    ),
-                    payment_method=order.payment_method,
-                    metal=order.metal,
-                    gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
-                    amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
-                    gst_percent=Decimal(str(order.gst_percent or 0)),
-                    metal_value_inr=Decimal(str(order.metal_value_inr or 0)),
-                    gst_amount_inr=Decimal(str(order.gst_amount_inr or 0)),
-                    razorpay_fee_inr=Decimal(str(order.razorpay_fee_inr or 0)),
-                    merchant_settlement_inr=Decimal(
-                        str(order.merchant_settlement_inr or 0)
-                    ),
-                    grams=Decimal(str(order.grams)),
-                    paid_at=order.paid_at or order.created_at,
-                    created_at=order.created_at,
-                    status="paid" if order.status == "paid" else (order.status or "paid"),
-                    razorpay_payment_id=order.razorpay_payment_id,
-                    bank_rrn=order.bank_rrn,
+
+        settlement_items = [
+            PaymentSettlementItem(
+                id=order.id,
+                user_email=order.user.email if order.user else "",
+                user_name=self._display_name(order.user) if order.user else None,
+                user_mobile=(
+                    order.user.mobile_number
+                    if (order.user and order.user.mobile_number)
+                    else order.customer_contact
+                ),
+                payment_method=order.payment_method,
+                metal=order.metal,
+                gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+                amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
+                gst_percent=Decimal(str(order.gst_percent or 0)),
+                metal_value_inr=Decimal(str(order.metal_value_inr or 0)),
+                gst_amount_inr=Decimal(str(order.gst_amount_inr or 0)),
+                razorpay_fee_inr=Decimal(str(order.razorpay_fee_inr or 0)),
+                merchant_settlement_inr=Decimal(
+                    str(order.merchant_settlement_inr or 0)
+                ),
+                grams=Decimal(str(order.grams)),
+                paid_at=order.paid_at or order.created_at,
+                created_at=order.created_at,
+                status="paid" if order.status == "paid" else (order.status or "paid"),
+                razorpay_payment_id=order.razorpay_payment_id,
+                bank_rrn=order.bank_rrn,
+            )
+            for order in items
+        ]
+
+        if skip == 0:
+            try:
+                gold_rate = Decimal("15625")
+                try:
+                    prices = await self.metal_prices.get_prices()
+                    if prices.gold.retail_price > 0:
+                        gold_rate = Decimal(str(prices.gold.retail_price))
+                except Exception:
+                    pass
+
+                rr_res = await self.user_repo.db.execute(
+                    select(ReferralReward).order_by(ReferralReward.created_at.desc())
                 )
-                for order in items
-            ],
+                rewards = list(rr_res.scalars().all())
+                for rw in rewards:
+                    referrer = await self.user_repo.get_ById_include_deleted(rw.referrer_id) if hasattr(self.user_repo, "get_ById_include_deleted") else await self.user_repo.get(rw.referrer_id)
+                    if not referrer:
+                        continue
+                    rw_inr = Decimal(str(rw.reward_inr or 0))
+                    if rw_inr <= 0:
+                        continue
+                    rw_grams = (rw_inr / gold_rate).quantize(Decimal("0.0001"))
+                    settlement_items.append(
+                        PaymentSettlementItem(
+                            id=rw.id,
+                            user_email=referrer.email or "",
+                            user_name=self._display_name(referrer),
+                            user_mobile=referrer.mobile_number,
+                            payment_method="REFERRAL",
+                            metal="gold",
+                            gross_amount_inr=rw_inr,
+                            amount_inr=rw_inr,
+                            gst_percent=Decimal("0"),
+                            metal_value_inr=rw_inr,
+                            gst_amount_inr=Decimal("0"),
+                            razorpay_fee_inr=Decimal("0"),
+                            merchant_settlement_inr=rw_inr,
+                            grams=rw_grams,
+                            paid_at=rw.created_at,
+                            created_at=rw.created_at,
+                            status="paid",
+                            razorpay_payment_id=f"ref_{str(rw.id)[:8]}",
+                            bank_rrn=f"Referral ({int(rw.scheme_grams or 1)}g scheme)",
+                        )
+                    )
+                settlement_items.sort(
+                    key=lambda x: x.paid_at or x.created_at,
+                    reverse=True,
+                )
+                total += len(rewards)
+            except Exception as exc:
+                logger.warning("list_settlements_referral_include_error", error=str(exc))
+
+        return PaymentSettlementListResponse(
+            items=settlement_items,
             total=total,
             skip=skip,
             limit=limit,
