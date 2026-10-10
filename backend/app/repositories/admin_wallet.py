@@ -308,6 +308,23 @@ class AdminWalletRepository:
         return {row[0]: Decimal(str(row[1] or 0)) for row in result.all()}
 
 
+    async def sum_paid_amount_inr(self, user_id: uuid.UUID, metal: Optional[str] = None) -> Decimal:
+        query = (
+            select(func.coalesce(func.sum(PaymentOrder.amount_paise), 0))
+            .where(
+                PaymentOrder.user_id == user_id,
+                PaymentOrder.status == "paid",
+                or_(PaymentOrder.razorpay_payment_id.is_(None), PaymentOrder.razorpay_payment_id != "pay_dev_mock"),
+                or_(PaymentOrder.razorpay_order_id.is_(None), ~PaymentOrder.razorpay_order_id.like("order_dev_%")),
+                ~PaymentOrder.razorpay_order_id.in_(self._IGNORED_ORDERS),
+            )
+        )
+        if metal:
+            query = query.where(PaymentOrder.metal == metal)
+        result = await self.db.execute(query)
+        paise = Decimal(str(result.scalar_one() or 0))
+        return (paise / Decimal("100")).quantize(Decimal("0.01"))
+
     async def count_pending_sell_inquiries(self, user_id: uuid.UUID) -> int:
         result = await self.db.execute(
             select(func.count())
@@ -323,7 +340,7 @@ class AdminWalletRepository:
         result = await self.db.execute(
             select(
                 func.coalesce(func.sum(ReferralReward.reward_inr), 0),
-                func.coalesce(func.sum(ReferralReward.scheme_grams), 0),
+                func.coalesce(func.max(ReferralReward.scheme_grams), 0),
             ).where(ReferralReward.referrer_id == user_id)
         )
         row = result.one()

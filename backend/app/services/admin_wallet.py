@@ -105,13 +105,38 @@ class AdminWalletService:
         )
 
     async def _build_wallet_summary(self, user: User) -> WalletSummary:
-        total_bought = await self.wallet_repo.sum_paid_grams(user.id)
+        paid_gold = await self.wallet_repo.sum_paid_grams(user.id, metal="gold")
+        paid_silver = await self.wallet_repo.sum_paid_grams(user.id, metal="silver")
+        total_bought = paid_gold + paid_silver
+        paid_gold_inr = await self.wallet_repo.sum_paid_amount_inr(user.id, metal="gold")
+        paid_silver_inr = await self.wallet_repo.sum_paid_amount_inr(user.id, metal="silver")
         pending_sell = await self.wallet_repo.count_pending_sell_inquiries(user.id)
         referral_inr, referral_grams = await self.wallet_repo.sum_referral_rewards(
             user.id
         )
-        gold_invested = user.gold_invested_inr or Decimal("0")
-        silver_invested = user.silver_invested_inr or Decimal("0")
+
+        # Keep user record reconciled with verified paid orders and referral rewards
+        changed = False
+        if user.gold_savings_grams != paid_gold:
+            user.gold_savings_grams = paid_gold
+            changed = True
+        if user.silver_savings_grams != paid_silver:
+            user.silver_savings_grams = paid_silver
+            changed = True
+        if user.gold_invested_inr != paid_gold_inr:
+            user.gold_invested_inr = paid_gold_inr
+            changed = True
+        if user.silver_invested_inr != paid_silver_inr:
+            user.silver_invested_inr = paid_silver_inr
+            changed = True
+        if user.wallet_balance_inr != referral_inr:
+            user.wallet_balance_inr = referral_inr
+            changed = True
+        if changed:
+            try:
+                await self.wallet_repo.db.commit()
+            except Exception:
+                pass
 
         gold_rate = Decimal("0")
         silver_rate = Decimal("0")
@@ -122,11 +147,11 @@ class AdminWalletService:
         except Exception:
             pass
 
-        gold_grams = user.gold_savings_grams or Decimal("0")
-        silver_grams = user.silver_savings_grams or Decimal("0")
+        gold_grams = paid_gold
+        silver_grams = paid_silver
         gold_val = (gold_grams * gold_rate).quantize(Decimal("0.01")) if gold_rate > 0 else Decimal("0")
         silver_val = (silver_grams * silver_rate).quantize(Decimal("0.01")) if silver_rate > 0 else Decimal("0")
-        cash_val = user.wallet_balance_inr or Decimal("0")
+        cash_val = referral_inr
         display_val = gold_val if gold_val > 0 else cash_val
 
         return WalletSummary(
@@ -134,7 +159,7 @@ class AdminWalletService:
             silver_balance_grams=silver_grams,
             gold_value_inr=gold_val,
             silver_value_inr=silver_val,
-            total_inr_invested=gold_invested + silver_invested,
+            total_inr_invested=paid_gold_inr + paid_silver_inr,
             total_bought_grams=total_bought,
             total_sold_grams=Decimal("0"),
             pending_sell_inquiries=pending_sell,
@@ -174,11 +199,12 @@ class AdminWalletService:
         for u in users:
             paid_gold = paid_gold_map.get(u.id, Decimal("0"))
             paid_silver = paid_silver_map.get(u.id, Decimal("0"))
-            actual_gold = max(u.gold_savings_grams or Decimal("0"), paid_gold)
-            actual_silver = max(u.silver_savings_grams or Decimal("0"), paid_silver)
+            actual_gold = paid_gold
+            actual_silver = paid_silver
 
-            if u.gold_savings_grams is None or u.gold_savings_grams < actual_gold:
+            if u.gold_savings_grams != actual_gold or u.silver_savings_grams != actual_silver:
                 u.gold_savings_grams = actual_gold
+                u.silver_savings_grams = actual_silver
                 sync_needed = True
 
             items.append(

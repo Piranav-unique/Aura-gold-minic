@@ -369,7 +369,11 @@ class ExecutiveDashboardService:
                         if str(o.user.id) in customer_names_by_user_id:
                             return customer_names_by_user_id[str(o.user.id)]
                     # 2. Check Customer/User phone lookup
-                    contact = o.customer_contact or (o.user.mobile_number if o.user else None)
+                    contact = (
+                        o.user.mobile_number
+                        if (o.user and o.user.mobile_number)
+                        else o.customer_contact
+                    )
                     p_key = _clean_phone(contact)
                     if p_key and p_key in customer_names_by_phone:
                         return customer_names_by_phone[p_key]
@@ -387,8 +391,11 @@ class ExecutiveDashboardService:
                         bank_rrn=order.bank_rrn,
                         payment_method=order.payment_method,
                         customer_name=_resolve_order_customer_name(order),
-                        customer_mobile=order.customer_contact
-                        or (order.user.mobile_number if order.user else None),
+                        customer_mobile=(
+                            order.user.mobile_number
+                            if (order.user and order.user.mobile_number)
+                            else order.customer_contact
+                        ),
                         customer_email=order.user.email if order.user else None,
                         metal=order.metal,
                         grams=Decimal(str(order.grams)),

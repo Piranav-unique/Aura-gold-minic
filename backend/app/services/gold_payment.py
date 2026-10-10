@@ -601,8 +601,11 @@ class GoldPaymentService:
                     id=order.id,
                     user_email=order.user.email if order.user else "",
                     user_name=self._display_name(order.user) if order.user else None,
-                    user_mobile=order.customer_contact
-                    or (order.user.mobile_number if order.user else None),
+                    user_mobile=(
+                        order.user.mobile_number
+                        if (order.user and order.user.mobile_number)
+                        else order.customer_contact
+                    ),
                     payment_method=order.payment_method,
                     metal=order.metal,
                     gross_amount_inr=Decimal(str(order.amount_paise)) / Decimal("100"),
@@ -689,7 +692,7 @@ class GoldPaymentService:
                             payment_id,
                             bank_rrn=str(rrn) if rrn else None,
                             payment_method=method,
-                            customer_contact=contact or (user.mobile_number if user else None),
+                            customer_contact=(user.mobile_number if (user and user.mobile_number) else None) or contact,
                         )
                         updated_orders += 1
                     else:
@@ -700,7 +703,10 @@ class GoldPaymentService:
                         if not order.payment_method and method:
                             order.payment_method = method
                             changed = True
-                        if not order.customer_contact and contact:
+                        if user and user.mobile_number and order.customer_contact != user.mobile_number:
+                            order.customer_contact = user.mobile_number
+                            changed = True
+                        elif not order.customer_contact and contact:
                             order.customer_contact = contact
                             changed = True
                         if not order.razorpay_payment_id and payment_id:
@@ -768,7 +774,11 @@ class GoldPaymentService:
                     bank_rrn=order.bank_rrn,
                     payment_method=order.payment_method,
                     customer_name=self._human_name_or_none(order.user),
-                    customer_mobile=order.customer_contact or (order.user.mobile_number if order.user else None),
+                    customer_mobile=(
+                        order.user.mobile_number
+                        if (order.user and order.user.mobile_number)
+                        else order.customer_contact
+                    ),
                     customer_email=order.user.email if order.user else None,
                     metal=order.metal,
                     grams=Decimal(str(order.grams)),
