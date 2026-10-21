@@ -17,6 +17,12 @@ _OTP_ATTEMPT_LOST_MESSAGE = (
     "UIDAI did not respond in time, so this OTP can no longer be used. "
     "Wait a minute, tap Resend OTP and enter the new code."
 )
+# Retrying OTP generation after a 503/timeout can make UIDAI send a second SMS
+# that silently invalidates the first one, so it is not retried either.
+_OTP_SEND_UNAVAILABLE_MESSAGE = (
+    "UIDAI is not responding right now, so the OTP could not be sent. "
+    "Wait a minute and tap Send OTP again."
+)
 
 
 class SandboxKycClient:
@@ -43,7 +49,11 @@ class SandboxKycClient:
             "consent": "Y",
             "reason": self.reason,
         }
-        data = await self._post("/kyc/aadhaar/okyc/otp", payload)
+        data = await self._post(
+            "/kyc/aadhaar/okyc/otp",
+            payload,
+            no_retry_message=_OTP_SEND_UNAVAILABLE_MESSAGE,
+        )
         reference_id = self._extract_reference_id(data)
         if not reference_id:
             message = (
@@ -78,7 +88,9 @@ class SandboxKycClient:
         }
         try:
             body = await self._post(
-                "/kyc/aadhaar/okyc/otp/verify", payload, one_time=True
+                "/kyc/aadhaar/okyc/otp/verify",
+                payload,
+                no_retry_message=_OTP_ATTEMPT_LOST_MESSAGE,
             )
         except ValidationException:
             if settings.KYC_TEST_MODE and otp_clean in {"123456", "000000"}:
@@ -164,7 +176,7 @@ class SandboxKycClient:
         payload: dict[str, Any],
         *,
         max_attempts: int = 3,
-        one_time: bool = False,
+        no_retry_message: Optional[str] = None,
     ) -> dict[str, Any]:
         last_body: dict[str, Any] = {}
         last_status = 0
@@ -187,8 +199,8 @@ class SandboxKycClient:
                     response = await client.post(url, json=payload, headers=headers)
             except httpx.HTTPError as exc:
                 logger.error("sandbox_kyc_http_error", path=path, error=str(exc))
-                if one_time:
-                    raise ValidationException(_OTP_ATTEMPT_LOST_MESSAGE) from exc
+                if no_retry_message:
+                    raise ValidationException(no_retry_message) from exc
                 if attempt < max_attempts - 1:
                     await asyncio.sleep(2**attempt)
                     continue
@@ -211,13 +223,13 @@ class SandboxKycClient:
                 await asyncio.sleep(2**attempt)
                 continue
 
-            if response.status_code == 503 and one_time:
+            if response.status_code == 503 and no_retry_message:
                 logger.warning(
-                    "sandbox_kyc_source_unavailable_one_time",
+                    "sandbox_kyc_source_unavailable_no_retry",
                     path=path,
                     transaction_id=last_body.get("transaction_id"),
                 )
-                raise ValidationException(_OTP_ATTEMPT_LOST_MESSAGE)
+                raise ValidationException(no_retry_message)
 
             if response.status_code == 503 and attempt < max_attempts - 1:
                 logger.warning(

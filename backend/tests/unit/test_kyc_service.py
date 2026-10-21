@@ -283,3 +283,31 @@ async def test_sandbox_verify_otp_not_retried_after_503(monkeypatch):
     with pytest.raises(ValidationException, match="can no longer be used"):
         await client.verify_aadhaar_otp("12345678", "482913")
     assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_sandbox_send_otp_not_retried_after_503(monkeypatch):
+    """Retrying OTP generation could trigger a second SMS that invalidates the first."""
+    import httpx
+
+    from app.services import sandbox_kyc
+
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        return httpx.Response(503, json={"code": 503, "message": "Source Unavailable"})
+
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        sandbox_kyc.httpx,
+        "AsyncClient",
+        lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw),
+    )
+    client = sandbox_kyc.SandboxKycClient()
+    client.api_key, client.api_secret = "key", "secret"
+    client._get_access_token = AsyncMock(return_value="token")
+
+    with pytest.raises(ValidationException, match="could not be sent"):
+        await client.generate_aadhaar_otp("234567890123")
+    assert len(calls) == 1
