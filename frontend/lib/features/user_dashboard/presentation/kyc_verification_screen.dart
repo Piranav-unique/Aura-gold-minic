@@ -145,6 +145,10 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
 
   String _friendlyKycError(String message) {
     final lower = message.toLowerCase();
+    if (lower.contains('otp expired') || lower.contains('expired otp')) {
+      return 'This OTP has expired or was already used. Tap Resend OTP and '
+          'enter the new code.';
+    }
     if (lower.contains('source unavailable')) {
       return 'UIDAI is temporarily unavailable. Wait a minute, then tap '
           'Verify again — or request a new OTP.';
@@ -348,7 +352,15 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         'kyc_verify_aadhaar_failed',
         data: {'message': e.message},
       );
-      setState(() => _errorMessage = _friendlyKycError(e.message));
+      final lower = e.message.toLowerCase();
+      // The OTP is spent; let the user request a new one straight away.
+      final otpUnusable =
+          lower.contains('expired') || lower.contains('can no longer be used');
+      if (otpUnusable) _resendTimer?.cancel();
+      setState(() {
+        _errorMessage = _friendlyKycError(e.message);
+        if (otpUnusable) _resendSecondsLeft = 0;
+      });
     } catch (_) {
       setState(() => _errorMessage = context.l10n.otpVerificationFailed);
     } finally {

@@ -11,6 +11,13 @@ from app.core.logging import logger
 _token_cache: tuple[float, str] | None = None
 _TOKEN_TTL_SECONDS = 23 * 60 * 60
 
+# An Aadhaar OTP is single-use: UIDAI may consume it even when the gateway
+# answers 503 or times out, so a verify call is never retried with the same OTP.
+_OTP_ATTEMPT_LOST_MESSAGE = (
+    "UIDAI did not respond in time, so this OTP can no longer be used. "
+    "Wait a minute, tap Resend OTP and enter the new code."
+)
+
 
 class SandboxKycClient:
     """Client for Sandbox.co.in Aadhaar OTP and PAN–Aadhaar link APIs."""
@@ -70,7 +77,9 @@ class SandboxKycClient:
             "otp": otp_clean,
         }
         try:
-            body = await self._post("/kyc/aadhaar/okyc/otp/verify", payload)
+            body = await self._post(
+                "/kyc/aadhaar/okyc/otp/verify", payload, one_time=True
+            )
         except ValidationException:
             if settings.KYC_TEST_MODE and otp_clean in {"123456", "000000"}:
                 return self._mock_verify_otp(reference_id, otp_clean)
@@ -150,7 +159,12 @@ class SandboxKycClient:
             raise
 
     async def _post(
-        self, path: str, payload: dict[str, Any], *, max_attempts: int = 3
+        self,
+        path: str,
+        payload: dict[str, Any],
+        *,
+        max_attempts: int = 3,
+        one_time: bool = False,
     ) -> dict[str, Any]:
         last_body: dict[str, Any] = {}
         last_status = 0
@@ -173,6 +187,8 @@ class SandboxKycClient:
                     response = await client.post(url, json=payload, headers=headers)
             except httpx.HTTPError as exc:
                 logger.error("sandbox_kyc_http_error", path=path, error=str(exc))
+                if one_time:
+                    raise ValidationException(_OTP_ATTEMPT_LOST_MESSAGE) from exc
                 if attempt < max_attempts - 1:
                     await asyncio.sleep(2**attempt)
                     continue
@@ -194,6 +210,14 @@ class SandboxKycClient:
                 force_refresh = True
                 await asyncio.sleep(2**attempt)
                 continue
+
+            if response.status_code == 503 and one_time:
+                logger.warning(
+                    "sandbox_kyc_source_unavailable_one_time",
+                    path=path,
+                    transaction_id=last_body.get("transaction_id"),
+                )
+                raise ValidationException(_OTP_ATTEMPT_LOST_MESSAGE)
 
             if response.status_code == 503 and attempt < max_attempts - 1:
                 logger.warning(

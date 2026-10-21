@@ -252,3 +252,34 @@ async def test_pan_requires_aadhaar_first(kyc_service, user_repo):
 
     with pytest.raises(ValidationException, match="Aadhaar"):
         await kyc_service.verify_pan_aadhaar_link(user.id, "ABCDE1234F")
+
+
+@pytest.mark.asyncio
+async def test_sandbox_verify_otp_not_retried_after_503(monkeypatch):
+    """A 503 on OTP verify must not be retried: UIDAI may have consumed the
+    single-use OTP, and the retry would only report a misleading 'OTP expired'."""
+    import httpx
+
+    from app.services import sandbox_kyc
+
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        if len(calls) == 1:
+            return httpx.Response(503, json={"code": 503, "message": "Source Unavailable"})
+        return httpx.Response(200, json={"code": 200, "data": {"message": "OTP expired"}})
+
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        sandbox_kyc.httpx,
+        "AsyncClient",
+        lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw),
+    )
+    client = sandbox_kyc.SandboxKycClient()
+    client.api_key, client.api_secret = "key", "secret"
+    client._get_access_token = AsyncMock(return_value="token")
+
+    with pytest.raises(ValidationException, match="can no longer be used"):
+        await client.verify_aadhaar_otp("12345678", "482913")
+    assert len(calls) == 1
