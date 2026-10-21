@@ -185,14 +185,7 @@ class UserDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 14),
 
-                  // 2. Live 24K Gold Price (24K only, live rate, real change %, real sparkline chart, [Full Chart >] linking to /live-price)
-                  AurumLiveGoldCard(
-                    livePricePerGram: goldRate,
-                    change24hPct: goldQuote?.changePercent ?? 0.0,
-                    initialTrend: goldQuote?.trend ?? const [],
-                    onChartTap: () => context.push('/live-price'),
-                  ),
-                  const SizedBox(height: 14),
+
 
                   // 4. Clear [BUY GOLD] & [SELL GOLD] Actions (No SIP, No Add Funds)
                   AurumBuySellButtons(
