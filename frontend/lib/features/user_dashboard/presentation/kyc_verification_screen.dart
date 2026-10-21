@@ -728,6 +728,24 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: AurumConsumerTheme.chipGold,
+              ),
+              icon: const Icon(Icons.flash_on, size: 16),
+              label: const Text('Use Test OTP (123456)'),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _otpController.text = '123456';
+                      setState(() {});
+                    },
+            ),
+          ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,

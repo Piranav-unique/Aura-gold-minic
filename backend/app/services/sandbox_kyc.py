@@ -57,14 +57,12 @@ class SandboxKycClient:
         )
         return reference_id
 
-    async def verify_aadhaar_otp(
-        self, reference_id: str, otp: str, user_name: str | None = None
-    ) -> dict[str, Any]:
+    async def verify_aadhaar_otp(self, reference_id: str, otp: str) -> dict[str, Any]:
         otp_clean = str(otp).strip()
         if not self.is_configured or (
             settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}
         ):
-            return self._mock_verify_otp(reference_id, otp_clean, user_name=user_name)
+            return self._mock_verify_otp(reference_id, otp_clean)
 
         payload = {
             "@entity": "in.co.sandbox.kyc.aadhaar.okyc.request",
@@ -75,7 +73,7 @@ class SandboxKycClient:
             body = await self._post("/kyc/aadhaar/okyc/otp/verify", payload)
         except ValidationException:
             if settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}:
-                return self._mock_verify_otp(reference_id, otp_clean, user_name=user_name)
+                return self._mock_verify_otp(reference_id, otp_clean)
             raise
 
         data = body.get("data") if isinstance(body.get("data"), dict) else {}
@@ -86,7 +84,7 @@ class SandboxKycClient:
         )
         if status and status not in {"VALID", "SUCCESS"}:
             if settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}:
-                return self._mock_verify_otp(reference_id, otp_clean, user_name=user_name)
+                return self._mock_verify_otp(reference_id, otp_clean)
             message = (
                 data.get("message")
                 or body.get("message")
@@ -95,7 +93,7 @@ class SandboxKycClient:
             raise ValidationException(str(message))
         if not status and not has_identity:
             if settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}:
-                return self._mock_verify_otp(reference_id, otp_clean, user_name=user_name)
+                return self._mock_verify_otp(reference_id, otp_clean)
             raw_msg = str(data.get("message") or body.get("message") or "").strip()
             logger.warning(
                 "sandbox_aadhaar_verify_empty_data",
@@ -344,16 +342,14 @@ class SandboxKycClient:
         return f"mock-ref-{aadhaar_number[-4:]}"
 
     @staticmethod
-    def _mock_verify_otp(
-        reference_id: str, otp: str, user_name: str | None = None
-    ) -> dict[str, Any]:
+    def _mock_verify_otp(reference_id: str, otp: str) -> dict[str, Any]:
         if str(otp).strip() not in {"123456", "000000"}:
             raise ValidationException("Invalid OTP. Use 123456 in development mode.")
         return {
             "data": {
                 "status": "VALID",
                 "reference_id": reference_id,
-                "name": user_name or "Verified User",
+                "name": "Verified User",
                 "date_of_birth": "15-08-1992",
                 "gender": "M",
                 "care_of": "S/O: Parent",

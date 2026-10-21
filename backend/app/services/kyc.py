@@ -2,6 +2,7 @@ import re
 import uuid
 from typing import Any, Optional
 
+from app.core.config import settings
 from app.core.exceptions import ValidationException
 from app.core.kyc_crypto import decrypt_aadhaar, encrypt_aadhaar
 from app.core.logging import logger
@@ -301,7 +302,7 @@ class KycService:
         linked = self._extract_aadhaar_mobile(data)
         if not registered:
             raise ValidationException("Registered mobile number is missing.")
-        if linked and linked != registered:
+        if linked and linked != registered :
             raise ValidationException(
                 "The mobile linked with this Aadhaar does not match your registered "
                 "number. Use the same mobile number you signed up with for verification."
