@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,10 +43,20 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
   String? _errorMessage;
   String? _registeredMobileMasked;
   KycGovernmentProfile? _verifiedProfile;
+  Timer? _resendTimer;
+  int _resendSecondsLeft = 0;
 
   static const _kycRefKey = KycDraftPrefs.referenceIdKey;
   static const _kycOtpSentKey = KycDraftPrefs.otpSentKey;
   static const _kycAadhaarKey = KycDraftPrefs.aadhaarPendingKey;
+  static const _kycOtpSentAtKey = KycDraftPrefs.otpSentAtKey;
+
+  /// UIDAI OTPs expire after ~10 minutes; older sessions must request a new OTP.
+  static const _otpValidity = Duration(minutes: 10);
+
+  /// Each resend makes UIDAI invalidate the previous OTP and rapid resends get
+  /// throttled, so give the SMS time to arrive before allowing another one.
+  static const _resendCooldown = Duration(seconds: 60);
 
   @override
   void initState() {
@@ -67,9 +79,22 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
     final refId = prefs.getString(_kycRefKey);
     final otpSent = prefs.getBool(_kycOtpSentKey) ?? false;
     final aadhaar = prefs.getString(_kycAadhaarKey);
+    final sentAtMs = prefs.getInt(_kycOtpSentAtKey);
     if (!mounted || refId == null || !otpSent) return;
-    if (aadhaar == null || aadhaar.length != 12) {
+    final sentAt = sentAtMs == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(sentAtMs);
+    final age = sentAt == null ? null : DateTime.now().difference(sentAt);
+    if (aadhaar == null ||
+        aadhaar.length != 12 ||
+        age == null ||
+        age >= _otpValidity) {
+      // Expired or legacy session: the old OTP is no longer valid, so show
+      // the Aadhaar form again instead of waiting for an SMS that won't come.
       await _persistOtpSession(sent: false);
+      if (mounted && aadhaar != null && aadhaar.length == 12) {
+        setState(() => _aadhaarController.text = aadhaar);
+      }
       return;
     }
     setState(() {
@@ -77,6 +102,21 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
       _otpSent = true;
       _pendingAadhaar = aadhaar;
       _aadhaarController.text = aadhaar;
+    });
+    final remaining = _resendCooldown - age;
+    if (remaining > Duration.zero) _startResendCooldown(remaining);
+  }
+
+  void _startResendCooldown(Duration duration) {
+    _resendTimer?.cancel();
+    setState(() => _resendSecondsLeft = duration.inSeconds);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() => _resendSecondsLeft--);
+      if (_resendSecondsLeft <= 0) timer.cancel();
     });
   }
 
@@ -90,10 +130,15 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
       await prefs.setString(_kycRefKey, referenceId);
       await prefs.setBool(_kycOtpSentKey, true);
       await prefs.setString(_kycAadhaarKey, aadhaarNumber);
+      await prefs.setInt(
+        _kycOtpSentAtKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
     } else {
       await prefs.remove(_kycRefKey);
       await prefs.setBool(_kycOtpSentKey, false);
       await prefs.remove(_kycAadhaarKey);
+      await prefs.remove(_kycOtpSentAtKey);
     }
   }
 
@@ -158,6 +203,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _aadhaarController.dispose();
     _otpController.dispose();
     _panController.dispose();
@@ -222,6 +268,8 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         aadhaarNumber: aadhaar,
       );
       if (mounted) {
+        _otpController.clear();
+        _startResendCooldown(_resendCooldown);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.otpSentSnack)),
         );
@@ -615,6 +663,13 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.otpDeliveryHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
           const SizedBox(height: 16),
           Form(
             key: _otpFormKey,
@@ -649,10 +704,12 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                     : () async {
                         await _persistOtpSession(sent: false);
                         if (!mounted) return;
+                        _resendTimer?.cancel();
                         setState(() {
                           _otpSent = false;
                           _referenceId = null;
                           _pendingAadhaar = null;
+                          _resendSecondsLeft = 0;
                           _otpController.clear();
                         });
                       },
@@ -660,8 +717,14 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
               ),
               const Spacer(),
               TextButton(
-                onPressed: _isLoading ? null : _sendOtp,
-                child: Text(l10n.resendOtp),
+                onPressed: _isLoading || _resendSecondsLeft > 0
+                    ? null
+                    : _sendOtp,
+                child: Text(
+                  _resendSecondsLeft > 0
+                      ? l10n.resendOtpIn(_resendSecondsLeft)
+                      : l10n.resendOtp,
+                ),
               ),
             ],
           ),

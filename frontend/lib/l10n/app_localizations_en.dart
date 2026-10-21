@@ -1131,6 +1131,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resendOtp => 'Resend OTP';
 
   @override
+  String resendOtpIn(int seconds) {
+    return 'Resend OTP in ${seconds}s';
+  }
+
+  @override
+  String get otpDeliveryHint =>
+      'The SMS can take up to 2 minutes. Not received? Make sure this Aadhaar is linked to a mobile you have now, and check blocked or spam messages. Each resend cancels the previous OTP.';
+
+  @override
   String get verifyAadhaar => 'Verify Aadhaar';
 
   @override

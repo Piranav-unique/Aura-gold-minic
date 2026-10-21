@@ -2096,6 +2096,18 @@ abstract class AppLocalizations {
   /// **'Resend OTP'**
   String get resendOtp;
 
+  /// No description provided for @resendOtpIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend OTP in {seconds}s'**
+  String resendOtpIn(int seconds);
+
+  /// No description provided for @otpDeliveryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The SMS can take up to 2 minutes. Not received? Make sure this Aadhaar is linked to a mobile you have now, and check blocked or spam messages. Each resend cancels the previous OTP.'**
+  String get otpDeliveryHint;
+
   /// No description provided for @verifyAadhaar.
   ///
   /// In en, this message translates to:

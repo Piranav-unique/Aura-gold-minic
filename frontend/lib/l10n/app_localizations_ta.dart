@@ -1144,6 +1144,15 @@ class AppLocalizationsTa extends AppLocalizations {
   String get resendOtp => 'OTP மீண்டும் அனுப்பு';
 
   @override
+  String resendOtpIn(int seconds) {
+    return '$seconds வினாடிகளில் மீண்டும் அனுப்பலாம்';
+  }
+
+  @override
+  String get otpDeliveryHint =>
+      'SMS வர 2 நிமிடங்கள் வரை ஆகலாம். வரவில்லையா? இந்த ஆதார் உங்களிடம் உள்ள மொபைலுடன் இணைக்கப்பட்டுள்ளதா என சரிபார்க்கவும், spam/blocked messages-ஐயும் பாருங்கள். மீண்டும் அனுப்பினால் முந்தைய OTP செல்லாது.';
+
+  @override
   String get verifyAadhaar => 'ஆதாரை சரிபார்';
 
   @override

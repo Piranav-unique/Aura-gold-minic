@@ -12,7 +12,6 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_pr
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_buy_sell_buttons.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_hero_portfolio_card.dart';
-import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_live_gold_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_quick_buy_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_scheme_journey_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_scheme_selection_sheet.dart';

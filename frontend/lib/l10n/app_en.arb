@@ -521,6 +521,13 @@
   "otpInvalid": "Enter the 6-digit OTP",
   "changeAadhaarNumber": "Change Aadhaar number",
   "resendOtp": "Resend OTP",
+  "resendOtpIn": "Resend OTP in {seconds}s",
+  "@resendOtpIn": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "otpDeliveryHint": "The SMS can take up to 2 minutes. Not received? Make sure this Aadhaar is linked to a mobile you have now, and check blocked or spam messages. Each resend cancels the previous OTP.",
   "verifyAadhaar": "Verify Aadhaar",
   "verifying": "Verifying...",
   "panNumber": "PAN number",
