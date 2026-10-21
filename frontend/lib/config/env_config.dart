@@ -23,8 +23,8 @@ class EnvConfig {
     required this.environment,
     required this.baseUrl,
     required this.adminNumber,
-    this.connectionTimeout = const Duration(seconds: 15),
-    this.receiveTimeout = const Duration(seconds: 15),
+    this.connectionTimeout = const Duration(seconds: 20),
+    this.receiveTimeout = const Duration(seconds: 45),
   });
 
   static String get _devBaseUrl {

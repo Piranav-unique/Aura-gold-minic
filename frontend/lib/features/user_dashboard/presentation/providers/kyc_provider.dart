@@ -48,6 +48,7 @@ final kycAadhaarOtpProvider = Provider((ref) {
     final response = await apiClient.post(
       '/profile/kyc/aadhaar/otp',
       data: {'aadhaar_number': aadhaarNumber},
+      options: Options(receiveTimeout: const Duration(seconds: 45)),
     );
     final data = response.data as Map<String, dynamic>;
     return (
