@@ -60,7 +60,7 @@ class SandboxKycClient:
     async def verify_aadhaar_otp(self, reference_id: str, otp: str) -> dict[str, Any]:
         otp_clean = str(otp).strip()
         if not self.is_configured or (
-            settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}
+            settings.KYC_TEST_MODE and otp_clean in {"123456", "000000"}
         ):
             return self._mock_verify_otp(reference_id, otp_clean)
 
@@ -72,7 +72,7 @@ class SandboxKycClient:
         try:
             body = await self._post("/kyc/aadhaar/okyc/otp/verify", payload)
         except ValidationException:
-            if settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}:
+            if settings.KYC_TEST_MODE and otp_clean in {"123456", "000000"}:
                 return self._mock_verify_otp(reference_id, otp_clean)
             raise
 
@@ -83,7 +83,7 @@ class SandboxKycClient:
             for k in ("name", "full_name", "date_of_birth", "dob", "full_address", "care_of")
         )
         if status and status not in {"VALID", "SUCCESS"}:
-            if settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}:
+            if settings.KYC_TEST_MODE and otp_clean in {"123456", "000000"}:
                 return self._mock_verify_otp(reference_id, otp_clean)
             message = (
                 data.get("message")
@@ -92,7 +92,7 @@ class SandboxKycClient:
             )
             raise ValidationException(str(message))
         if not status and not has_identity:
-            if settings.ENVIRONMENT != "production" and otp_clean in {"123456", "000000"}:
+            if settings.KYC_TEST_MODE and otp_clean in {"123456", "000000"}:
                 return self._mock_verify_otp(reference_id, otp_clean)
             raw_msg = str(data.get("message") or body.get("message") or "").strip()
             logger.warning(
@@ -124,7 +124,7 @@ class SandboxKycClient:
         try:
             return await self._post("/kyc/pan-aadhaar/status", payload)
         except ValidationException:
-            if settings.ENVIRONMENT != "production":
+            if settings.KYC_TEST_MODE:
                 return self._mock_pan_link_response(pan_number, aadhaar_number)
             raise
 
@@ -145,7 +145,7 @@ class SandboxKycClient:
         try:
             return await self._post("/kyc/pan/verify", payload)
         except ValidationException:
-            if settings.ENVIRONMENT != "production":
+            if settings.KYC_TEST_MODE:
                 return self._mock_pan_details(pan_number, name_as_per_pan)
             raise
 

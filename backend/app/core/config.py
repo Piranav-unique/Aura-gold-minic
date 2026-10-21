@@ -162,6 +162,11 @@ class Settings(BaseSettings):
     # Keep false on Railway / production or bank OTP SMS will never send.
     BANK_OTP_DEV_MODE: bool = False
 
+    # Local dev only: when true, Aadhaar OTP 123456/000000 skips UIDAI and Sandbox
+    # PAN errors fall back to mock data. Never enable on a live server — it lets
+    # anyone pass KYC with a fake identity. Kept separate from ENVIRONMENT on purpose.
+    KYC_TEST_MODE: bool = False
+
     # Android in-app update (public APK URL + version; bump when publishing a new APK)
     APP_ANDROID_VERSION_NAME: str = ""
     APP_ANDROID_VERSION_CODE: int = 0

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -270,15 +271,12 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
       if (mounted) {
         _otpController.clear();
         _startResendCooldown(_resendCooldown);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.otpSentSnack)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.otpSentSnack)));
       }
     } on ApiException catch (e) {
-      AppEventLog.action(
-        'kyc_send_otp_failed',
-        data: {'message': e.message},
-      );
+      AppEventLog.action('kyc_send_otp_failed', data: {'message': e.message});
       setState(() => _errorMessage = _friendlyKycError(e.message));
     } catch (_) {
       setState(() => _errorMessage = context.l10n.unableToSendOtp);
@@ -387,9 +385,9 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
       ref.invalidate(userKycGateProvider);
       await ref.read(personalDashboardProvider.notifier).refresh();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.kycCompleteSnack)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.kycCompleteSnack)));
         setState(() {
           _stage = 3;
           _verifiedProfile = details.profile;
@@ -434,27 +432,27 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
     });
 
     return ResponsiveNavigationWrapper(
-        title: l10n.kycVerification,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _StepIndicator(
-                    currentStage: displayStage,
-                    aadhaarLabel: l10n.aadhaarOtpStep,
-                    panLabel: l10n.panLinkStep,
-                    confirmLabel: l10n.kycStepConfirm,
-                  ),
-                  const SizedBox(height: 24),
-                  if (_errorMessage != null) ...[
-                    _errorBanner(_errorMessage!),
-                    const SizedBox(height: 16),
-                  ],
-                  statusAsync.when(
+      title: l10n.kycVerification,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StepIndicator(
+                  currentStage: displayStage,
+                  aadhaarLabel: l10n.aadhaarOtpStep,
+                  panLabel: l10n.panLinkStep,
+                  confirmLabel: l10n.kycStepConfirm,
+                ),
+                const SizedBox(height: 24),
+                if (_errorMessage != null) ...[
+                  _errorBanner(_errorMessage!),
+                  const SizedBox(height: 16),
+                ],
+                statusAsync.when(
                   loading: () => displayStage == 1
                       ? _buildAadhaarStage(
                           context,
@@ -476,8 +474,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                   data: (details) {
                     final stage = _effectiveStage(details);
                     if (details.status == KycStatus.verified) {
-                      final profile =
-                          _verifiedProfile ?? details.profile;
+                      final profile = _verifiedProfile ?? details.profile;
                       if (profile != null && profile.hasIdentity) {
                         final pending = ref.watch(pendingTradeProvider);
                         final primaryLabel = pending != null
@@ -557,7 +554,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                             aadhaarLast4: details.aadhaarLast4,
                             registeredMobileMasked:
                                 details.registeredMobileMasked ??
-                                    _registeredMobileMasked,
+                                _registeredMobileMasked,
                           )
                         : _buildPanStage(
                             context,
@@ -655,9 +652,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         ] else ...[
           Text(
             l10n.otpSentToMobile(
-              aadhaarLast4 != null
-                  ? l10n.otpSentEnding(aadhaarLast4)
-                  : '',
+              aadhaarLast4 != null ? l10n.otpSentEnding(aadhaarLast4) : '',
             ),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -728,24 +723,27 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                foregroundColor: AurumConsumerTheme.chipGold,
+          // Debug builds only; the backend accepts it only with KYC_TEST_MODE=true.
+          if (kDebugMode) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: AurumConsumerTheme.chipGold,
+                ),
+                icon: const Icon(Icons.flash_on, size: 16),
+                label: const Text('Use Test OTP (123456)'),
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        _otpController.text = '123456';
+                        setState(() {});
+                      },
               ),
-              icon: const Icon(Icons.flash_on, size: 16),
-              label: const Text('Use Test OTP (123456)'),
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      _otpController.text = '123456';
-                      setState(() {});
-                    },
             ),
-          ),
+          ],
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -804,56 +802,56 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         ],
         Form(
           key: _panFormKey,
-            child: _field(
-              label: l10n.panNumber,
-              child: TextFormField(
-                controller: _panController,
-                textCapitalization: TextCapitalization.characters,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(10),
-                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                ],
-                decoration: InputDecoration(
-                  hintText: l10n.panHint,
-                  prefixIcon: const Icon(Icons.badge_outlined),
-                  helperText: l10n.panHelper,
-                ),
-                validator: (v) {
-                  final pan = (v ?? '').trim().toUpperCase();
-                  if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(pan)) {
-                    return l10n.panInvalid;
-                  }
-                  return null;
-                },
+          child: _field(
+            label: l10n.panNumber,
+            child: TextFormField(
+              controller: _panController,
+              textCapitalization: TextCapitalization.characters,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(10),
+                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+              ],
+              decoration: InputDecoration(
+                hintText: l10n.panHint,
+                prefixIcon: const Icon(Icons.badge_outlined),
+                helperText: l10n.panHelper,
               ),
+              validator: (v) {
+                final pan = (v ?? '').trim().toUpperCase();
+                if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(pan)) {
+                  return l10n.panInvalid;
+                }
+                return null;
+              },
             ),
           ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: _isLoading
-                ? null
-                : () => setState(() {
-                      _stage = 1;
-                      _otpSent = false;
-                      _referenceId = null;
-                      _pendingAadhaar = null;
-                      _otpController.clear();
-                    }),
-            child: Text(l10n.backToAadhaarVerification),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _isLoading ? null : _verifyPan,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.link_outlined),
-              label: Text(_isLoading ? l10n.verifying : l10n.verifyPanLink),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: _isLoading
+              ? null
+              : () => setState(() {
+                  _stage = 1;
+                  _otpSent = false;
+                  _referenceId = null;
+                  _pendingAadhaar = null;
+                  _otpController.clear();
+                }),
+          child: Text(l10n.backToAadhaarVerification),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _isLoading ? null : _verifyPan,
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.link_outlined),
+            label: Text(_isLoading ? l10n.verifying : l10n.verifyPanLink),
           ),
         ),
       ],
@@ -868,10 +866,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         color: Colors.redAccent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        message,
-        style: const TextStyle(color: Colors.redAccent),
-      ),
+      child: Text(message, style: const TextStyle(color: Colors.redAccent)),
     );
   }
 
@@ -963,8 +958,8 @@ class _StepChip extends StatelessWidget {
     final color = done
         ? AurumConsumerTheme.liveGreen
         : active
-            ? AurumConsumerTheme.chipGold
-            : AurumConsumerTheme.textMuted;
+        ? AurumConsumerTheme.chipGold
+        : AurumConsumerTheme.textMuted;
 
     return Column(
       children: [
