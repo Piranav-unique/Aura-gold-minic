@@ -98,23 +98,23 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
   }
 
   String _friendlyKycError(String message) {
-    if (message.toLowerCase().contains('source unavailable')) {
+    final lower = message.toLowerCase();
+    if (lower.contains('source unavailable')) {
       return 'UIDAI is temporarily unavailable. Wait a minute, then tap '
           'Verify again — or request a new OTP.';
     }
     if (message.contains('aadhaar_number') ||
-        message.toLowerCase().contains('string should have at least 12')) {
+        lower.contains('string should have at least 12')) {
       return 'Aadhaar number was lost from this session. Tap '
           '"Change Aadhaar number" and enter it again.';
     }
-    if (message.toLowerCase().contains('does not match') ||
-        message.toLowerCase().contains('unable to confirm the mobile')) {
+    if (lower.contains('mobile linked with this aadhaar does not match')) {
       return context.l10n.kycMobileMismatchError;
     }
-    if (message.toLowerCase().contains('already verified')) {
+    if (lower.contains('already verified')) {
       return 'Aadhaar is already verified. Continue with PAN linking below.';
     }
-    if (message.toLowerCase().contains('complete aadhaar verification')) {
+    if (lower.contains('complete aadhaar verification')) {
       return 'Aadhaar OTP was not saved on the server. Tap "Back to Aadhaar '
           'verification", request a new OTP, and verify again.';
     }

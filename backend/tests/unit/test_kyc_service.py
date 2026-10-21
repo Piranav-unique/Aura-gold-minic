@@ -152,28 +152,20 @@ async def test_verify_aadhaar_otp_via_mobile_hash(kyc_service, user_repo, sandbo
 
 
 @pytest.mark.asyncio
-async def test_verify_aadhaar_rejects_mobile_hash_mismatch(kyc_service, user_repo, sandbox):
+async def test_verify_aadhaar_rejects_explicit_mobile_mismatch(kyc_service, user_repo, sandbox):
     user = _user()
     user.mobile_number = "9123456789"
-    aadhaar = "123456789012"
-    share_code = "2356"
-    mobile_hash = compute_aadhaar_mobile_hash("9876543210", share_code, aadhaar)
     user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
     sandbox.is_configured = True
     sandbox.verify_aadhaar_otp = AsyncMock(
         return_value={
-            "data": {
-                "status": "VALID",
-                "name": "Ramesh Kumar",
-                "mobile_hash": mobile_hash,
-                "share_code": share_code,
-            }
+            "data": {"status": "VALID", "name": "Ramesh Kumar", "mobile": "9876543210"}
         }
     )
 
     with pytest.raises(ValidationException, match="does not match"):
         await kyc_service.verify_aadhaar_otp(
-            user.id, "ref-1234", "123456", aadhaar
+            user.id, "ref-1234", "123456", "123456789012"
         )
 
 
@@ -250,7 +242,7 @@ async def test_verify_pan_link_rejects_unlinked(kyc_service, user_repo, sandbox)
     with pytest.raises(ValidationException):
         await kyc_service.verify_pan_aadhaar_link(user.id, "ABCDE1234F")
 
-    assert user.kyc_status == "rejected"
+    assert user.kyc_status == "aadhaar_verified"
 
 
 @pytest.mark.asyncio

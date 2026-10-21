@@ -12,6 +12,7 @@ import 'package:ags_gold/features/user_dashboard/presentation/providers/metal_pr
 import 'package:ags_gold/features/user_dashboard/presentation/providers/personal_dashboard_provider.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_buy_sell_buttons.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_hero_portfolio_card.dart';
+import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_live_gold_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_quick_buy_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_scheme_journey_card.dart';
 import 'package:ags_gold/features/user_dashboard/presentation/widgets/aurum_scheme_selection_sheet.dart';
@@ -55,7 +56,8 @@ class UserDashboardScreen extends ConsumerWidget {
               maybeShowEmailPrompt(context, ref, currentEmail: data.email);
             }
 
-            final goldRate = pricesAsync.asData?.value.gold.displayPrice ?? 15736.0;
+            final goldQuote = pricesAsync.asData?.value.gold;
+            final goldRate = goldQuote?.displayPrice ?? 15736.0;
             final silverRate = pricesAsync.asData?.value.silver.displayPrice ?? 255.0;
 
             final goldValue = MarketLinkedHoldings.currentValueInr(
@@ -183,7 +185,16 @@ class UserDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 14),
 
-                  // 2. Clear [BUY GOLD] & [SELL GOLD] Actions (No SIP, No Add Funds)
+                  // 2. Live 24K Gold Price (24K only, live rate, real change %, real sparkline chart, [Full Chart >] linking to /live-price)
+                  AurumLiveGoldCard(
+                    livePricePerGram: goldRate,
+                    change24hPct: goldQuote?.changePercent ?? 0.0,
+                    initialTrend: goldQuote?.trend ?? const [],
+                    onChartTap: () => context.push('/live-price'),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 4. Clear [BUY GOLD] & [SELL GOLD] Actions (No SIP, No Add Funds)
                   AurumBuySellButtons(
                     onBuyGold: () => handleBuyGold(),
                     onSellGold: handleSellGold,

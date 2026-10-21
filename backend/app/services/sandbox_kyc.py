@@ -57,15 +57,36 @@ class SandboxKycClient:
 
         payload = {
             "@entity": "in.co.sandbox.kyc.aadhaar.okyc.request",
-            "reference_id": reference_id,
-            "otp": otp,
+            "reference_id": str(reference_id).strip(),
+            "otp": str(otp).strip(),
         }
         body = await self._post("/kyc/aadhaar/okyc/otp/verify", payload)
         data = body.get("data") if isinstance(body.get("data"), dict) else {}
-        status = str(data.get("status", "")).upper()
+        status = str(data.get("status", "")).strip().upper()
+        has_identity = any(
+            bool(data.get(k))
+            for k in ("name", "full_name", "date_of_birth", "dob", "full_address", "care_of")
+        )
         if status and status not in {"VALID", "SUCCESS"}:
-            message = data.get("message") or "Invalid OTP. Please try again."
+            message = (
+                data.get("message")
+                or body.get("message")
+                or "Invalid or expired OTP. Please tap Resend OTP and try again."
+            )
             raise ValidationException(str(message))
+        if not status and not has_identity:
+            raw_msg = str(data.get("message") or body.get("message") or "").strip()
+            logger.warning(
+                "sandbox_aadhaar_verify_empty_data",
+                raw_message=raw_msg,
+                data_keys=sorted(str(k) for k in data.keys()),
+                body_keys=sorted(str(k) for k in body.keys()),
+            )
+            raise ValidationException(
+                raw_msg
+                if raw_msg
+                else "UIDAI OTP session expired or timed out. Please tap Resend OTP and enter the new OTP."
+            )
         return body
 
     async def verify_pan_aadhaar_link(

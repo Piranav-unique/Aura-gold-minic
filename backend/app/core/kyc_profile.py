@@ -36,20 +36,26 @@ def _optional_str(value: Any) -> Optional[str]:
 
 def parse_aadhaar_profile(data: dict[str, Any], aadhaar_last4: str) -> dict[str, Any]:
     address = data.get("address") if isinstance(data.get("address"), dict) else {}
-    gender_raw = str(data.get("gender", "")).upper()
+    gender_raw = str(data.get("gender", "")).strip().upper()
     gender = {"M": "Male", "F": "Female", "T": "Transgender"}.get(gender_raw, gender_raw)
 
+    dob_raw = (
+        data.get("date_of_birth")
+        or data.get("dob")
+        or data.get("dateOfBirth")
+    )
+    if not dob_raw and (data.get("year_of_birth") or data.get("yob")):
+        dob_raw = f"01-01-{data.get('year_of_birth') or data.get('yob')}"
+
     return {
-        "full_name": _optional_str(data.get("name")),
-        "date_of_birth": _optional_str(
-            data.get("date_of_birth") or data.get("dob")
-        ),
+        "full_name": _optional_str(data.get("name") or data.get("full_name") or data.get("fullName")),
+        "date_of_birth": _optional_str(dob_raw),
         "gender": _optional_str(gender),
-        "care_of": _optional_str(data.get("care_of")),
-        "full_address": _optional_str(data.get("full_address")),
-        "state": _optional_str(address.get("state")),
-        "district": _optional_str(address.get("district")),
-        "pincode": _optional_str(address.get("pincode")),
+        "care_of": _optional_str(data.get("care_of") or data.get("careOf")),
+        "full_address": _optional_str(data.get("full_address") or data.get("fullAddress")),
+        "state": _optional_str(address.get("state") or data.get("state")),
+        "district": _optional_str(address.get("district") or data.get("district")),
+        "pincode": _optional_str(address.get("pincode") or address.get("pin") or data.get("pincode")),
         "aadhaar_last4": _optional_str(aadhaar_last4),
         "source": "uidai",
     }
@@ -152,8 +158,15 @@ def loads_profile(value: Optional[str]) -> Optional[dict[str, Any]]:
 def aadhaar_dob_for_pan(dob: Optional[str]) -> Optional[str]:
     if not dob:
         return None
-    normalized = dob.strip().replace("-", "/")
-    parts = normalized.split("/")
-    if len(parts) == 3 and len(parts[2]) == 4:
-        return f"{parts[0]}/{parts[1]}/{parts[2]}"
+    normalized = dob.strip().replace("-", "/").replace(".", "/")
+    parts = [p.strip() for p in normalized.split("/") if p.strip()]
+    if len(parts) == 3:
+        if len(parts[0]) == 4:
+            # YYYY/MM/DD -> DD/MM/YYYY
+            return f"{parts[2].zfill(2)}/{parts[1].zfill(2)}/{parts[0]}"
+        if len(parts[2]) == 4:
+            # DD/MM/YYYY -> DD/MM/YYYY
+            return f"{parts[0].zfill(2)}/{parts[1].zfill(2)}/{parts[2]}"
+    if len(normalized) == 4 and normalized.isdigit():
+        return f"01/01/{normalized}"
     return normalized
