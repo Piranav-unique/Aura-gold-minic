@@ -43,3 +43,21 @@ def test_resolve_client_ip_honors_real_ip_when_trusted(monkeypatch):
     monkeypatch.setattr(client_ip_module.settings, "TRUSTED_PROXY", True)
     request = _request(headers={"X-Real-IP": "198.51.100.20"}, client_host="10.0.0.1")
     assert resolve_client_ip(request) == "198.51.100.20"
+
+
+def test_resolve_client_ip_prefers_cloudflare_header_when_trusted(monkeypatch):
+    monkeypatch.setattr(client_ip_module.settings, "TRUSTED_PROXY", True)
+    request = _request(
+        headers={
+            "CF-Connecting-IP": "203.0.113.7",
+            "X-Forwarded-For": "198.51.100.1, 203.0.113.7",
+        },
+        client_host="172.18.0.1",
+    )
+    assert resolve_client_ip(request) == "203.0.113.7"
+
+
+def test_resolve_client_ip_ignores_cloudflare_header_when_untrusted(monkeypatch):
+    monkeypatch.setattr(client_ip_module.settings, "TRUSTED_PROXY", False)
+    request = _request(headers={"CF-Connecting-IP": "203.0.113.7"}, client_host="172.18.0.1")
+    assert resolve_client_ip(request) == "172.18.0.1"
