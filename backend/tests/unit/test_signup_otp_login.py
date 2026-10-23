@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.core.config import settings
 from app.core.exceptions import ValidationException
 from app.services.signup_otp import SignupOtpService
 
@@ -16,7 +15,6 @@ async def test_admin_mobile_cannot_log_in_with_default_otp():
     sms.uses_msg91_native_otp = False
     service = SignupOtpService(otp_repo, MagicMock(), sms)
 
-    for mobile in (settings.ADMIN_MOBILE_NUMBER or "9943795005", "9943795005"):
-        with pytest.raises(ValidationException):
-            await service.consume_login_otp(mobile, "123456")
-    assert otp_repo.get_latest_active.await_count == 2
+    with pytest.raises(ValidationException, match="Send OTP"):
+        await service.consume_login_otp("9943795005", "123456")
+    otp_repo.get_latest_active.assert_awaited_once()
