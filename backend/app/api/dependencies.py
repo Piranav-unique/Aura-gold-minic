@@ -427,10 +427,9 @@ def get_kyc_service(
     user_repo: UserRepository = Depends(get_user_repository),
     sandbox_client: SandboxKycClient = Depends(get_sandbox_kyc_client),
     audit_service: AuditService = Depends(get_audit_service),
-    sms_service: SmsService = Depends(get_sms_service),
 ) -> KycService:
     """Dependency injecting the KycService."""
-    return KycService(user_repo, sandbox_client, audit_service, sms_service)
+    return KycService(user_repo, sandbox_client, audit_service)
 
 
 def get_payment_order_repository(

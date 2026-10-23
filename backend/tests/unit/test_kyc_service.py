@@ -311,32 +311,3 @@ async def test_sandbox_send_otp_not_retried_after_503(monkeypatch):
     with pytest.raises(ValidationException, match="could not be sent"):
         await client.generate_aadhaar_otp("234567890123")
     assert len(calls) == 1
-
-
-@pytest.mark.asyncio
-async def test_kyc_service_sms_otp_dispatch_and_verify(user_repo, sandbox, monkeypatch):
-    """Verify that KycService sends real OTP via sms_service and verifies it."""
-    monkeypatch.setattr(
-        "app.services.kyc.clear_personal_dashboard_cache",
-        lambda user_id=None: None,
-    )
-    sms_service = MagicMock()
-    sms_service.send_signup_otp = AsyncMock()
-    sms_service.is_live = True
-
-    kyc_svc = KycService(user_repo, sandbox, audit_service=None, sms_service=sms_service)
-    user = _user()
-    user_repo.get_with_roles_and_permissions = AsyncMock(return_value=user)
-
-    ref_id = await kyc_svc.send_aadhaar_otp(user.id, "940773587318")
-    assert ref_id is not None
-    assert sms_service.send_signup_otp.await_count == 1
-    call_args = sms_service.send_signup_otp.await_args[0]
-    assert call_args[0] == user.mobile_number
-    sent_otp = call_args[1]
-    assert len(sent_otp) == 6
-
-    # Verify with the OTP dispatched in the SMS
-    result = await kyc_svc.verify_aadhaar_otp(user.id, ref_id, sent_otp, "940773587318")
-    assert result.kyc_status == "aadhaar_verified"
-    assert result.aadhaar_last4 == "7318"
