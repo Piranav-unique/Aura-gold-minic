@@ -27,6 +27,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             f"{settings.API_V1_STR}/auth/signup/otp/send",
             f"{settings.API_V1_STR}/auth/login/otp/send",
             f"{settings.API_V1_STR}/bank-accounts/link/initiate",
+            f"{settings.API_V1_STR}/profile/kyc/aadhaar/otp",
         }
     )
 
@@ -35,6 +36,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             f"{settings.API_V1_STR}/auth/login/mobile",
             f"{settings.API_V1_STR}/auth/signup/otp/verify",
             f"{settings.API_V1_STR}/bank-accounts/link/verify",
+            f"{settings.API_V1_STR}/profile/kyc/aadhaar/verify",
+            f"{settings.API_V1_STR}/profile/kyc/pan/verify",
+        }
+    )
+
+    PAYMENT_PATHS = frozenset(
+        {
+            f"{settings.API_V1_STR}/payments/buy-order",
+            f"{settings.API_V1_STR}/payments/verify",
         }
     )
 
@@ -115,6 +125,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 "profile",
             ):
                 return self._rate_limit_response(settings.RATE_LIMIT_PROFILE_WINDOW_SECONDS)
+
+        elif path in self.PAYMENT_PATHS:
+            if self._is_rate_limited(
+                client_ip,
+                20,
+                60,
+                "payment",
+            ):
+                return self._rate_limit_response(60)
 
         return await call_next(request)
 

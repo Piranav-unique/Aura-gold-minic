@@ -1,158 +1,203 @@
-# Aurum Gold Enterprise Platform (AGS Gold)
+# AGS Gold (Aurum Gold & Silvers)
 
-[![Backend CI](https://github.com/aurum-gold/ags-gold/actions/workflows/backend.yml/badge.svg)](https://github.com/aurum-gold/ags-gold/actions/workflows/backend.yml)
-[![Flutter CI](https://github.com/aurum-gold/ags-gold/actions/workflows/flutter.yml/badge.svg)](https://github.com/aurum-gold/ags-gold/actions/workflows/flutter.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
-[![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL-15-336791.svg)](https://www.postgresql.org/)
-[![Flutter 3.x](https://img.shields.io/badge/Flutter-3.x%20%7C%20Dart%203.x-02569B.svg)](https://flutter.dev/)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+**AGS Gold** is a digital gold and silver savings and trading platform. It consists of a **FastAPI backend** (Python), a **PostgreSQL database**, and a **Flutter mobile app** (Android & iOS).
 
-AGS Gold (Aurum Gold & Silvers) is an enterprise-grade digital bullion fintech ecosystem comprising an asynchronous FastAPI backend, a high-throughput PostgreSQL database with partitioned audit logging, and a reactive cross-platform Flutter client. The platform enables retail and enterprise customers to track real-time bullion spot prices, buy/sell 24K physical gold and 999 fine silver, participate in goal-based gold accumulation schemes, link bank accounts, complete automated KYC, and earn rewards via a tiered multi-scheme referral engine.
+The platform allows everyday customers to buy 24K 999 digital gold and silver starting from ₹50, track real-time spot prices with Tamil Nadu retail markups, accumulate gold toward goals (1g, 5g, 10g schemes), earn cash rewards via plan-specific referral codes, link bank accounts, complete Aadhaar/PAN KYC, and submit sell requests that are reviewed and settled by the admin.
 
 ---
 
-## Key Features & Business Modules
+## 📱 What Is in the Mobile App (Customer Side)
 
-### 🪙 Digital Bullion Trading & Pricing Engine
-- **Live Spot Price Feed**: Real-time 24K Gold and 999 Fine Silver spot prices aggregating multiple market data providers (GoldAPI.io, Commodities-API, MetalPriceAPI) with automatic fallback and configurable cache TTLs.
-- **Tamil Nadu Bullion Formula Engine**: Dynamic retail pricing incorporating international spot conversion, import duty (6% Gold / 10% Silver), GST (3%), and regional jeweler bullion markups.
-- **Interactive Historical Charts**: Interactive Sparklines and multi-range price trend history (1 Month, 3 Months, 6 Months, 1 Year, 3 Years).
-- **Instant Buy Orders**: Real-time gram-to-INR conversions, transparent GST and platform fee calculations, Razorpay checkout, and automated credit to user digital vaults.
-- **Cryptographic Webhook Reconciliation**: Asynchronous Razorpay webhook ingestion (`razorpay_webhooks.py`) with HMAC-SHA256 signature verification for resilient payment completion.
+### 1. Smart Sign Up & Plan-Specific Referral Codes
+- **Mobile OTP Authentication**: Customers sign up or log in using their mobile number with instant 6-digit OTP delivered via SMS (MSG91 DLT header `AURUS`).
+- **Plan-Specific Referral Codes**: 
+  - Instead of generic codes, referrers share codes tied directly to target schemes: `<CODE>-1G`, `<CODE>-5G`, or `<CODE>-10G`.
+  - When a new user enters a plan code during signup, the app **automatically locks in the selected scheme** (1g, 5g, or 10g) with no manual choice required.
+  - When the new customer makes their first gold purchase of at least ₹100, the referrer automatically receives a **₹150 cash reward** credited directly to their in-app wallet balance.
 
-### 💰 Customer Sell Inquiries & Admin Settlement Pipeline
-- **Locked-In Sell Quotes**: Real-time sell price locking for customer holdings with choice of gram weight or rupee value.
-- **Bank Account Integration**: Verified payout destination routing with automated IFSC resolution (bank, branch, MICR).
-- **Admin Settlement Queue**: Granular admin back-office dashboard to inspect, approve, or reject sell inquiries with support for RazorpayX automated payouts or manual settlement reconciliation.
-- **Digital Metal Inventory Tracking**: Automatic ledger debits from user savings balances and reconciliation against digital vault stock.
+### 2. Customer Dashboard & Real-Time Portfolio
+- **Total Portfolio Value**: Live value of customer gold and silver holdings in rupees, along with total return/gain percentage and net profit.
+- **Privacy Toggle**: Eye icon to quickly hide or reveal portfolio values on screen.
+- **24K Live Gold Spot Price**: Real-time rate per gram, 24-hour change percentage, and live sparkline graph.
+- **Full Price Charts (`/live-price`)**: Interactive historical charts across **1 Month**, **3 Months**, **6 Months**, **1 Year**, and **3 Years**.
 
-### 🎯 Goal-Based Gold Savings Schemes
-- **Flexible Accumulation Tiers**: Targeted gold accumulation milestones (1g, 5g, 10g schemes) designed to help users build wealth incrementally.
-- **Visual Progress Tracking**: Real-time progress bars, completion estimates, and milestone celebration dialogs.
+### 3. Buying Digital Gold (`/buy-gold`)
+- **Flexible Amounts**: Buy by entering rupees (₹) or grams (g), or tap instant quick-buy chips (**₹50, ₹100, ₹250, ₹500, ₹1,000, ₹2,000**).
+- **Transparent Price Breakdown**: Real-time display of pure gold price, 3% GST, 2% platform fee, and exact grams credited.
+- **Instant Payment Gateway**: Integrated with **Razorpay** supporting UPI (Google Pay, PhonePe, Paytm), Netbanking, Debit/Credit Cards.
+- **Instant Vault Credit**: Purchased gold is credited immediately to the customer's digital vault with an automated tax invoice.
 
-### 🤝 Tiered Multi-Scheme Referral Engine ("Refer & Earn")
-- **Plan-Specific Referral Codes**: Unique referral codes for each individual scheme tier (`<CODE>-1G`, `<CODE>-5G`, `<CODE>-10G`) with one-touch copy and shareable link generators.
-- **Automatic Plan Lock**: When new customers sign up using a tiered referral code, the target scheme tier is automatically resolved and locked in without requiring manual dropdown choices.
-- **Automated Qualifying Payouts**: Instant validation of minimum qualifying purchases (`₹100`) and immediate crediting of referral cash rewards (e.g., `₹150` for 1g scheme) directly into the referrer's wallet.
-- **Wallet Ledger & History**: Transparent ledger of referral earnings, transaction timestamps, and referee milestone statuses.
+### 4. Selling Gold & Customer Sell Requests (`/sell-gold-inquiry`)
+- **Sell From Vault**: Customers can sell their accumulated gold at the live market buyback rate.
+- **Amount by Grams or Rupees**: Enter the weight to sell or desired rupee payout.
+- **Destination Bank Account**: Select a linked verified bank account to receive funds.
+- **Instant Submission**: Generates a sell request with a unique inquiry ID for administrative review and settlement.
 
-### 🔐 Identity, Bank & Regulatory Compliance
-- **Sandbox.co.in KYC Engine**: Live Aadhaar OTP authentication and PAN-Aadhaar linking with automated verification statuses (`pending`, `verified`, `rejected`).
-- **Bank Account Verification**: Bank addition secured with MSG91 DLT OTP verification and instant IFSC resolution.
-- **Mobile OTP Authentication**: Passwordless signup and login via MSG91 v5 OTP with Jio DLT Principal Entity headers (`AURUS`).
-- **Brevo SMTP Integration**: Transactional emails for order confirmations, statements, and security notices.
-- **Enterprise 2FA & TOTP**: Time-based one-time password (TOTP) two-factor authentication for administrative personnel.
-- **Data Privacy & Account Deletion**: Self-service GDPR/DPDP-compliant account deletion workflows with administrative review.
+### 5. Goal-Based Gold Savings Schemes (`/my-savings`)
+- **Target Accumulation**: Track progress toward physical gold savings goals (**1 gram, 5 grams, 10 grams**).
+- **Visual Progress Ring**: Live progress bars showing grams accumulated, target remaining, and invested amounts.
 
-### 📱 Flutter Mobile Experience
-- **Architecture**: Material 3 design system, Riverpod 3 declarative state management, and GoRouter 17 route guards.
-- **Security & Privacy**: Biometric authentication (`local_auth`), encrypted credential storage (`flutter_secure_storage`), and privacy/screenshot protections (`FLAG_SECURE`).
-- **In-App OTA Updates**: Built-in Over-The-Air release checker and APK installer for seamless client upgrades.
+### 6. Refer & Earn (`/referral`)
+- **Dedicated Scheme Cards**: Separate cards for **1g**, **5g**, and **10g** plans.
+- **One-Tap Sharing**: Dedicated **Copy code** and **Copy link** buttons for each plan code.
+- **Wallet Overview**: Shows total referrals count, total cash earned, available wallet balance, and full reward transaction history.
+
+### 7. Bank Account Linking (`/bank-accounts`)
+- **Add Bank Account**: Add beneficiary bank accounts with Account Number and IFSC code.
+- **Auto IFSC Lookup**: Automatically resolves and displays bank name and branch name upon entering the IFSC.
+- **OTP Verification**: Secure verification via SMS OTP before linking the account.
+
+### 8. Regulatory KYC Verification (`/kyc-verification`)
+- **Instant Aadhaar Verification**: Live Aadhaar OTP verification powered by Sandbox.co.in API.
+- **PAN Verification**: PAN card input with automated name-match verification.
+- **KYC Status Badges**: Real-time status indicators (**Verified**, **Pending**, or **Action Required**).
+
+### 9. Account Settings & Security (`/settings`, `/profile`)
+- **Biometric Lock**: Enable Fingerprint or Face ID unlock for app launch.
+- **Screenshot Protection**: Option to toggle screenshot and screen recording security (`FLAG_SECURE`).
+- **Data Privacy**: GDPR/DPDP-compliant account deletion request submission.
 
 ---
 
-## Architecture Diagram
+## 🛠️ What Is in the Admin & Back-Office (`/admin/*`)
 
-```mermaid
-graph TD
-    %% Client Layer
-    subgraph Client ["Client Layer (Flutter Mobile App)"]
-        FlutterApp["Flutter Mobile App (Android/iOS)"]
-        Riverpod["flutter_riverpod (State & DI)"]
-        GoRouter["GoRouter (Guards & Deep Links)"]
-        DioClient["ApiClient (Dio Interceptors)"]
-        SecureStorage["SecureStorage (Encrypted Tokens)"]
-        LocalAuth["Biometrics & Screenshot Security"]
+### 1. Sell Requests Queue (`/admin/sell-inquiries`)
+- Review all customer sell requests with customer name, phone number, grams to sell, locked price, and bank details.
+- Approve or reject requests with payout settlement via **RazorpayX** or manual bank transfer.
 
-        FlutterApp --> Riverpod
-        FlutterApp --> GoRouter
-        FlutterApp --> LocalAuth
-        Riverpod --> DioClient
-        DioClient --> SecureStorage
-    end
+### 2. User Wallets & Customer Accounts (`/admin/user-wallets`)
+- Search any user by mobile number or name.
+- View gold savings grams, silver savings grams, cash wallet balance, and full transaction ledgers.
+- Perform admin adjustments or corrections with full audit notes.
 
-    %% Network & API Gateway Layer
-    subgraph Gateway ["Gateway & API Layer (FastAPI)"]
-        FastAPI["FastAPI Application"]
-        RateLimit["RateLimitMiddleware"]
-        AuditMD["AuditMiddleware"]
-        LoggingMD["RequestLoggingMiddleware"]
-        SecurityHeaders["SecurityHeadersMiddleware"]
-        JWTDep["JWT & TokenBlacklist Dependency"]
-        RBACDep["RBAC Authorization Engine"]
+### 3. Payment Settlements (`/admin/payment-settlements`)
+- Reconcile online Razorpay payments, payment IDs, bank RRNs, customer contacts, and payment methods (UPI, card, netbanking).
 
-        DioClient -- HTTPS / JSON --> RateLimit
-        RateLimit --> AuditMD
-        AuditMD --> LoggingMD
-        LoggingMD --> SecurityHeaders
-        SecurityHeaders --> JWTDep
-        JWTDep --> RBACDep
-    end
+### 4. Metal Inventory & Vault Oversight (`/admin/metal-inventory`, `/inventory`)
+- Track digital bullion reserves and physical vault stock.
+- Monitor inward and outward stock movements to ensure 100% backing of user digital gold.
 
-    %% Service Layer
-    subgraph Services ["Core Business Services"]
-        GoldPaySvc["GoldPaymentService"]
-        SellSvc["GoldSellInquiryService"]
-        SchemeSvc["GoldSchemeService"]
-        ReferralSvc["ReferralService"]
-        MetalPriceSvc["MetalPriceService"]
-        KYCSvc["SandboxKYCService"]
-        BankSvc["BankAccountService"]
-        AuthSvc["AuthService"]
-        UserSvc["UserService"]
-        AuditSvc["AuditService"]
+### 5. Customer Directory (`/customers`)
+- Complete directory of registered customers, registration dates, KYC verification statuses, and lifetime savings.
 
-        RBACDep --> GoldPaySvc
-        RBACDep --> SellSvc
-        RBACDep --> SchemeSvc
-        RBACDep --> ReferralSvc
-        RBACDep --> MetalPriceSvc
-        RBACDep --> KYCSvc
-        RBACDep --> BankSvc
-        RBACDep --> AuthSvc
-        RBACDep --> UserSvc
-        RBACDep --> AuditSvc
-    end
+### 6. Role-Based Access Control & Audit Trails (`/admin/roles`, `/audit-logs`)
+- Granular permissions engine for admin roles (Superadmin, Store Manager, Operations, Auditor).
+- Range-partitioned PostgreSQL audit logs recording every database change with timestamps and IP addresses.
 
-    %% External Integrations
-    subgraph Integrations ["Third-Party & FinTech Integrations"]
-        Razorpay["Razorpay Gateway & RazorpayX"]
-        GoldAPIs["Bullion Spot Feeds (GoldAPI / MetalPrice)"]
-        SandboxKYC["Sandbox.co.in (Aadhaar / PAN KYC)"]
-        MSG91["MSG91 SMS Gateway (DLT 'AURUS')"]
-        BrevoSMTP["Brevo SMTP (Transactional Mail)"]
+---
 
-        GoldPaySvc --> Razorpay
-        SellSvc --> Razorpay
-        MetalPriceSvc --> GoldAPIs
-        KYCSvc --> SandboxKYC
-        BankSvc --> MSG91
-        AuthSvc --> MSG91
-        AuthSvc --> BrevoSMTP
-    end
+## 🔌 Core Integrations That Power AGS Gold
 
-    %% Persistence Layer
-    subgraph Database ["Persistence Layer (PostgreSQL 15)"]
-        SQLAlchemy["SQLAlchemy 2.0 (Async ORM / asyncpg)"]
-        Postgres["PostgreSQL Database Container"]
-        AuditLogs["audit_logs (RANGE Partitioned)"]
-        Users["users (Partial Unique Indexes)"]
-        PaymentOrders["payment_orders"]
-        SellInquiries["gold_sell_inquiries"]
-        BankAccounts["bank_accounts"]
-        ReferralRewards["referral_rewards"]
-        DigitalInventory["digital_metal_inventory"]
-        TokenBL["token_blacklist"]
+| Service | Provider | Purpose |
+| :--- | :--- | :--- |
+| **Payment Gateway** | **Razorpay** | UPI, Cards, Netbanking checkout for buying gold |
+| **Payout Settlements** | **RazorpayX** | Automated bank payouts for customer gold sell requests |
+| **Live Spot Prices** | **GoldAPI / Commodities-API / MetalPriceAPI** | International spot bullion prices with failover |
+| **Retail Pricing Engine**| **Tamil Nadu Bullion Formula** | Calculates live retail prices with 6% duty, 3% GST, and TN jeweler markup |
+| **SMS OTP** | **MSG91 (Jio DLT header `AURUS`)** | Signup OTP and Bank addition verification |
+| **Government KYC** | **Sandbox.co.in API** | Live Aadhaar OTP authentication and PAN-Aadhaar linking |
+| **Bank IFSC Directory** | **Razorpay IFSC** | Automated bank name and branch resolution |
+| **Transactional Email**| **Brevo SMTP** | Purchase invoices, statement delivery, and security alerts |
 
-        Services --> SQLAlchemy
-        SQLAlchemy --> Postgres
-        Postgres --> AuditLogs
-        Postgres --> Users
-        Postgres --> PaymentOrders
-        Postgres --> SellInquiries
-        Postgres --> BankAccounts
-        Postgres --> ReferralRewards
-        Postgres --> DigitalInventory
-        Postgres --> TokenBL
-    end
+---
+
+## 📁 Repository Structure
+
+```text
+Aura-gold-minic/
+├── backend/                        # FastAPI Python Backend
+│   ├── alembic/versions/           # 40+ database migration files
+│   ├── app/
+│   │   ├── api/                    # API Endpoints
+│   │   │   ├── auth.py             # Mobile OTP signup & login
+│   │   │   ├── payments.py         # Gold/silver buy orders & Razorpay
+│   │   │   ├── razorpay_webhooks.py# Webhook payment confirmation
+│   │   │   ├── sell_inquiries.py   # Customer sell requests
+│   │   │   ├── referrals.py        # Tiered referral codes & wallet
+│   │   │   ├── bank_accounts.py    # Bank account linking & OTP
+│   │   │   ├── gold_scheme.py      # Goal savings targets (1g, 5g, 10g)
+│   │   │   ├── dashboard.py        # Live bullion prices & charts
+│   │   │   ├── admin_wallet.py     # Admin user wallet management
+│   │   │   └── admin_2fa.py        # Admin TOTP two-factor security
+│   │   ├── models/                 # SQLAlchemy 2.0 Database Models
+│   │   ├── services/               # Core Business Logic
+│   │   │   ├── gold_payment.py     # Buy order processing & GST calculations
+│   │   │   ├── gold_sell_inquiry.py# Sell quoting & payout approvals
+│   │   │   ├── referral.py         # Tiered codes (-1G, -5G, -10G) & rewards
+│   │   │   ├── metal_prices.py     # Spot price aggregation & TN retail markup
+│   │   │   └── sandbox_kyc.py      # Aadhaar OTP & PAN verification client
+│   │   └── main.py                 # FastAPI application startup
+│   ├── Dockerfile                  # Production container
+│   ├── docker-compose.yml          # PostgreSQL 15 & API containers
+│   └── requirements.txt            # Python dependencies
+│
+├── frontend/                       # Flutter Cross-Platform Mobile App
+│   ├── lib/
+│   │   ├── features/
+│   │   │   ├── auth/               # Mobile OTP login & smart referral signup
+│   │   │   ├── user_dashboard/     # Live prices, buy gold, sell gold
+│   │   │   ├── referral/           # Refer & Earn plan cards (1g, 5g, 10g)
+│   │   │   ├── profile/            # Profile, KYC verification, bank linking
+│   │   │   ├── admin/              # Sell inquiry review, settlements, wallets
+│   │   │   └── settings/           # Biometric lock & screenshot settings
+│   │   ├── routes/                 # GoRouter declarations & route guards
+│   │   └── main.dart               # Flutter app entry point
+│   └── pubspec.yaml                # Flutter dependencies
+│
+└── AGS-Gold-Release.apk            # Compiled release Android APK
+```
+
+---
+
+## 🚀 How to Run the Project Locally
+
+### 1. Start the Backend API
+
+```powershell
+# 1. Start PostgreSQL container
+cd backend
+docker compose up -d db
+
+# 2. Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Run migrations & seed data
+$env:PYTHONPATH="."
+python -m alembic upgrade head
+python app/database/seed.py
+
+# 5. Start development server
+uvicorn app.main:app --reload --port 8000
+```
+- API Docs: `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/api/v1/health`
+
+### 2. Run the Mobile App
+
+```bash
+cd frontend
+flutter pub get
+flutter run
+```
+
+### 3. Generate Android Release APK
+
+```bash
+cd frontend
+flutter build apk --release
+# Output: frontend/build/app/outputs/flutter-apk/app-release.apk
+```
+
+---
+
+## 👥 User Roles & Access
+
+| Role | Access Scope |
+| :--- | :--- |
+| **Customer** | View live prices, buy gold/silver, track savings goals, refer friends, link bank accounts, complete KYC, request sell payouts. |
+| **Superadmin** | Full platform access, admin 2FA, approve sell requests, adjust wallets, oversee inventory, manage roles and permissions. |
+| **Store Manager** | Manage bullion inventory, review customers, and view settlement ledgers. |
+| **Auditor** | Read-only access to partitioned audit logs, transaction histories, and regulatory reports. |

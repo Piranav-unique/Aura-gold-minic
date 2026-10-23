@@ -21,7 +21,13 @@ abstract class IDeviceAuthStorage {
 
 class DeviceAuthStorage implements IDeviceAuthStorage {
   DeviceAuthStorage({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+      : _storage = storage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(resetOnError: true),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock_this_device,
+            ),
+          );
 
   final FlutterSecureStorage _storage;
   static const _mobileKey = 'device_registered_mobile';
