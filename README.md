@@ -1,25 +1,54 @@
-# AGS Gold Enterprise Platform
+# Aurum Gold Enterprise Platform (AGS Gold)
 
-AGS Gold is an enterprise-grade platform built on a decoupled, high-performance architecture comprising a FastAPI backend, a PostgreSQL relational database, and a cross-platform Flutter mobile client. The platform incorporates Role-Based Access Control (RBAC), JWT Authentication, token blacklisting, rate limiting, automated audit logging, database partitioning, and automated CI/CD pipelines via GitHub Actions.
+[![Backend CI](https://github.com/aurum-gold/ags-gold/actions/workflows/backend.yml/badge.svg)](https://github.com/aurum-gold/ags-gold/actions/workflows/backend.yml)
+[![Flutter CI](https://github.com/aurum-gold/ags-gold/actions/workflows/flutter.yml/badge.svg)](https://github.com/aurum-gold/ags-gold/actions/workflows/flutter.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
+[![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL-15-336791.svg)](https://www.postgresql.org/)
+[![Flutter 3.x](https://img.shields.io/badge/Flutter-3.x%20%7C%20Dart%203.x-02569B.svg)](https://flutter.dev/)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
+AGS Gold (Aurum Gold & Silvers) is an enterprise-grade digital bullion fintech ecosystem comprising an asynchronous FastAPI backend, a high-throughput PostgreSQL database with partitioned audit logging, and a reactive cross-platform Flutter client. The platform enables retail and enterprise customers to track real-time bullion spot prices, buy/sell 24K physical gold and 999 fine silver, participate in goal-based gold accumulation schemes, link bank accounts, complete automated KYC, and earn rewards via a tiered multi-scheme referral engine.
 
 ---
 
-## Current Status
+## Key Features & Business Modules
 
-### ✅ Done
-- **Project scaffolding** — repository structure, Docker Compose (DB + API services), environment configuration, and `.env.example` in place.
-- **Backend API** — FastAPI app with JWT authentication, token blacklisting, RBAC authorization engine, rate limiting middleware, request/audit logging middleware, and health check endpoint.
-- **Database layer** — SQLAlchemy 2.0 async models (`User`, `Role`, `Permission`, `AuditLog`, `TokenBlacklist`), 4 Alembic migrations applied, PostgreSQL range partitioning on audit logs, and idempotent seed scripts.
-- **Repository & Service layers** — Full repository pattern (`user`, `role`, `permission`, `audit_log`, `token_blacklist`) and service layer (`auth`, `user`, `rbac`, `audit`) with Pydantic v2 schemas.
-- **Flutter client** — GoRouter navigation (splash → login → dashboard → profile → admin), Riverpod state management, Material 3 theme, Dio-based `ApiClient` with error-mapped interceptors, and `SecureStorageService`.
-- **CI/CD pipelines** — Full multi-stage GitHub Actions pipelines for both backend and Flutter (see [CI/CD Pipeline](#cicd-pipeline) section).
-- **Testing infrastructure** — Pytest suites (unit, API, integration, security, e2e, smoke) with coverage reporting; Flutter test dirs (unit, widget, integration, e2e, security) with mocktail + http_mock_adapter.
-- **Coding standards** — Ruff linting/formatting enforced on Python; `flutter analyze` enforced on Dart; `.coveragerc` configured.
+### 🪙 Digital Bullion Trading & Pricing Engine
+- **Live Spot Price Feed**: Real-time 24K Gold and 999 Fine Silver spot prices aggregating multiple market data providers (GoldAPI.io, Commodities-API, MetalPriceAPI) with automatic fallback and configurable cache TTLs.
+- **Tamil Nadu Bullion Formula Engine**: Dynamic retail pricing incorporating international spot conversion, import duty (6% Gold / 10% Silver), GST (3%), and regional jeweler bullion markups.
+- **Interactive Historical Charts**: Interactive Sparklines and multi-range price trend history (1 Month, 3 Months, 6 Months, 1 Year, 3 Years).
+- **Instant Buy Orders**: Real-time gram-to-INR conversions, transparent GST and platform fee calculations, Razorpay checkout, and automated credit to user digital vaults.
+- **Cryptographic Webhook Reconciliation**: Asynchronous Razorpay webhook ingestion (`razorpay_webhooks.py`) with HMAC-SHA256 signature verification for resilient payment completion.
 
-### 🚧 In Progress
-- Flutter screen implementations (admin, profile, dashboard domain logic).
-- Business module endpoints (inventory, transactions, reports).
-- Audit trail UI integration.
+### 💰 Customer Sell Inquiries & Admin Settlement Pipeline
+- **Locked-In Sell Quotes**: Real-time sell price locking for customer holdings with choice of gram weight or rupee value.
+- **Bank Account Integration**: Verified payout destination routing with automated IFSC resolution (bank, branch, MICR).
+- **Admin Settlement Queue**: Granular admin back-office dashboard to inspect, approve, or reject sell inquiries with support for RazorpayX automated payouts or manual settlement reconciliation.
+- **Digital Metal Inventory Tracking**: Automatic ledger debits from user savings balances and reconciliation against digital vault stock.
+
+### 🎯 Goal-Based Gold Savings Schemes
+- **Flexible Accumulation Tiers**: Targeted gold accumulation milestones (1g, 5g, 10g schemes) designed to help users build wealth incrementally.
+- **Visual Progress Tracking**: Real-time progress bars, completion estimates, and milestone celebration dialogs.
+
+### 🤝 Tiered Multi-Scheme Referral Engine ("Refer & Earn")
+- **Plan-Specific Referral Codes**: Unique referral codes for each individual scheme tier (`<CODE>-1G`, `<CODE>-5G`, `<CODE>-10G`) with one-touch copy and shareable link generators.
+- **Automatic Plan Lock**: When new customers sign up using a tiered referral code, the target scheme tier is automatically resolved and locked in without requiring manual dropdown choices.
+- **Automated Qualifying Payouts**: Instant validation of minimum qualifying purchases (`₹100`) and immediate crediting of referral cash rewards (e.g., `₹150` for 1g scheme) directly into the referrer's wallet.
+- **Wallet Ledger & History**: Transparent ledger of referral earnings, transaction timestamps, and referee milestone statuses.
+
+### 🔐 Identity, Bank & Regulatory Compliance
+- **Sandbox.co.in KYC Engine**: Live Aadhaar OTP authentication and PAN-Aadhaar linking with automated verification statuses (`pending`, `verified`, `rejected`).
+- **Bank Account Verification**: Bank addition secured with MSG91 DLT OTP verification and instant IFSC resolution.
+- **Mobile OTP Authentication**: Passwordless signup and login via MSG91 v5 OTP with Jio DLT Principal Entity headers (`AURUS`).
+- **Brevo SMTP Integration**: Transactional emails for order confirmations, statements, and security notices.
+- **Enterprise 2FA & TOTP**: Time-based one-time password (TOTP) two-factor authentication for administrative personnel.
+- **Data Privacy & Account Deletion**: Self-service GDPR/DPDP-compliant account deletion workflows with administrative review.
+
+### 📱 Flutter Mobile Experience
+- **Architecture**: Material 3 design system, Riverpod 3 declarative state management, and GoRouter 17 route guards.
+- **Security & Privacy**: Biometric authentication (`local_auth`), encrypted credential storage (`flutter_secure_storage`), and privacy/screenshot protections (`FLAG_SECURE`).
+- **In-App OTA Updates**: Built-in Over-The-Air release checker and APK installer for seamless client upgrades.
 
 ---
 
@@ -28,458 +57,102 @@ AGS Gold is an enterprise-grade platform built on a decoupled, high-performance 
 ```mermaid
 graph TD
     %% Client Layer
-    subgraph Client ["Client Layer (Flutter)"]
-        FlutterApp["Flutter Mobile App"]
-        Riverpod["flutter_riverpod (DI & State)"]
-        GoRouter["GoRouter (Navigation Guards)"]
-        DioClient["ApiClient (Dio Wrapper)"]
-        SecureStorage["SecureStorageService"]
+    subgraph Client ["Client Layer (Flutter Mobile App)"]
+        FlutterApp["Flutter Mobile App (Android/iOS)"]
+        Riverpod["flutter_riverpod (State & DI)"]
+        GoRouter["GoRouter (Guards & Deep Links)"]
+        DioClient["ApiClient (Dio Interceptors)"]
+        SecureStorage["SecureStorage (Encrypted Tokens)"]
+        LocalAuth["Biometrics & Screenshot Security"]
 
         FlutterApp --> Riverpod
         FlutterApp --> GoRouter
+        FlutterApp --> LocalAuth
         Riverpod --> DioClient
         DioClient --> SecureStorage
     end
 
     %% Network & API Gateway Layer
-    subgraph API ["Gateway & API Layer (FastAPI)"]
-        FastAPI["FastAPI Backend"]
+    subgraph Gateway ["Gateway & API Layer (FastAPI)"]
+        FastAPI["FastAPI Application"]
         RateLimit["RateLimitMiddleware"]
         AuditMD["AuditMiddleware"]
-        LoggingMD["LoggingMiddleware"]
-        JWTDep["JWT Auth Dependency"]
-        RBACDep["RBAC Authorization Dependency"]
+        LoggingMD["RequestLoggingMiddleware"]
+        SecurityHeaders["SecurityHeadersMiddleware"]
+        JWTDep["JWT & TokenBlacklist Dependency"]
+        RBACDep["RBAC Authorization Engine"]
 
         DioClient -- HTTPS / JSON --> RateLimit
         RateLimit --> AuditMD
         AuditMD --> LoggingMD
-        LoggingMD --> JWTDep
+        LoggingMD --> SecurityHeaders
+        SecurityHeaders --> JWTDep
         JWTDep --> RBACDep
     end
 
-    %% Service & Repository Layer
-    subgraph Services ["Service & Repository Layer"]
+    %% Service Layer
+    subgraph Services ["Core Business Services"]
+        GoldPaySvc["GoldPaymentService"]
+        SellSvc["GoldSellInquiryService"]
+        SchemeSvc["GoldSchemeService"]
+        ReferralSvc["ReferralService"]
+        MetalPriceSvc["MetalPriceService"]
+        KYCSvc["SandboxKYCService"]
+        BankSvc["BankAccountService"]
         AuthSvc["AuthService"]
         UserSvc["UserService"]
-        RBACSvc["RBACService"]
         AuditSvc["AuditService"]
 
+        RBACDep --> GoldPaySvc
+        RBACDep --> SellSvc
+        RBACDep --> SchemeSvc
+        RBACDep --> ReferralSvc
+        RBACDep --> MetalPriceSvc
+        RBACDep --> KYCSvc
+        RBACDep --> BankSvc
         RBACDep --> AuthSvc
         RBACDep --> UserSvc
-        RBACDep --> RBACSvc
         RBACDep --> AuditSvc
+    end
+
+    %% External Integrations
+    subgraph Integrations ["Third-Party & FinTech Integrations"]
+        Razorpay["Razorpay Gateway & RazorpayX"]
+        GoldAPIs["Bullion Spot Feeds (GoldAPI / MetalPrice)"]
+        SandboxKYC["Sandbox.co.in (Aadhaar / PAN KYC)"]
+        MSG91["MSG91 SMS Gateway (DLT 'AURUS')"]
+        BrevoSMTP["Brevo SMTP (Transactional Mail)"]
+
+        GoldPaySvc --> Razorpay
+        SellSvc --> Razorpay
+        MetalPriceSvc --> GoldAPIs
+        KYCSvc --> SandboxKYC
+        BankSvc --> MSG91
+        AuthSvc --> MSG91
+        AuthSvc --> BrevoSMTP
     end
 
     %% Persistence Layer
     subgraph Database ["Persistence Layer (PostgreSQL 15)"]
-        SQLAlchemy["SQLAlchemy 2.0 (Async ORM)"]
-        Postgres["PostgreSQL Container"]
+        SQLAlchemy["SQLAlchemy 2.0 (Async ORM / asyncpg)"]
+        Postgres["PostgreSQL Database Container"]
         AuditLogs["audit_logs (RANGE Partitioned)"]
-        Users["users (Partial Unique Index)"]
-        Roles["roles (Partial Unique Index)"]
-        Permissions["permissions"]
+        Users["users (Partial Unique Indexes)"]
+        PaymentOrders["payment_orders"]
+        SellInquiries["gold_sell_inquiries"]
+        BankAccounts["bank_accounts"]
+        ReferralRewards["referral_rewards"]
+        DigitalInventory["digital_metal_inventory"]
         TokenBL["token_blacklist"]
 
-        AuthSvc --> SQLAlchemy
-        UserSvc --> SQLAlchemy
-        RBACSvc --> SQLAlchemy
-        AuditSvc --> SQLAlchemy
+        Services --> SQLAlchemy
         SQLAlchemy --> Postgres
         Postgres --> AuditLogs
         Postgres --> Users
-        Postgres --> Roles
-        Postgres --> Permissions
+        Postgres --> PaymentOrders
+        Postgres --> SellInquiries
+        Postgres --> BankAccounts
+        Postgres --> ReferralRewards
+        Postgres --> DigitalInventory
         Postgres --> TokenBL
     end
-```
-
----
-
-## Technology Stack
-
-| Component | Technology | Version | Description |
-| :--- | :--- | :--- | :--- |
-| **Backend** | Python / FastAPI | `3.12+` / `0.110.0+` | High-performance async API |
-| **Auth** | python-jose / passlib | `3.3.0+` / `1.7.4+` | JWT signing and bcrypt hashing |
-| **Database** | PostgreSQL / asyncpg | `15+` / `0.29.0+` | Relational storage with range partitioning |
-| **ORM & Migrations** | SQLAlchemy / Alembic | `2.0.28+` / `1.13.1+` | Async declarative ORM and schema migrations |
-| **Validation** | Pydantic v2 / pydantic-settings | `2.6.0+` / `2.2.0+` | Request/response schemas and env config |
-| **Logging** | structlog | `24.1.0+` | Structured JSON logging |
-| **Mobile Client** | Flutter / Dart | stable channel / `3.12.1+` | Cross-platform Material 3 client |
-| **State & DI** | flutter_riverpod | `3.3.1+` | Reactive state management |
-| **Navigation** | go_router | `17.3.0+` | Declarative routing with guards |
-| **HTTP Client** | Dio | `5.9.2+` | HTTP client with interceptors |
-| **Secure Storage** | flutter_secure_storage | `10.3.1+` | Encrypted token persistence |
-| **Testing (Python)** | pytest / pytest-asyncio / httpx | `8.0.0+` / `0.23.5+` / `0.27.0+` | Async test runner and HTTP testing |
-| **Testing (Flutter)** | mocktail / http_mock_adapter | `1.0.4+` / `0.6.1+` | Mock testing utilities |
-| **CI/CD & DevOps** | Docker / GitHub Actions | `v25+` / `v4+` | Automated testing and build pipelines |
-
----
-
-## Repository Structure
-
-```text
-.github/
-└── workflows/
-    ├── backend.yml        # Lint → Unit/Integration/Security/E2E Tests → Coverage → Docker → Smoke
-    └── flutter.yml        # Analyze → Unit/Widget/Integration/E2E/Security Tests → Build APK
-backend/
-├── alembic/
-│   └── versions/          # 4 applied migration files
-├── app/
-│   ├── api/               # Route handlers: auth, user, rbac, audit, health
-│   │   ├── auth.py        # Login, logout, refresh token endpoints
-│   │   ├── user.py        # User CRUD endpoints
-│   │   ├── rbac.py        # Role & permission management endpoints
-│   │   ├── audit.py       # Audit log query endpoints
-│   │   ├── health.py      # Health check endpoint
-│   │   └── dependencies.py# JWT & RBAC FastAPI dependencies
-│   ├── core/              # App configuration and cross-cutting concerns
-│   │   ├── config.py      # Pydantic Settings (env-based configuration)
-│   │   ├── security.py    # JWT encode/decode, password hashing
-│   │   ├── authorization.py# RBAC permission checks
-│   │   ├── exceptions.py  # Custom HTTP exception handlers
-│   │   └── logging.py     # structlog configuration
-│   ├── database/          # DB engine, session factory, seed scripts
-│   │   ├── session.py     # Async engine & session maker
-│   │   ├── base.py        # SQLAlchemy declarative base
-│   │   └── seed.py        # Idempotent seed (roles, permissions, superadmin)
-│   ├── middleware/        # Request lifecycle middlewares
-│   │   ├── logging_middleware.py   # Structured request/response logging
-│   │   ├── audit_middleware.py     # Automatic mutation audit trail
-│   │   └── rate_limit_middleware.py# IP-based rate limiting
-│   ├── models/            # SQLAlchemy ORM models
-│   │   ├── user.py        # User model (soft delete, partial unique index)
-│   │   ├── role.py        # Role model (partial unique index)
-│   │   ├── permission.py  # Permission model
-│   │   ├── audit_log.py   # AuditLog model (range partitioned)
-│   │   ├── token_blacklist.py # Token blacklist model
-│   │   ├── associations.py# Role↔Permission many-to-many table
-│   │   └── base.py        # UUID PK, timestamp, soft-delete mixins
-│   ├── repositories/      # Data access layer (repository pattern)
-│   │   ├── user.py        # UserRepository
-│   │   ├── role.py        # RoleRepository
-│   │   ├── permission.py  # PermissionRepository
-│   │   ├── audit_log.py   # AuditLogRepository
-│   │   ├── token_blacklist.py # TokenBlacklistRepository
-│   │   └── base.py        # Generic async CRUD base repository
-│   ├── schemas/           # Pydantic v2 request/response schemas
-│   │   ├── auth.py        # Login, token response schemas
-│   │   ├── user.py        # User create/update/response schemas
-│   │   ├── rbac.py        # Role/permission schemas
-│   │   ├── audit_log.py   # Audit log response schemas
-│   │   └── base.py        # Shared base schema
-│   ├── services/          # Business logic layer
-│   │   ├── auth.py        # AuthService (login, logout, token refresh)
-│   │   ├── user.py        # UserService (CRUD, role assignment)
-│   │   ├── rbac.py        # RBACService (role/permission management)
-│   │   ├── audit.py       # AuditService (log querying)
-│   │   └── base.py        # Base service
-│   └── main.py            # FastAPI app bootstrap, middleware registration
-├── tests/
-│   ├── conftest.py        # Shared fixtures (async DB, test client, seed data)
-│   ├── unit/              # Pure unit tests (services, utilities)
-│   ├── api/               # API handler tests (httpx TestClient)
-│   ├── integration/       # Cross-layer integration tests
-│   ├── security/          # Auth and RBAC security tests
-│   ├── e2e/               # Full flow end-to-end tests
-│   └── smoke/             # Live API smoke tests (runs against real containers)
-├── .coveragerc            # Coverage configuration
-├── pytest.ini             # Pytest markers and settings
-├── alembic.ini            # Alembic configuration
-├── Dockerfile             # Multistage production Docker build
-├── docker-compose.yml     # PostgreSQL (port 5435) + API (port 8000) containers
-└── requirements.txt       # Python package dependencies
-frontend/
-├── lib/
-│   ├── config/            # Dev/Prod environment configuration
-│   ├── core/              # Material 3 themes and responsive layout helpers
-│   ├── features/          # Feature modules (screen + domain layer)
-│   │   ├── auth/          # Login screen and auth logic
-│   │   ├── dashboard/     # Dashboard screen and domain
-│   │   ├── profile/       # User profile screen
-│   │   ├── admin/         # Admin management screen
-│   │   └── splash/        # Splash/session check screen
-│   ├── routes/            # GoRouter setup and navigation guards
-│   ├── services/          # API client, secure storage, and Riverpod providers
-│   │   ├── api_client.dart         # Dio wrapper with interceptors
-│   │   ├── secure_storage_service.dart # Encrypted token storage
-│   │   └── service_providers.dart  # Riverpod provider definitions
-│   └── main.dart          # Flutter app bootstrap
-├── test/                  # Test suites: unit, widget, integration, e2e, security
-├── analysis_options.yaml  # Dart lint rules
-└── pubspec.yaml           # Dart package dependencies
-```
-
----
-
-## Local Development Setup
-
-### Prerequisites
-
-- Python `3.12+`
-- Docker Desktop (for PostgreSQL and API containers)
-- Flutter SDK `stable` channel
-- Java `17+` (for Android APK builds)
-
-### Backend API Setup
-
-1. **Start the PostgreSQL container**:
-   ```bash
-   cd backend
-   docker compose up -d db
-   ```
-
-2. **Create and activate a virtual environment**:
-   ```bash
-   python -m venv .venv
-   # Windows PowerShell
-   .\.venv\Scripts\Activate.ps1
-   # macOS/Linux
-   source .venv/bin/activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment**:
-   Copy `.env.example` to `.env` in `backend/` and fill in values (see [Environment Variables](#environment-variables)).
-
-5. **Run database migrations**:
-   ```bash
-   # Windows PowerShell
-   $env:PYTHONPATH="."
-   python -m alembic upgrade head
-   ```
-
-6. **Seed initial records** (roles, permissions, superadmin user):
-   ```bash
-   python app/database/seed.py
-   ```
-
-7. **Start the development server**:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-   API docs available at: `http://localhost:8000/docs`
-
-   **Docker:** The API container runs `alembic upgrade head` automatically on startup via `entrypoint.sh`. For local development you must run migrations manually (step 5) before starting the server.
-
-   **Customer module:** Requires migration `h3c4d5e6f7g8` (customers table) and `i4d5e6f7g8h9` (constraints/indexes). Run `alembic current` to confirm you are at head.
-
-### Flutter Mobile App Setup
-
-1. **Install dependencies**:
-   ```bash
-   cd frontend
-   flutter pub get
-   ```
-
-2. **Validate code health**:
-   ```bash
-   flutter analyze
-   ```
-
-3. **Run tests**:
-   ```bash
-   flutter test
-   ```
-
-4. **Run the app**:
-   ```bash
-   # Development environment
-   flutter run --dart-define=ENV=dev
-   ```
-
----
-
-## Environment Variables
-
-Copy `backend/.env.example` to `backend/.env`:
-
-```env
-# General
-ENVIRONMENT=development
-PROJECT_NAME="AGS Gold API"
-
-# Security
-SECRET_KEY=generate-a-secure-random-token-key-for-prod
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-SUPERADMIN_PASSWORD=change-me-in-production
-
-# Database (Docker local port is 5435, mapped to internal 5432)
-POSTGRES_SERVER=localhost
-POSTGRES_PORT=5435
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password123
-POSTGRES_DB=ags_gold_db
-
-# CORS (comma-separated)
-BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:8080
-```
-
----
-
-## Docker Setup
-
-The `docker-compose.yml` in `backend/` defines two services:
-
-| Service | Container | Port |
-| :--- | :--- | :--- |
-| `db` | `ags-gold-db` (postgres:15-alpine) | `5435 → 5432` |
-| `api` | `ags-gold-api` (Dockerfile multistage) | `8000 → 8000` |
-
-```bash
-# Start all services
-cd backend
-docker compose up -d
-
-# Start only the database (for local dev)
-docker compose up -d db
-
-# View logs
-docker compose logs -f db
-docker compose logs -f api
-
-# Tear down
-docker compose down -v
-```
-
----
-
-## Database Migrations
-
-4 migrations are applied in sequence:
-
-| Revision | Description |
-| :--- | :--- |
-| `e906f3e0ff0c` | Create initial schema (users, roles, permissions, audit_logs) |
-| `7ffa80359775` | Fix audit_logs columns |
-| `a123bc456def` | Create token_blacklist table |
-| `e6164fefc93b` | Apply audit fixes |
-
-```bash
-# Set PYTHONPATH (Windows PowerShell)
-$env:PYTHONPATH="."
-
-# Apply all migrations
-python -m alembic upgrade head
-
-# Generate a new migration after model changes
-python -m alembic revision --autogenerate -m "describe_changes"
-
-# Rollback one migration
-python -m alembic downgrade -1
-```
-
----
-
-## Git Workflow & Branch Strategy
-
-We follow a strict Git Flow model. No direct pushes to `main` or `develop`.
-
-| Branch | Purpose |
-| :--- | :--- |
-| `main` | Production-only. Fully tested, tagged releases. |
-| `develop` | Integration branch. Feature branches merge here. |
-| `feature/*` | Individual feature work, branched from `develop`. |
-| `bugfix/*` | Hotfixes targeting specific integration issues. |
-
-### Pull Request Requirements
-- All GitHub Actions CI checks must pass.
-- Minimum 1 peer-review approval.
-- Merge via **Squash and Merge** only.
-
----
-
-## CI/CD Pipeline
-
-Both workflows are **path-filtered** — they only trigger on changes to their respective directories.
-
-### Backend Workflow ([`backend.yml`](.github/workflows/backend.yml))
-
-Triggers on push/PR to `main`, `develop`, `dev` when `backend/**` or the workflow file changes.
-
-```mermaid
-flowchart TD
-    Lint["1️⃣ Lint & Format\nruff check + ruff format --check"]
-    Unit["2️⃣ Unit & API Tests\npytest tests/unit/ tests/api/\n(needs: postgres service)"]
-    Integration["3️⃣ Integration Tests\npytest tests/integration/\n(needs: postgres service)"]
-    Security["4️⃣ Security Tests\npytest tests/security/ -m security\n(needs: postgres service)"]
-    E2E["5️⃣ E2E Tests\npytest tests/e2e/ -m e2e\n(needs: integration + security)"]
-    Coverage["6️⃣ Coverage Report\npytest --cov=app (all suites)\nUploads HTML + XML artifacts"]
-    Docker["7️⃣ Docker Image Build\ndocker/build-push-action (push=false)\nags-gold-backend:latest"]
-    Smoke["8️⃣ Smoke Tests & Health Checks\nSpins up DB + API via docker compose\npytest tests/smoke/ -m smoke\nTears down after"]
-
-    Lint --> Unit
-    Lint --> Integration
-    Lint --> Security
-    Integration --> E2E
-    Security --> E2E
-    Unit --> Coverage
-    Integration --> Coverage
-    Security --> Coverage
-    E2E --> Coverage
-    Coverage --> Docker
-    Docker --> Smoke
-```
-
-### Flutter Workflow ([`flutter.yml`](.github/workflows/flutter.yml))
-
-Triggers on push/PR to `main`, `develop`, `dev` when `frontend/**` or the workflow file changes.
-
-```mermaid
-flowchart TD
-    Analyze["1️⃣ Flutter Analyze\nflutter analyze"]
-    Unit["2️⃣ Unit Tests\nflutter test test/unit/"]
-    Widget["3️⃣ Widget Tests\nflutter test test/widget/"]
-    Integration["4️⃣ Integration, E2E & Security Tests\nflutter test test/integration/\nflutter test test/e2e/\nflutter test test/security/"]
-    APK["5️⃣ Build APK (Release)\nflutter build apk --release\nUploads release-apk artifact"]
-
-    Analyze --> Unit
-    Analyze --> Widget
-    Unit --> Integration
-    Widget --> Integration
-    Integration --> APK
-```
-
----
-
-## Coding Standards
-
-- **Python**: Enforced via `ruff`. Run before committing:
-  ```bash
-  ruff check backend/
-  ruff format backend/
-  ```
-- **Flutter**: Enforced via `flutter analyze`. Zero lints, warnings, or deprecations.
-- **Coverage**: Tracked via `pytest-cov` with `.coveragerc`. HTML and XML reports uploaded as GitHub Actions artifacts on every pipeline run.
-
----
-
-## Deployment
-
-### Backend (Docker)
-
-The `Dockerfile` uses a multistage build:
-- **Stage 1 (builder)**: Installs all dependencies into a virtual environment.
-- **Stage 2 (runtime)**: Copies only the `.venv` to a clean `python:3.12-slim` base, keeping the image footprint minimal.
-
-The full stack (DB + API) can be launched with:
-```bash
-cd backend
-docker compose up -d
-```
-
-### Flutter (Android APK)
-
-```bash
-cd frontend
-flutter build apk --release
-# Output: frontend/build/app/outputs/flutter-apk/app-release.apk
-```
-
-The CI pipeline uploads `app-release.apk` as a GitHub Actions artifact (`release-apk`) on every successful merge.
