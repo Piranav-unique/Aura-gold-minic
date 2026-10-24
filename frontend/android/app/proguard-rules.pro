@@ -19,6 +19,10 @@
 # Kotlin Coroutines & Serialization
 -dontwarn kotlin.**
 -dontwarn kotlinx.coroutines.**
+
+# Play Core & Flutter Deferred Components
+-dontwarn com.google.android.play.core.**
+
 -keepclassmembers class * {
     @androidx.annotation.Keep *;
 }
