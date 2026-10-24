@@ -508,3 +508,138 @@ async def signup_landing_page(
         .replace("{{DEEP_LINK}}", deep_link)
     )
     return HTMLResponse(content=html, status_code=200)
+
+
+ACCOUNT_DELETION_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Account &amp; Data Deletion - Aurum Gold &amp; Silvers (AGS Gold)</title>
+  <link rel="icon" type="image/png" href="/ags-logo.png">
+  <style>
+    :root {
+      --primary: #B8860B;
+      --primary-dark: #8B6508;
+      --bg: #FAFAF7;
+      --card-bg: #FFFFFF;
+      --text: #222222;
+      --text-muted: #555555;
+      --border: #E8E5DD;
+      --danger: #DC2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 36px 32px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      background: #FDF6E2;
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 24px; font-weight: 700; color: #111; margin-bottom: 8px; }
+    h2 { font-size: 18px; font-weight: 700; color: var(--primary-dark); margin: 24px 0 12px; }
+    p, li { font-size: 14.5px; color: var(--text); margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 16px; }
+    .card-box {
+      background: #F9F9F6;
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    .contact-box {
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 24px;
+    }
+    .contact-box a { color: #92400E; font-weight: 700; text-decoration: none; }
+    footer {
+      margin-top: 32px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Google Play Data Safety &amp; User Privacy</div>
+      <h1>Request Account &amp; Data Deletion</h1>
+      <p style="color: var(--text-muted); font-size: 13px;">Aurum Gold &amp; Silvers (AGS Gold)</p>
+    </header>
+
+    <p>At Aurum Gold &amp; Silvers, we respect your right to privacy and control over your personal information. If you wish to delete your AGS Gold account and all associated personal data, you can request account deletion at any time.</p>
+
+    <h2>1. How to Delete Your Account</h2>
+    <p>You can request account deletion through either of the following methods:</p>
+    <ul>
+      <li><strong>In-App Deletion:</strong> Open the AGS Gold app ➔ go to <strong>Profile / Settings</strong> ➔ tap <strong>Delete Account</strong> ➔ confirm your request.</li>
+      <li><strong>Web / Email Request:</strong> Send an email from your registered email address to <a href="mailto:aurumgoldsilvers@gmail.com">aurumgoldsilvers@gmail.com</a> with the subject <code>Account Deletion Request - [Your Mobile Number]</code>.</li>
+    </ul>
+
+    <h2>2. What Data is Deleted</h2>
+    <div class="card-box">
+      <ul>
+        <li><strong>Profile Information:</strong> Name, mobile phone number, email address, and profile photo.</li>
+        <li><strong>Device Identifiers:</strong> Registered device IDs, login session tokens, and push notification tokens.</li>
+        <li><strong>KYC Documents:</strong> PAN card records, Aadhaar verification logs, and identity hashes.</li>
+        <li><strong>Linked Bank Accounts:</strong> Saved bank account numbers, IFSC codes, and beneficiary data.</li>
+      </ul>
+    </div>
+
+    <h2>3. Data Retention for Legal &amp; Financial Compliance</h2>
+    <p>Under Indian regulations (including the Prevention of Money Laundering Act - PMLA, GST Act, and statutory financial accounting standards):</p>
+    <ul>
+      <li>Records of executed financial transactions (gold/silver purchases, sell payouts, and GST tax invoices) are legally required to be retained in archived audit ledgers for a period of 5 years.</li>
+      <li>These archived records are isolated, securely encrypted, and never used for marketing or commercial profiling.</li>
+    </ul>
+
+    <h2>4. Processing Timeline</h2>
+    <p>Account deletion requests are reviewed and fulfilled within <strong>48 to 72 business hours</strong>. Once deleted, your account cannot be recovered, and any unused promotional credits or vouchers will be forfeited.</p>
+
+    <div class="contact-box">
+      <p style="margin: 0; font-size: 14px;"><strong>Need help or have questions?</strong> Contact our Data Privacy Officer at <a href="mailto:aurumgoldsilvers@gmail.com">aurumgoldsilvers@gmail.com</a>.</p>
+    </div>
+
+    <footer>
+      &copy; 2026 Aurum Gold &amp; Silvers. All rights reserved. &bull; <a href="/privacy-policy" style="color: var(--primary);">Privacy Policy</a>
+    </footer>
+  </div>
+</body>
+</html>
+"""
+
+
+@router.get("/delete-account", response_class=HTMLResponse, include_in_schema=False)
+@router.get("/account-deletion", response_class=HTMLResponse, include_in_schema=False)
+async def get_account_deletion_page():
+    return HTMLResponse(content=ACCOUNT_DELETION_TEMPLATE, status_code=200)

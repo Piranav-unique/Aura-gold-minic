@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -370,6 +371,9 @@ class _TradeAmountFormState extends ConsumerState<TradeAmountForm>
       if (!mounted) return;
 
       if (order.keyId == 'dev_mock') {
+        if (!kDebugMode) {
+          throw ValidationException('Development mock payment is disabled in release builds. Please configure Razorpay keys.');
+        }
         await _completeDevMockPayment(order.orderId);
         return;
       }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
@@ -25,8 +26,8 @@ class _SecurityGuardState extends ConsumerState<SecurityGuard> {
   Future<void> _checkSecurity() async {
     final securityService = ref.read(securityServiceProvider);
     
-    // Disable screenshot protection per user request
-    await securityService.setScreenshotProtection(false);
+    // Enable screenshot protection in release mode for financial data security
+    await securityService.setScreenshotProtection(!kDebugMode);
 
     // Perform root check
     final isRooted = await securityService.isDeviceRooted();
