@@ -83,32 +83,21 @@ async def _startup_cleanup():
                     WHERE id = '7eeb1b05-0a84-4bb3-aaa3-fd8a76613b49';
                 """)
             )
-            # 5. Ensure Google Play review demo customer exists
-            await session.execute(
-                text("""
-                    INSERT INTO users (
-                        id, email, mobile_number, first_name, last_name,
-                        is_active, is_superuser, mobile_verified, kyc_status,
-                        wallet_balance_inr, gold_savings_grams, silver_savings_grams,
-                        created_at, updated_at
-                    )
-                    VALUES (
-                        '88888888-8888-8888-8888-888888888888',
-                        'playreviewer@aurumgold.co.in',
-                        '9876543210',
-                        'Google Play',
-                        'Reviewer',
-                        true, false, true, 'verified',
-                        100.00, 0.0500, 1.0000,
-                        NOW(), NOW()
-                    )
-                    ON CONFLICT (id) DO NOTHING;
-                """)
-            )
             await session.commit()
             logger.info("db_startup_cleanup_complete", message="Purged fake mock payments and website orders.")
     except Exception as exc:
         logger.warning("db_startup_cleanup_failed", error=str(exc))
+
+
+async def _ensure_play_review_account():
+    """Separate transaction so a failure never rolls back the startup cleanup."""
+    from app.services.play_review import ensure_reviewer_account
+
+    try:
+        async with async_session_maker() as session:
+            await ensure_reviewer_account(session)
+    except Exception as exc:
+        logger.warning("play_review_account_setup_failed", error=str(exc))
 
 
 @asynccontextmanager
@@ -124,6 +113,7 @@ async def lifespan(app: FastAPI):
             message="Database connection verified successfully.",
         )
         await _startup_cleanup()
+        await _ensure_play_review_account()
     else:
         logger.warning(
             "db_connection_failed",

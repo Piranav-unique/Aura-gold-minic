@@ -54,8 +54,10 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = "secret-key-change-me"
     ADMIN_MOBILE_NUMBER: str = "9943795005"
-    PLAY_STORE_REVIEW_MOBILE: str = "9876543210"
-    PLAY_STORE_REVIEW_OTP: str = "123456"
+    # Google Play review demo login (see app/services/play_review.py). Off unless
+    # both are set in .env; the OTP must be a non-trivial SIGNUP_OTP_LENGTH code.
+    PLAY_STORE_REVIEW_MOBILE: str = ""
+    PLAY_STORE_REVIEW_OTP: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
@@ -185,8 +187,10 @@ class Settings(BaseSettings):
     # Domestic card/UPI fee estimate used for merchant settlement ledger (2% + 18% GST on fee).
     RAZORPAY_PLATFORM_FEE_PERCENT: float = 2.0
     RAZORPAY_PLATFORM_FEE_GST_PERCENT: float = 18.0
-    # When true (default in development), simulate checkout if Razorpay keys are unset
-    PAYMENT_DEV_MOCK: bool = True
+    # Local dev only: when true (and ENVIRONMENT=development), simulate checkout and
+    # payouts if Razorpay keys are unset. Off by default: the live server also runs
+    # as "development", and a mock checkout credits gold without any payment.
+    PAYMENT_DEV_MOCK: bool = False
     # RazorpayX — merchant ledger account for sell payouts (from RazorpayX dashboard)
     RAZORPAYX_ACCOUNT_NUMBER: str = ""
     RAZORPAYX_PAYOUT_MODE: str = "IMPS"

@@ -89,28 +89,6 @@ class AuthService:
         normalized_device_id = normalize_device_id(device_id)
         identifier = mobile
         try:
-            reviewer_mobile = normalize_mobile(getattr(settings, "PLAY_STORE_REVIEW_MOBILE", "9876543210"))
-            if mobile == reviewer_mobile:
-                user = await self.user_repo.get_by_mobile(mobile)
-                if not user:
-                    user = User(
-                        id=uuid.UUID("88888888-8888-8888-8888-888888888888"),
-                        email="playreviewer@aurumgold.co.in",
-                        mobile_number=reviewer_mobile,
-                        first_name="Google Play",
-                        last_name="Reviewer",
-                        is_active=True,
-                        mobile_verified=True,
-                        kyc_status="verified",
-                    )
-                    self.user_repo.db.add(user)
-                    await self.user_repo.db.commit()
-                    await self.user_repo.db.refresh(user)
-                await bind_device_for_mobile_login(
-                    self.user_repo, user, normalized_device_id, audit_service=self.audit_service
-                )
-                return user
-
             user = await self.user_repo.get_by_mobile(mobile)
             if not user or user.is_deleted or not user.is_active:
                 raise AuthenticationException(

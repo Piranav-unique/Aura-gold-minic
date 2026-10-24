@@ -8,6 +8,7 @@ from app.core.exceptions import ValidationException
 from app.core.logging import logger
 from app.repositories.signup_otp import SignupOtpRepository
 from app.repositories.user import UserRepository
+from app.services import play_review
 from app.services.sms import SmsService
 from app.utils.mobile import normalize_mobile
 from app.utils.device_binding import normalize_device_id
@@ -108,9 +109,6 @@ class SignupOtpService:
 
     async def _ensure_registered_active_user(self, mobile_number: str) -> None:
         mobile = normalize_mobile(mobile_number)
-        reviewer_mobile = normalize_mobile(getattr(settings, "PLAY_STORE_REVIEW_MOBILE", "9876543210"))
-        if mobile == reviewer_mobile:
-            return
         user = await self.user_repo.get_by_mobile(mobile)
         if not user or not user.is_active or user.is_deleted:
             raise ValidationException("No account found for this mobile number.")
@@ -138,18 +136,16 @@ class SignupOtpService:
         normalize_device_id(device_id)
         await self._ensure_registered_active_user(mobile_number)
         mobile = normalize_mobile(mobile_number)
-        reviewer_mobile = normalize_mobile(getattr(settings, "PLAY_STORE_REVIEW_MOBILE", "9876543210"))
-        if mobile == reviewer_mobile:
-            logger.info("play_store_reviewer_otp_challenge", mobile=mobile)
+        if await play_review.reviewer_shortcut_applies(self.user_repo, mobile):
+            # Reviewers use the fixed OTP from Play Console; no SMS is sent.
             return
         await self._send_otp_challenge(mobile)
 
     async def consume_login_otp(self, mobile_number: str, otp: str) -> None:
-        mobile = normalize_mobile(mobile_number)
-        reviewer_mobile = normalize_mobile(getattr(settings, "PLAY_STORE_REVIEW_MOBILE", "9876543210"))
-        reviewer_otp = str(getattr(settings, "PLAY_STORE_REVIEW_OTP", "123456")).strip()
-        if mobile == reviewer_mobile and otp.strip() == reviewer_otp:
-            logger.info("play_store_reviewer_otp_accepted", mobile=mobile)
+        if await play_review.reviewer_shortcut_applies(self.user_repo, mobile_number):
+            if not play_review.check_reviewer_otp(otp):
+                raise ValidationException("Invalid OTP. Please try again.")
+            logger.info("play_review_login_accepted")
             return
         await self._check_otp_code(mobile_number, otp, consume=True)
 
