@@ -17,7 +17,7 @@ from app.services.gold_payment import GoldPaymentService
 def _dummy_user(
     *,
     user_id: uuid.UUID | None = None,
-    email: str = "customer@example.com",
+    email: str = "customer@gmail.com",
     first_name: str = "John",
     last_name: str = "Doe",
     mobile_number: str = "9876543210",
@@ -95,11 +95,11 @@ def test_generate_invoice_html():
     html = generate_invoice_html(order, user)
     assert isinstance(html, str)
     assert "Tax Invoice" in html
-    assert "Payment Receipt" in html
+    assert "AURUM" in html
     assert "Alice Wonderland" in html
     assert "order_dummy_12345" in html
     assert "pay_dummy_67890" in html
-    assert "24K Pure Digital Gold" in html
+    assert "24K Pure Bullion Gold" in html
 
 
 def test_snapshot_data():

@@ -277,6 +277,9 @@ async def test_referral_summary_contains_min_purchase_inr():
     user_repo = MagicMock()
     user_repo.get_by_referral_code = AsyncMock(return_value=None)
     user_repo.get_with_roles_and_permissions = AsyncMock(return_value=None)
+    mock_db = MagicMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=None)))
+    user_repo.db = mock_db
 
     reward_repo = MagicMock()
     reward_repo.count_and_sum_for_referrer = AsyncMock(return_value=(0, Decimal("0")))

@@ -166,7 +166,7 @@ async def test_update_email_staff_with_password_requires_password(
     from app.core.exceptions import ValidationException
 
     user = _user(
-        email="staff@example.com",
+        email="staff@gmail.com",
         has_completed_mobile_login=False,
         registered_device_id=None,
     )
@@ -175,7 +175,7 @@ async def test_update_email_staff_with_password_requires_password(
 
     with pytest.raises(ValidationException, match="Current password is required"):
         await profile_service.update_profile(
-            user.id, ProfileUpdate(email="newstaff@example.com")
+            user.id, ProfileUpdate(email="newstaff@gmail.com")
         )
 
 

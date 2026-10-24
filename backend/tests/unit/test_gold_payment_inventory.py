@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from app.core.config import settings
 
 import pytest
 from sqlalchemy import select
@@ -34,7 +36,7 @@ async def _buy_ready_user(test_db: AsyncSession) -> User:
     now = datetime.now(timezone.utc)
     user = User(
         id=uuid.uuid4(),
-        email=f"buyer_{uuid.uuid4().hex[:8]}@example.com",
+        email=f"buyer_{uuid.uuid4().hex[:8]}@gmail.com",
         hashed_password=get_password_hash("password123"),
         first_name="Buyer",
         last_name="Test",
@@ -114,12 +116,13 @@ async def test_verify_payment_reduces_inventory(test_db: AsyncSession):
     service = _build_payment_service(test_db)
 
     order = await service.create_buy_order(user, metal="gold", grams=Decimal("1"))
-    result = await service.verify_payment(
-        user,
-        razorpay_order_id=order.order_id,
-        razorpay_payment_id="pay_dev_mock",
-        razorpay_signature="dev_mock",
-    )
+    with patch.object(settings, "ENVIRONMENT", "development"), patch.object(settings, "PAYMENT_DEV_MOCK", True):
+        result = await service.verify_payment(
+            user,
+            razorpay_order_id=order.order_id,
+            razorpay_payment_id="pay_dev_mock",
+            razorpay_signature="dev_mock",
+        )
     assert result.status == "paid"
 
     inv = await test_db.execute(

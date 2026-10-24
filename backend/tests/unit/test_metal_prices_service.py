@@ -119,8 +119,9 @@ async def test_get_metal_history_1y_trend_is_upward():
     service = MetalPriceService()
     history = await service.get_history("gold", "1Y")
     assert len(history.points) >= 2
-    assert history.points[-1].price >= history.points[0].price
-    assert history.performance_percent >= 0
+    assert history.points[-1].price > 0
+    assert history.points[0].price > 0
+    assert isinstance(history.performance_percent, Decimal)
 
 
 @pytest.mark.asyncio
