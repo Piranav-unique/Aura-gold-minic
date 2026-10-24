@@ -58,13 +58,13 @@ class EnvConfig {
   );
 
   static EnvConfig get active {
-    const env = String.fromEnvironment('ENV', defaultValue: 'dev');
+    const env = String.fromEnvironment('ENV', defaultValue: 'prod');
     switch (env) {
-      case 'prod':
-        return prod;
       case 'dev':
-      default:
         return dev;
+      case 'prod':
+      default:
+        return prod;
     }
   }
 }

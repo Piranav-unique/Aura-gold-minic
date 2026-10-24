@@ -23,14 +23,41 @@ class RazorpayLiveData {
 }
 
 class RazorpayLiveService {
-  static const String keyId = 'rzp_live_TeduS7UBp3zY8P';
-  static const String keySecret = 'HcTCERztC9Y53fi7WEQEQBJz';
+  /// Loaded via environment definitions at build-time, NEVER hardcoded.
+  static const String keyId = String.fromEnvironment(
+    'RAZORPAY_KEY_ID',
+    defaultValue: '',
+  );
+  static const String keySecret = String.fromEnvironment(
+    'RAZORPAY_KEY_SECRET',
+    defaultValue: '',
+  );
 
   final Dio _dio;
 
   RazorpayLiveService([Dio? dio]) : _dio = dio ?? Dio();
 
   Future<RazorpayLiveData> fetchLivePayments() async {
+    if (keyId.isEmpty || keySecret.isEmpty) {
+      final now = DateTime.now();
+      return RazorpayLiveData(
+        totalRevenueInr: 0.0,
+        totalCapturedCount: 0,
+        totalFailedCount: 0,
+        totalFailedAmountInr: 0.0,
+        allPayments: const [],
+        customerSummaries: const [],
+        summary: AdminPaymentSummary(
+          totalCapturedRevenue: 0.0,
+          totalCapturedCount: 0,
+          totalPendingCount: 0,
+          totalFailedCount: 0,
+          todayCapturedRevenue: 0.0,
+          todayCapturedCount: 0,
+          lastSyncedAt: now,
+        ),
+      );
+    }
     final auth = 'Basic ${base64Encode(utf8.encode('$keyId:$keySecret'))}';
     final response = await _dio.get<Map<String, dynamic>>(
       'https://api.razorpay.com/v1/payments',
