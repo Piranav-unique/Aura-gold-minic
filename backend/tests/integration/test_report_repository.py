@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
@@ -146,6 +146,12 @@ async def test_revenue_growth_percent_with_new_revenue(test_db: AsyncSession):
         tax_amount=Decimal("0"),
         total_amount=Decimal("1000.00"),
         stock_applied=False,
+        # Explicit timestamp: a Docker DB clock running ahead of the host would
+        # otherwise place the row after "now" in revenue_growth_percent().
+        created_at=max(
+            datetime.now(timezone.utc) - timedelta(minutes=1),
+            datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0),
+        ),
     )
     test_db.add(txn)
     await test_db.commit()

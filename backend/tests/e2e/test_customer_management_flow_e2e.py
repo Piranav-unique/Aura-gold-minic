@@ -73,7 +73,8 @@ async def test_e2e_customer_management_full_flow(
     )
     assert update_response.status_code == 200
     assert update_response.json()["status"] == "inactive"
-    assert update_response.json()["full_name"] == "E2E Updated Traders"
+    # Customer names are immutable once created.
+    assert update_response.json()["full_name"] == created["full_name"]
 
     delete_response = await db_client.delete(
         f"/api/v1/customers/{customer_id}",

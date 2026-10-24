@@ -283,12 +283,14 @@ async def test_update_customer_api(client: AsyncClient, db_session, authorized_u
 
     response = await client.put(
         f"/api/v1/customers/{target.id}",
-        json={"full_name": "Updated Name"},
+        json={"full_name": "Updated Name", "status": "inactive"},
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
     assert response.status_code == 200
-    assert response.json()["full_name"] == "Updated Name"
+    # Customer names are immutable once created; other fields still update.
+    assert response.json()["full_name"] == target.full_name
+    assert response.json()["status"] == "inactive"
 
 
 @pytest.mark.asyncio

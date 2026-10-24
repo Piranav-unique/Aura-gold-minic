@@ -146,7 +146,7 @@ async def test_update_customer_success(
     customer_service, mock_customer_repository, mock_audit_service
 ):
     customer = _sample_customer()
-    customer_in = CustomerUpdate(full_name="Jane Doe")
+    customer_in = CustomerUpdate(full_name="Jane Doe", status="inactive")
 
     mock_customer_repository.get_active = AsyncMock(return_value=customer)
     mock_customer_repository.db = MagicMock()
@@ -158,7 +158,9 @@ async def test_update_customer_success(
         customer.id, customer_in, performing_user_id=uuid.uuid4()
     )
 
-    assert result.full_name == "Jane Doe"
+    # Customer names are immutable once created; other fields still update.
+    assert result.full_name == "John Doe"
+    assert result.status == "inactive"
     mock_audit_service.log_action.assert_called_once()
 
 

@@ -107,8 +107,10 @@ async def test_get_user_wallet_detail(
     data = response.json()
     assert data["email"] == wallet_end_user.email
     assert data["kyc_aadhaar_last4"] == "1234"
-    assert data["wallet"]["gold_balance_grams"] == "1.5000"
-    assert Decimal(data["wallet"]["total_inr_invested"]) == Decimal("8750.00")
+    assert Decimal(data["wallet"]["gold_balance_grams"]) == Decimal("1.5")
+    # Invested totals come from paid orders (one ₹8,500 gold order), not the
+    # cached per-user columns.
+    assert Decimal(data["wallet"]["total_inr_invested"]) == Decimal("8500.00")
 
 
 @pytest.mark.asyncio
@@ -278,6 +280,6 @@ async def test_deleted_users_list_and_detail(
     assert detail["id"] == str(wallet_end_user.id)
     assert detail["status"] == "Deleted"
     assert detail["deleted_at"] is not None
-    assert detail["wallet"]["gold_balance_grams"] == "1.5000"
+    assert Decimal(detail["wallet"]["gold_balance_grams"]) == Decimal("1.5")
     assert len(detail["transactions"]) >= 1
 

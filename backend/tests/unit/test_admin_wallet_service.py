@@ -62,6 +62,8 @@ async def test_get_user_wallet_audits_view(wallet_service, wallet_repo, audit_se
     wallet_repo.get_wallet_user = AsyncMock(return_value=user)
     wallet_repo.sum_paid_grams = AsyncMock(return_value=Decimal("1"))
     wallet_repo.count_pending_sell_inquiries = AsyncMock(return_value=0)
+    wallet_repo.get_referral_attribution = AsyncMock(return_value=(None, []))
+    wallet_repo.sum_paid_amount_inr = AsyncMock(return_value=Decimal("5000"))
     wallet_repo.sum_referral_rewards = AsyncMock(
         return_value=(Decimal("0"), Decimal("0"))
     )
