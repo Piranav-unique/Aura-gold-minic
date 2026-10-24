@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:ags_gold/features/app_update/domain/android_app_release.dart';
 import 'package:ags_gold/features/app_update/domain/app_update_utils.dart';
 import 'package:ags_gold/features/app_update/presentation/providers/app_update_provider.dart';
 import 'package:ags_gold/features/app_update/presentation/widgets/app_update_prompt.dart';
@@ -14,6 +13,13 @@ import 'package:ags_gold/l10n/l10n_extension.dart';
 
 class AppUpdateCoordinator {
   AppUpdateCoordinator(this._ref);
+
+  static final _playStoreAppUri = Uri.parse(
+    'market://details?id=com.agsgold.ags_gold',
+  );
+  static final _playStoreWebUri = Uri.parse(
+    'https://play.google.com/store/apps/details?id=com.agsgold.ags_gold',
+  );
 
   final Ref _ref;
   bool _promptVisible = false;
@@ -70,35 +76,30 @@ class AppUpdateCoordinator {
       _promptVisible = false;
       if (!accepted || !context.mounted) return;
 
-      await _downloadAndInstall(context, release);
+      await _openPlayStore(context);
     } catch (_) {
       if (manual && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.appUpdateFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.appUpdateFailed)));
       }
     }
   }
 
-  Future<void> _downloadAndInstall(
-    BuildContext context,
-    AndroidAppRelease release,
-  ) async {
-    final targetUrl = release.apkUrl.trim();
-    final uri = (targetUrl.isNotEmpty && targetUrl.startsWith('http'))
-        ? Uri.parse(targetUrl)
-        : Uri.parse('https://play.google.com/store/apps/details?id=com.agsgold.ags_gold');
-
+  Future<void> _openPlayStore(BuildContext context) async {
+    // Play policy: updates only come from the Play Store, never a downloaded APK.
     try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        final fallback = Uri.parse('https://play.google.com/store/apps/details?id=com.agsgold.ags_gold');
-        await launchUrl(fallback, mode: LaunchMode.externalApplication);
+      if (!await launchUrl(
+        _playStoreAppUri,
+        mode: LaunchMode.externalApplication,
+      )) {
+        await launchUrl(_playStoreWebUri, mode: LaunchMode.externalApplication);
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.appUpdateFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.appUpdateFailed)));
       }
     }
   }

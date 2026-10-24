@@ -48,6 +48,10 @@ android {
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
+                logger.warn(
+                    "android/key.properties not found: release builds are signed with the " +
+                        "DEBUG key and cannot be uploaded to Google Play."
+                )
                 signingConfigs.getByName("debug")
             }
             proguardFiles(

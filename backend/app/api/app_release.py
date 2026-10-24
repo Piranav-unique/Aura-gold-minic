@@ -12,8 +12,12 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
 )
 async def get_android_release() -> AndroidAppReleaseResponse:
-    """Public endpoint used by the mobile app to check for APK updates."""
-    if not settings.APP_ANDROID_APK_URL.strip():
+    """Public endpoint used by the mobile app to check for updates.
+
+    Play builds only need APP_ANDROID_VERSION_CODE; the app opens the Play Store
+    listing. APP_ANDROID_APK_URL is kept for older sideloaded builds.
+    """
+    if settings.APP_ANDROID_VERSION_CODE <= 0 and not settings.APP_ANDROID_APK_URL.strip():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Android release is not configured.",

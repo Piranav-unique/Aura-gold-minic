@@ -22,6 +22,11 @@ if (-not $env:JAVA_HOME -or -not (Test-Path $env:JAVA_HOME)) {
     }
 }
 
+# Without key.properties Gradle falls back to the debug key, which Google Play rejects.
+if (-not (Test-Path (Join-Path $PSScriptRoot "android\key.properties"))) {
+    Write-Error "android\key.properties not found. Restore the release keystore before building for Google Play."
+}
+
 Write-Host "Building app bundle (AAB)..." -ForegroundColor Cyan
 Write-Host "API: $ApiBaseUrl" -ForegroundColor DarkGray
 
