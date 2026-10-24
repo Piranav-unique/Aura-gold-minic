@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ags_gold/core/theme/app_theme.dart';
+import 'package:ags_gold/l10n/l10n_extension.dart';
 import 'package:ags_gold/services/security_service.dart';
 
 class SecurityGuard extends ConsumerStatefulWidget {
@@ -70,10 +71,10 @@ class _SecurityGuardState extends ConsumerState<SecurityGuard> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Security Alert: Device Rooted',
+                  Text(
+                    context.l10n.deviceRootedTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -81,8 +82,7 @@ class _SecurityGuardState extends ConsumerState<SecurityGuard> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'AGS Gold has detected that this device is rooted or jailbroken. '
-                    'To protect your financial transactions and digital gold holdings, access is restricted on compromised operating systems.',
+                    context.l10n.deviceRootedMessage,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -99,7 +99,7 @@ class _SecurityGuardState extends ConsumerState<SecurityGuard> {
                     ),
                     onPressed: _checkSecurity,
                     icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Re-check Device Security'),
+                    label: Text(context.l10n.deviceRootedRecheck),
                   ),
                 ],
               ),

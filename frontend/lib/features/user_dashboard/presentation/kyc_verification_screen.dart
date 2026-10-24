@@ -146,27 +146,23 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
   String _friendlyKycError(String message) {
     final lower = message.toLowerCase();
     if (lower.contains('otp expired') || lower.contains('expired otp')) {
-      return 'This OTP has expired or was already used. Tap Resend OTP and '
-          'enter the new code.';
+      return context.l10n.kycOtpExpiredError;
     }
     if (lower.contains('source unavailable')) {
-      return 'UIDAI is temporarily unavailable. Wait a minute, then tap '
-          'Verify again — or request a new OTP.';
+      return context.l10n.kycUidaiUnavailableError;
     }
     if (message.contains('aadhaar_number') ||
         lower.contains('string should have at least 12')) {
-      return 'Aadhaar number was lost from this session. Tap '
-          '"Change Aadhaar number" and enter it again.';
+      return context.l10n.kycAadhaarSessionLostError;
     }
     if (lower.contains('mobile linked with this aadhaar does not match')) {
       return context.l10n.kycMobileMismatchError;
     }
     if (lower.contains('already verified')) {
-      return 'Aadhaar is already verified. Continue with PAN linking below.';
+      return context.l10n.kycAadhaarAlreadyVerifiedError;
     }
     if (lower.contains('complete aadhaar verification')) {
-      return 'Aadhaar OTP was not saved on the server. Tap "Back to Aadhaar '
-          'verification", request a new OTP, and verify again.';
+      return context.l10n.kycAadhaarNotSavedError;
     }
     return message;
   }

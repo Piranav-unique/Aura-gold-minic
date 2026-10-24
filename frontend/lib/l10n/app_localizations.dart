@@ -1988,6 +1988,54 @@ abstract class AppLocalizations {
   /// **'The mobile linked with this Aadhaar does not match your registered number. Use the same mobile you signed up with.'**
   String get kycMobileMismatchError;
 
+  /// No description provided for @deviceRootedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security Alert: Device Rooted'**
+  String get deviceRootedTitle;
+
+  /// No description provided for @deviceRootedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'AGS Gold has detected that this device is rooted or jailbroken. To protect your financial transactions and digital gold holdings, access is restricted on compromised operating systems.'**
+  String get deviceRootedMessage;
+
+  /// No description provided for @deviceRootedRecheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-check Device Security'**
+  String get deviceRootedRecheck;
+
+  /// No description provided for @kycOtpExpiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'This OTP has expired or was already used. Tap Resend OTP and enter the new code.'**
+  String get kycOtpExpiredError;
+
+  /// No description provided for @kycUidaiUnavailableError.
+  ///
+  /// In en, this message translates to:
+  /// **'UIDAI is temporarily unavailable. Wait a minute, then tap Verify again — or request a new OTP.'**
+  String get kycUidaiUnavailableError;
+
+  /// No description provided for @kycAadhaarSessionLostError.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar number was lost from this session. Tap \"Change Aadhaar number\" and enter it again.'**
+  String get kycAadhaarSessionLostError;
+
+  /// No description provided for @kycAadhaarAlreadyVerifiedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar is already verified. Continue with PAN linking below.'**
+  String get kycAadhaarAlreadyVerifiedError;
+
+  /// No description provided for @kycAadhaarNotSavedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar OTP was not saved on the server. Tap \"Back to Aadhaar verification\", request a new OTP, and verify again.'**
+  String get kycAadhaarNotSavedError;
+
   /// No description provided for @useDigilockerInstead.
   ///
   /// In en, this message translates to:

@@ -1084,6 +1084,37 @@ class AppLocalizationsTa extends AppLocalizations {
       'இந்த ஆதாருடன் இணைக்கப்பட்ட மொபைல் உங்கள் பதிவு செய்த எண்ணுடன் பொருந்தவில்லை. பதிவு செய்த அதே மொபைலைப் பயன்படுத்தவும்.';
 
   @override
+  String get deviceRootedTitle =>
+      'பாதுகாப்பு எச்சரிக்கை: சாதனம் ரூட் செய்யப்பட்டுள்ளது';
+
+  @override
+  String get deviceRootedMessage =>
+      'இந்த சாதனம் ரூட் அல்லது ஜெயில்பிரேக் செய்யப்பட்டுள்ளதை AGS Gold கண்டறிந்துள்ளது. உங்கள் நிதி பரிவர்த்தனைகளையும் டிஜிட்டல் தங்கத்தையும் பாதுகாக்க, பாதுகாப்பற்ற இயங்குதளங்களில் அணுகல் கட்டுப்படுத்தப்பட்டுள்ளது.';
+
+  @override
+  String get deviceRootedRecheck => 'சாதன பாதுகாப்பை மீண்டும் சரிபார்';
+
+  @override
+  String get kycOtpExpiredError =>
+      'இந்த OTP காலாவதியாகிவிட்டது அல்லது ஏற்கனவே பயன்படுத்தப்பட்டது. OTP மீண்டும் அனுப்பு என்பதைத் தட்டி புதிய குறியீட்டை உள்ளிடவும்.';
+
+  @override
+  String get kycUidaiUnavailableError =>
+      'UIDAI தற்காலிகமாக கிடைக்கவில்லை. ஒரு நிமிடம் காத்திருந்து மீண்டும் சரிபார் என்பதைத் தட்டவும் — அல்லது புதிய OTP-ஐக் கோரவும்.';
+
+  @override
+  String get kycAadhaarSessionLostError =>
+      'இந்த அமர்வில் ஆதார் எண் இழக்கப்பட்டது. \"ஆதார் எண்ணை மாற்று\" என்பதைத் தட்டி மீண்டும் உள்ளிடவும்.';
+
+  @override
+  String get kycAadhaarAlreadyVerifiedError =>
+      'ஆதார் ஏற்கனவே சரிபார்க்கப்பட்டது. கீழே PAN இணைப்பைத் தொடரவும்.';
+
+  @override
+  String get kycAadhaarNotSavedError =>
+      'ஆதார் OTP சர்வரில் சேமிக்கப்படவில்லை. \"ஆதார் சரிபார்ப்புக்குத் திரும்பு\" என்பதைத் தட்டி, புதிய OTP-ஐக் கோரி மீண்டும் சரிபார்க்கவும்.';
+
+  @override
   String get useDigilockerInstead => 'DigiLocker சரிபார்ப்பைப் பயன்படுத்தவும்';
 
   @override

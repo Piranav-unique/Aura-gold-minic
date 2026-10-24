@@ -1071,6 +1071,36 @@ class AppLocalizationsEn extends AppLocalizations {
       'The mobile linked with this Aadhaar does not match your registered number. Use the same mobile you signed up with.';
 
   @override
+  String get deviceRootedTitle => 'Security Alert: Device Rooted';
+
+  @override
+  String get deviceRootedMessage =>
+      'AGS Gold has detected that this device is rooted or jailbroken. To protect your financial transactions and digital gold holdings, access is restricted on compromised operating systems.';
+
+  @override
+  String get deviceRootedRecheck => 'Re-check Device Security';
+
+  @override
+  String get kycOtpExpiredError =>
+      'This OTP has expired or was already used. Tap Resend OTP and enter the new code.';
+
+  @override
+  String get kycUidaiUnavailableError =>
+      'UIDAI is temporarily unavailable. Wait a minute, then tap Verify again — or request a new OTP.';
+
+  @override
+  String get kycAadhaarSessionLostError =>
+      'Aadhaar number was lost from this session. Tap \"Change Aadhaar number\" and enter it again.';
+
+  @override
+  String get kycAadhaarAlreadyVerifiedError =>
+      'Aadhaar is already verified. Continue with PAN linking below.';
+
+  @override
+  String get kycAadhaarNotSavedError =>
+      'Aadhaar OTP was not saved on the server. Tap \"Back to Aadhaar verification\", request a new OTP, and verify again.';
+
+  @override
   String get useDigilockerInstead => 'Use DigiLocker verification instead';
 
   @override
