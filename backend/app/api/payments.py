@@ -5,6 +5,7 @@ from app.api.dependencies import (
   get_current_user,
   get_digital_metal_inventory_service,
   get_gold_payment_service,
+  get_razorpay_client,
 )
 from app.core.authorization import PermissionChecker
 from app.models.user import User
@@ -22,6 +23,7 @@ from app.schemas.payment import (
 )
 from app.services.digital_metal_inventory import DigitalMetalInventoryService
 from app.services.gold_payment import GoldPaymentService
+from app.services.razorpay_client import RazorpayClient
 
 router = APIRouter()
 
@@ -125,6 +127,19 @@ async def list_admin_payment_orders(
   return await payment_service.list_admin_orders(
     skip=skip, limit=limit, status=status, search=search
   )
+
+
+@router.get(
+  "/admin/razorpay-payments",
+  summary="Latest payments straight from Razorpay for live reconciliation (admin)",
+)
+async def list_razorpay_payments(
+  count: int = Query(100, ge=1, le=100),
+  current_user: User = Depends(PermissionChecker("dashboard.view")),
+  razorpay: RazorpayClient = Depends(get_razorpay_client),
+) -> dict:
+  # The Razorpay secret stays on the server; the app never holds it.
+  return {"items": await razorpay.list_payments(count)}
 
 
 @router.get(

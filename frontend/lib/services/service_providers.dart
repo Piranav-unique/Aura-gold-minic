@@ -489,5 +489,5 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
 );
 
 final razorpayLiveServiceProvider = Provider<RazorpayLiveService>((ref) {
-  return RazorpayLiveService();
+  return RazorpayLiveService(ref.watch(apiClientProvider));
 });

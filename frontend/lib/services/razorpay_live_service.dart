@@ -1,6 +1,5 @@
-import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:ags_gold/features/dashboard/domain/executive_dashboard.dart';
+import 'package:ags_gold/services/api_client.dart';
 
 class RazorpayLiveData {
   final double totalRevenueInr;
@@ -23,50 +22,16 @@ class RazorpayLiveData {
 }
 
 class RazorpayLiveService {
-  /// Loaded via environment definitions at build-time, NEVER hardcoded.
-  static const String keyId = String.fromEnvironment(
-    'RAZORPAY_KEY_ID',
-    defaultValue: '',
-  );
-  static const String keySecret = String.fromEnvironment(
-    'RAZORPAY_KEY_SECRET',
-    defaultValue: '',
-  );
+  RazorpayLiveService(this._apiClient);
 
-  final Dio _dio;
+  final ApiClient _apiClient;
 
-  RazorpayLiveService([Dio? dio]) : _dio = dio ?? Dio();
-
+  /// Latest Razorpay payments, fetched through the backend so the Razorpay
+  /// secret never ships inside the app.
   Future<RazorpayLiveData> fetchLivePayments() async {
-    if (keyId.isEmpty || keySecret.isEmpty) {
-      final now = DateTime.now();
-      return RazorpayLiveData(
-        totalRevenueInr: 0.0,
-        totalCapturedCount: 0,
-        totalFailedCount: 0,
-        totalFailedAmountInr: 0.0,
-        allPayments: const [],
-        customerSummaries: const [],
-        summary: AdminPaymentSummary(
-          totalCapturedRevenue: 0.0,
-          totalCapturedCount: 0,
-          totalPendingCount: 0,
-          totalFailedCount: 0,
-          todayCapturedRevenue: 0.0,
-          todayCapturedCount: 0,
-          lastSyncedAt: now,
-        ),
-      );
-    }
-    final auth = 'Basic ${base64Encode(utf8.encode('$keyId:$keySecret'))}';
-    final response = await _dio.get<Map<String, dynamic>>(
-      'https://api.razorpay.com/v1/payments',
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/payments/admin/razorpay-payments',
       queryParameters: {'count': 100},
-      options: Options(
-        headers: {'Authorization': auth},
-        sendTimeout: const Duration(seconds: 12),
-        receiveTimeout: const Duration(seconds: 12),
-      ),
     );
 
     final data = response.data;
